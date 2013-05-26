@@ -8,3 +8,5 @@ Description, docs and examples are coming soon.
 
 Native .dll could be obtained from https://github.com/ilyalukyanov/lightningdb-win.
 Also precompiled dll is located in Binaries directory. It's supplied to be used by unit tests.
+
+The library is published under MIT license.
