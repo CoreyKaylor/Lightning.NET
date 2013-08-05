@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LightningDB
 {
@@ -10,10 +6,7 @@ namespace LightningDB
     {
         public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
-        private TransactionBeginFlags _flags;
-
         internal IntPtr _handle;
-        private EventHandler<LightningClosingEventArgs> _environmentOrParentTransactionClosing;
 
         public LightningTransaction(LightningEnvironment environment, LightningTransaction parent, TransactionBeginFlags flags)
         {
@@ -28,21 +21,17 @@ namespace LightningDB
                 ? parent._handle
                 : IntPtr.Zero;
 
-            IntPtr handle;
-            var res = Native.mdb_txn_begin(environment._handle, parentHandle, flags, out handle);
-            if (res != 0)
-                throw new LightningException(res);
+            IntPtr handle = default(IntPtr);
+            Native.Execute(() => Native.mdb_txn_begin(environment._handle, parentHandle, flags, out handle));
 
             _handle = handle;
-            _flags = flags;
 
             this.State = LightningTransacrionState.Active;
 
-            _environmentOrParentTransactionClosing = new EventHandler<LightningClosingEventArgs>(this.EnvironmentOrParentTransactionClosing);
             if (parent == null)
-                this.Environment.Closing += _environmentOrParentTransactionClosing;
+                this.Environment.Closing += EnvironmentOrParentTransactionClosing;
             else
-                parent.Closing += _environmentOrParentTransactionClosing;
+                parent.Closing += EnvironmentOrParentTransactionClosing;
         }
 
         public event EventHandler<LightningClosingEventArgs> Closing;
@@ -59,7 +48,9 @@ namespace LightningDB
             {
                 this.Abort(e.EnvironmentClosing);
             }
-            catch { }
+            catch
+            {
+            }
         }
 
         public LightningTransacrionState State { get; private set; }
@@ -74,7 +65,7 @@ namespace LightningDB
             return this.BeginTransaction(DefaultTransactionBeginFlags);
         }
 
-        public LightningDatabase OpenDatabase(string name, DatabaseOpenFlags flags)
+        public LightningDatabase OpenDatabase(string name = null, DatabaseOpenFlags flags = DatabaseOpenFlags.None)
         {
             return this.Environment.OpenDatabase(name, flags, this);
         }
@@ -110,21 +101,15 @@ namespace LightningDB
                 }
                 finally
                 {
-                    var res = Native.mdb_txn_commit(_handle);
-                    if (res != 0)
+                    try
                     {
-                        try
-                        {
-                            this.Abort(false);
-                        }
-                        catch
-                        {
-                            this.State = LightningTransacrionState.Aborted;
-                        }
-
-                        throw new LightningException(res);
+                        Native.Execute(() => Native.mdb_txn_commit(_handle));
                     }
-
+                    catch (LightningException)
+                    {
+                        this.Abort(false);
+                        throw;
+                    }
                     this.State = LightningTransacrionState.Commited;
                 }
             }
@@ -162,9 +147,9 @@ namespace LightningDB
         private void DetachClosingHandler()
         {
             if (this.ParentTransaction == null)
-                this.Environment.Closing -= _environmentOrParentTransactionClosing;
+                this.Environment.Closing -= EnvironmentOrParentTransactionClosing;
             else
-                this.ParentTransaction.Closing -= _environmentOrParentTransactionClosing;
+                this.ParentTransaction.Closing -= EnvironmentOrParentTransactionClosing;
         }
 
         public LightningEnvironment Environment { get; private set; }

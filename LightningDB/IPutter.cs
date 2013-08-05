@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LightningDB
+﻿namespace LightningDB
 {
+    //TODO Is this interface buying us anything?
     public interface IPutter : IDatabaseAttributesProvider
     {
         void Put(byte[] key, byte[] value, PutOptions options);

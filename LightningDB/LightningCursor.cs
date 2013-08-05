@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
+using LightningDB.BasicExtensions;
 
 namespace LightningDB
 {
     public class LightningCursor : IDatabaseAttributesProvider, IPutter, IDisposable
     {
-        private IntPtr _handle;
+        private readonly IntPtr _handle;
         private bool _shouldDispose;
-        private EventHandler<LightningClosingEventArgs> _environmentOrTransactionClosing;
 
         public LightningCursor(LightningDatabase db, LightningTransaction txn)
         {
@@ -24,10 +21,8 @@ namespace LightningDB
             if (db.Environment != txn.Environment)
                 throw new ArgumentException("db and txn belong to different environments");
 
-            IntPtr handle;
-            var res = Native.mdb_cursor_open(txn._handle, db._handle, out handle);
-            if (res != 0)
-                throw new LightningException(res);
+            IntPtr handle = default(IntPtr);
+            Native.Execute(() => Native.mdb_cursor_open(txn._handle, db._handle, out handle));
 
             _handle = handle;
 
@@ -35,12 +30,11 @@ namespace LightningDB
             this.Transaction = txn;
 
             _shouldDispose = true;
-            _environmentOrTransactionClosing = new EventHandler<LightningClosingEventArgs>(this.EnvironmentOrTransactionClosing);
 
             if (txn.IsReadOnly)
-                this.Environment.Closing += _environmentOrTransactionClosing;
+                this.Environment.Closing += EnvironmentOrTransactionClosing;
             else
-                this.Transaction.Closing += _environmentOrTransactionClosing;
+                this.Transaction.Closing += EnvironmentOrTransactionClosing;
         }
 
         private void EnvironmentOrTransactionClosing(object sender, EventArgs e)
@@ -55,9 +49,9 @@ namespace LightningDB
         private void DetachClosingHandler()
         {
             if (this.Transaction.IsReadOnly)
-                this.Environment.Closing -= _environmentOrTransactionClosing;
+                this.Environment.Closing -= EnvironmentOrTransactionClosing;
             else
-                this.Transaction.Closing -= _environmentOrTransactionClosing;
+                this.Transaction.Closing -= EnvironmentOrTransactionClosing;
         }
 
         public LightningEnvironment Environment { get { return this.Database.Environment; } }
@@ -72,57 +66,28 @@ namespace LightningDB
             var keyStruct = new ValueStructure();
             var valueStruct = new ValueStructure();
 
-            var res = Native.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation);
-            if (res != 0)
-                throw new LightningException(res);
+            var res = Native.Read(() => Native.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
 
-            var keyBuffer = new byte[keyStruct.size];
-            var valueBuffer = new byte[valueStruct.size];
-
-            Marshal.Copy(keyStruct.data, keyBuffer, 0, keyStruct.size);
-            Marshal.Copy(valueStruct.data, valueBuffer, 0, valueStruct.size);
-
-            //TODO: Possible leak. Is the original data which is copied to buffer stays in memory?
-            return new KeyValuePair<byte[], byte[]>(keyBuffer, valueBuffer);
+            return new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
         }
 
         //TODO: tests
         public void Put(byte[] key, byte[] value, PutOptions options)
         {
-            var keyStruct = new ValueStructure
+            using(var keyMarshalStruct = new MarshalValueStructure(key))
+            using (var valueMarshalStruct = new MarshalValueStructure(value))
             {
-                data = Marshal.AllocHGlobal(key.Length),
-                size = key.Length
-            };
+                var keyStruct = keyMarshalStruct.ValueStructure;
+                var valueStruct = valueMarshalStruct.ValueStructure;
 
-            var valueStruct = new ValueStructure
-            {
-                data = Marshal.AllocHGlobal(value.Length),
-                size = value.Length
-            };
-
-            try
-            {
-                Marshal.Copy(key, 0, keyStruct.data, key.Length);
-                Marshal.Copy(value, 0, valueStruct.data, value.Length);
-
-                var res = Native.mdb_cursor_put(_handle, keyStruct, valueStruct, options);
-                if (res != 0)
-                    throw new LightningException(res);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(keyStruct.data);
-                Marshal.FreeHGlobal(valueStruct.data);
+                Native.Execute(() => Native.mdb_cursor_put(_handle, keyStruct, valueStruct, options));
             }
         }
 
         //TODO: tests
         public void Delete(CursorDeleteOption option)
         {
-            var res = Native.mdb_cursor_del(_handle, option);
-            if (res != 0)
-                throw new LightningException(res);
+            Native.Execute(() => Native.mdb_cursor_del(_handle, option));
         }
 
         public void Renew()
@@ -138,9 +103,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            var res = Native.mdb_cursor_renew(txn._handle, _handle);
-            if (res != 0)
-                throw new LightningException(res);
+            Native.Execute(() => Native.mdb_cursor_renew(txn._handle, _handle));
         }
 
         //TODO: tests

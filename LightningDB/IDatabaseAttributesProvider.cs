@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace LightningDB
 {
+    //TODO Is this interface buying us anything?
     public interface IDatabaseAttributesProvider
     {
         DatabaseOpenFlags OpenFlags { get; }
