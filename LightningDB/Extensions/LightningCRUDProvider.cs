@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LightningDB.Extensions
 {
@@ -161,7 +158,6 @@ namespace LightningDB.Extensions
         private TEnum GetEnumInternal<TEnum>(byte[] bytes)
         {
             var enumType = Enum.GetUnderlyingType(typeof(TEnum));
-            var enumSize = Marshal.SizeOf(enumType);
                         
             switch (bytes.Length)
             {
@@ -171,16 +167,16 @@ namespace LightningDB.Extensions
                         : EmitEnumConverter<byte, TEnum>.Convert(bytes[0]);
                 case 2:
                     return enumType == typeof(ushort)
-                        ? EmitEnumConverter<ushort, TEnum>.Convert((ushort)bytes[0])
-                        : EmitEnumConverter<short, TEnum>.Convert((short)bytes[0]);
+                        ? EmitEnumConverter<ushort, TEnum>.Convert(bytes[0])
+                        : EmitEnumConverter<short, TEnum>.Convert(bytes[0]);
                 case 4:
                     return enumType == typeof(ushort)
-                        ? EmitEnumConverter<uint, TEnum>.Convert((uint)bytes[0])
-                        : EmitEnumConverter<int, TEnum>.Convert((int)bytes[0]);
+                        ? EmitEnumConverter<uint, TEnum>.Convert(bytes[0])
+                        : EmitEnumConverter<int, TEnum>.Convert(bytes[0]);
                 case 8:
                     return enumType == typeof(ulong)
-                        ? EmitEnumConverter<ulong, TEnum>.Convert((ulong)bytes[0])
-                        : EmitEnumConverter<long, TEnum>.Convert((long)bytes[0]);;
+                        ? EmitEnumConverter<ulong, TEnum>.Convert(bytes[0])
+                        : EmitEnumConverter<long, TEnum>.Convert(bytes[0]);
                 default:
                     throw new InvalidCastException(InvalidByteCountText);
             }
@@ -191,19 +187,19 @@ namespace LightningDB.Extensions
             var enumType = Enum.GetUnderlyingType(typeof(TEnum));
             if (enumType.Equals(typeof(sbyte)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, sbyte>.Convert(value));
-            else if (enumType.Equals(typeof(byte)))
+            if (enumType.Equals(typeof(byte)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, byte>.Convert(value));
-            else if (enumType.Equals(typeof(short)))
+            if (enumType.Equals(typeof(short)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, short>.Convert(value));
-            else if (enumType.Equals(typeof(ushort)))
+            if (enumType.Equals(typeof(ushort)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, ushort>.Convert(value));
-            else if (enumType.Equals(typeof(int)))
+            if (enumType.Equals(typeof(int)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, int>.Convert(value));
-            else if (enumType.Equals(typeof(uint)))
+            if (enumType.Equals(typeof(uint)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, uint>.Convert(value));
-            else if (enumType.Equals(typeof(long)))
+            if (enumType.Equals(typeof(long)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, long>.Convert(value));
-            else if (enumType.Equals(typeof(ulong)))
+            if (enumType.Equals(typeof(ulong)))
                 return BitConverter.GetBytes(EmitEnumConverter<TEnum, ulong>.Convert(value));
 
             throw new InvalidCastException(InvalidByteCountText);
@@ -235,46 +231,46 @@ namespace LightningDB.Extensions
             if (valueType.Equals(typeof(string)))
                 return db.Encoding.GetBytes((string)((object)value));
             //bool
-            else if (valueType.Equals(typeof(Boolean)))
+            if (valueType.Equals(typeof(Boolean)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Boolean>.Convert(value));
             //sbyte
-            else if (valueType.Equals(typeof(SByte)))
+            if (valueType.Equals(typeof(SByte)))
                 return BitConverter.GetBytes(EmitConverter<TValue, SByte>.Convert(value));
             //byte
-            else if (valueType.Equals(typeof(Byte)))
+            if (valueType.Equals(typeof(Byte)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Byte>.Convert(value));
             //char
-            else if (valueType.Equals(typeof(Char)))
+            if (valueType.Equals(typeof(Char)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Char>.Convert(value));
             //short
-            else if (valueType.Equals(typeof(Int16)))
+            if (valueType.Equals(typeof(Int16)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Int16>.Convert(value));
             //ushort
-            else if (valueType.Equals(typeof(UInt16)))
+            if (valueType.Equals(typeof(UInt16)))
                 return BitConverter.GetBytes(EmitConverter<TValue, UInt16>.Convert(value));
             //int
-            else if (valueType.Equals(typeof(Int32)))
+            if (valueType.Equals(typeof(Int32)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Int32>.Convert(value));
             //uint
-            else if (valueType.Equals(typeof(UInt32)))
+            if (valueType.Equals(typeof(UInt32)))
                 return BitConverter.GetBytes(EmitConverter<TValue, UInt32>.Convert(value));
             //long
-            else if (valueType.Equals(typeof(Int64)))
+            if (valueType.Equals(typeof(Int64)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Int64>.Convert(value));
             //ulong
-            else if (valueType.Equals(typeof(UInt64)))
+            if (valueType.Equals(typeof(UInt64)))
                 return BitConverter.GetBytes(EmitConverter<TValue, UInt64>.Convert(value));
             //float
-            else if (valueType.Equals(typeof(Single)))
+            if (valueType.Equals(typeof(Single)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Single>.Convert(value));
             //double
-            else if (valueType.Equals(typeof(Double)))
+            if (valueType.Equals(typeof(Double)))
                 return BitConverter.GetBytes(EmitConverter<TValue, Double>.Convert(value));
             //enum
-            else if (typeof(Enum).IsAssignableFrom(valueType))
+            if (typeof(Enum).IsAssignableFrom(valueType))
                 return this.GetEnumBytes(value);
             //Guid
-            else if (typeof(Guid).Equals(valueType))
+            if (typeof(Guid).Equals(valueType))
                 return EmitConverter<TValue, Guid>.Convert(value).ToByteArray();
 
             throw new NotSupportedException("Type " + valueType.FullName + " is not supported");
@@ -288,46 +284,46 @@ namespace LightningDB.Extensions
             if (valueType.Equals(typeof(string)))
                 return (TValue)((object)this.GetString(db.Encoding, bytes));
             //bool
-            else if (valueType.Equals(typeof(Boolean)))
+            if (valueType.Equals(typeof(Boolean)))
                 return EmitConverter<Boolean, TValue>.Convert(this.GetBoolean(bytes));
             //sbyte
-            else if (valueType.Equals(typeof(SByte)))
+            if (valueType.Equals(typeof(SByte)))
                 return EmitConverter<SByte, TValue>.Convert(this.GetSByte(bytes));
             //byte
-            else if (valueType.Equals(typeof(Byte)))
+            if (valueType.Equals(typeof(Byte)))
                 return EmitConverter<Byte, TValue>.Convert(this.GetByte(bytes));
             //char
-            else if (valueType.Equals(typeof(Char)))
+            if (valueType.Equals(typeof(Char)))
                 return EmitConverter<Char, TValue>.Convert(this.GetChar(bytes));
             //short
-            else if (valueType.Equals(typeof(Int16)))
+            if (valueType.Equals(typeof(Int16)))
                 return EmitConverter<Int16, TValue>.Convert(this.GetInt16(bytes));
             //ushort
-            else if (valueType.Equals(typeof(UInt16)))
+            if (valueType.Equals(typeof(UInt16)))
                 return EmitConverter<UInt16, TValue>.Convert(this.GetUInt16(bytes));
             //int
-            else if (valueType.Equals(typeof(Int32)))
+            if (valueType.Equals(typeof(Int32)))
                 return EmitConverter<Int32, TValue>.Convert(this.GetInt32(bytes));
             //uint
-            else if (valueType.Equals(typeof(UInt32)))
+            if (valueType.Equals(typeof(UInt32)))
                 return EmitConverter<UInt32, TValue>.Convert(this.GetUInt32(bytes));
             //long
-            else if (valueType.Equals(typeof(Int64)))
+            if (valueType.Equals(typeof(Int64)))
                 return EmitConverter<Int64, TValue>.Convert(this.GetInt64(bytes));
             //ulong
-            else if (valueType.Equals(typeof(UInt64)))
+            if (valueType.Equals(typeof(UInt64)))
                 return EmitConverter<UInt64, TValue>.Convert(this.GetUInt64(bytes));
             //float
-            else if (valueType.Equals(typeof(Single)))
+            if (valueType.Equals(typeof(Single)))
                 return EmitConverter<Single, TValue>.Convert(this.GetSingle(bytes));
             //double
-            else if (valueType.Equals(typeof(Double)))
+            if (valueType.Equals(typeof(Double)))
                 return EmitConverter<Double, TValue>.Convert(this.GetDouble(bytes));
             //enum
-            else if (typeof(Enum).IsAssignableFrom(valueType))
+            if (typeof(Enum).IsAssignableFrom(valueType))
                 return this.GetEnumInternal<TValue>(bytes);
             //Guid
-            else if (typeof(Guid).Equals(valueType))
+            if (typeof(Guid).Equals(valueType))
                 return EmitConverter<Guid, TValue>.Convert(this.GetGuid(bytes));
 
             throw new NotSupportedException("Type " + valueType.FullName + " is not supported");

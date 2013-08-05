@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LightningDB
 {
@@ -15,13 +11,13 @@ namespace LightningDB
             _version = new Lazy<LightningVersionInfo>(() => new LightningVersionInfo());
         }
 
-        private static Lazy<LightningVersionInfo> _version;
+        private static readonly Lazy<LightningVersionInfo> _version;
 
         public const int DefaultMapSize = 10485760;
         public const int DefaultMaxReaders = 126;
         public const int DefaultMaxDatabases = 0;
                 
-        private EnvironmentOpenFlags _openFlags;
+        private readonly EnvironmentOpenFlags _openFlags;
         internal IntPtr _handle;
 
         private bool _shouldDispose;
@@ -29,18 +25,16 @@ namespace LightningDB
         private int _mapSize;
         private int _maxDbs;
 
-        private ConcurrentDictionary<string, LightningDatabase> _openedDatabases;
-        private HashSet<uint> _databasesForReuse;
+        private readonly ConcurrentDictionary<string, LightningDatabase> _openedDatabases;
+        private readonly HashSet<uint> _databasesForReuse;
 
         public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags)
         {
             if (String.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("Invalid directory name");
 
-            IntPtr handle;
-            var res = Native.mdb_env_create(out handle);
-            if (res != 0)
-                throw new LightningException(res);
+            IntPtr handle = default(IntPtr);
+            Native.Execute(() => Native.mdb_env_create(out handle));
 
             _shouldDispose = true;
             
@@ -70,14 +64,12 @@ namespace LightningDB
                 if (this.IsOpened)
                     throw new InvalidOperationException("Can't change MapSize of opened environment");
 
-                if (value != _mapSize)
-                {
-                    var res = Native.mdb_env_set_mapsize(_handle, value);
-                    if (res != 0)
-                        throw new LightningException(res);
+                if (value == _mapSize) 
+                    return;
 
-                    _mapSize = value;
-                }
+                Native.Execute(() => Native.mdb_env_set_mapsize(_handle, value));
+
+                _mapSize = value;
             }
         }
 
@@ -85,10 +77,8 @@ namespace LightningDB
         {
             get
             {
-                UInt32 readers;
-                var res = Native.mdb_env_get_maxreaders(_handle, out readers);
-                if (res != 0)
-                    throw new LightningException(res);
+                UInt32 readers = default(UInt32);
+                Native.Execute(() => Native.mdb_env_get_maxreaders(_handle, out readers));
 
                 return (int)readers;
             }
@@ -97,9 +87,7 @@ namespace LightningDB
                 if (this.IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
-                var res = Native.mdb_env_set_maxreaders(_handle, (UInt32) value);
-                if (res != 0)
-                    throw new LightningException(res);
+                Native.Execute(() => Native.mdb_env_set_maxreaders(_handle, (UInt32) value));
             }
         }
 
@@ -111,14 +99,12 @@ namespace LightningDB
                 if (this.IsOpened)
                     throw new InvalidOperationException("Can't change MaxDatabases of opened environment");
 
-                if (value != _maxDbs)
-                {
-                    var res = Native.mdb_env_set_maxdbs(_handle, (UInt32) value);
-                    if (res != 0)
-                        throw new LightningException(res);
+                if (value == _maxDbs) 
+                    return;
 
-                    _maxDbs = value;
-                }
+                Native.Execute(() => Native.mdb_env_set_maxdbs(_handle, (UInt32) value));
+
+                _maxDbs = value;
             }
         }
 
@@ -129,9 +115,7 @@ namespace LightningDB
             if (!System.IO.Directory.Exists(this.Directory))
                 System.IO.Directory.CreateDirectory(this.Directory);
 
-            var res = Native.mdb_env_open(_handle, this.Directory, _openFlags, 666);
-            if (res != 0)
-                throw new LightningException(res);
+            Native.Execute(() => Native.mdb_env_open(_handle, this.Directory, _openFlags, 666));
 
             this.IsOpened = true;
         }
@@ -211,17 +195,13 @@ namespace LightningDB
         {
             this.EnsureOpened();
 
-            var res = Native.mdb_env_copy(_handle, path);
-            if (res != 0)
-                throw new LightningException(res);
+            Native.Execute(() => Native.mdb_env_copy(_handle, path));
         }
 
         //TODO: tests
         public void Flush(bool force)
         {
-            var res = Native.mdb_env_sync(_handle, force);
-            if (res != 0)
-                throw new LightningException(res);
+            Native.Execute(() => Native.mdb_env_sync(_handle, force));
         }
 
         private void EnsureOpened()
@@ -232,13 +212,14 @@ namespace LightningDB
 
         protected virtual void Dispose(bool shouldDispose)
         {
-            if (shouldDispose && !IntPtr.Zero.Equals(_handle))
+            if (!shouldDispose || IntPtr.Zero.Equals(_handle)) 
+                return;
+            try
             {
-                try
-                {
-                    this.Close();
-                }
-                catch { }
+                this.Close();
+            }
+            catch
+            {
             }
         }
 

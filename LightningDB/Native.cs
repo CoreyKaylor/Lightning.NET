@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LightningDB
 {
@@ -573,5 +569,23 @@ namespace LightningDB
         /// </returns>
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
         public static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags); //OK
+
+        public static int Execute(Func<int> action)
+        {
+            return ExecuteHelper(action, err => true);
+        }
+
+        public static int Read(Func<int> action)
+        {
+            return ExecuteHelper(action, err => err != MDB_NOTFOUND);
+        }
+
+        private static int ExecuteHelper(Func<int> action, Func<int, bool> shouldThrow)
+        {
+            var res = action();
+            if (res != 0 && shouldThrow(res))
+                throw new LightningException(res);
+            return res;
+        }
     }
 }
