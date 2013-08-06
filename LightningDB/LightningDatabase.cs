@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
+using LightningDB.BasicExtensions;
 
 namespace LightningDB
 {
@@ -27,10 +24,8 @@ namespace LightningDB
             if (tran == null)
                 throw new ArgumentNullException("tran");
 
-            UInt32 handle;
-            var res = Native.mdb_dbi_open(tran._handle, name, flags, out handle);
-            if (res != 0)
-                throw new LightningException(res);
+            UInt32 handle = default(UInt32);
+            Native.Execute(() => Native.mdb_dbi_open(tran._handle, name, flags, out handle));
 
             _name = name ?? DefaultDatabaseName;
 
@@ -42,7 +37,7 @@ namespace LightningDB
             this.Transaction = tran;
             this.OpenFlags = flags;
 
-            _transactionClosing = new EventHandler<LightningClosingEventArgs>(this.TransactionClosing);
+            _transactionClosing = this.TransactionClosing;
             this.Transaction.Closing += _transactionClosing;
         }
 
@@ -69,119 +64,50 @@ namespace LightningDB
 
         public void DropDatabase(bool delete)
         {
-            var res = Native.mdb_drop(this.Transaction._handle, _handle, delete);
-            if (res != 0)
-                throw new LightningException(res);
+            Native.Execute(() => Native.mdb_drop(this.Transaction._handle, _handle, delete));
 
             this.Close(false);
         }
 
         public byte[] Get(byte[] key)
         {
-            var keyStructure = new ValueStructure
+            using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
-                data = Marshal.AllocHGlobal(key.Length),
-                size = key.Length
-            };
-
-            try
-            {
-                Marshal.Copy(key, 0, keyStructure.data, key.Length);
-
-                ValueStructure value;
-                var res = Native.mdb_get(this.Transaction._handle, this._handle, ref keyStructure, out value);
-                if (res == Native.MDB_NOTFOUND)
-                    return null;
-                else if (res != 0)
-                    throw new LightningException(res);
-
-                var buffer = new byte[value.size];
-                Marshal.Copy(value.data, buffer, 0, value.size);
-
-                //TODO: Possible leak. Is the original data which is copied to buffer stays in memory?
-                return buffer;
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(keyStructure.data);
+                var value = default(ValueStructure);
+                var keyStructure = keyMarshalStruct.ValueStructure;
+                var res = Native.Read(() => Native.mdb_get(Transaction._handle, _handle, ref keyStructure, out value));
+                return value.ToByteArray(res);
             }
         }
 
         public void Put(byte[] key, byte[] value, PutOptions options)
         {
-            var keyStruct = new ValueStructure
+            using (var keyStructureMarshal = new MarshalValueStructure(key))
+            using (var valueStructureMarshal = new MarshalValueStructure(value))
             {
-                data = Marshal.AllocHGlobal(key.Length),
-                size = key.Length
-            };
+                var keyStruct = keyStructureMarshal.ValueStructure;
+                var valueStruct = valueStructureMarshal.ValueStructure;
 
-            var valueStruct = new ValueStructure
-            {
-                data = Marshal.AllocHGlobal(value.Length),
-                size = value.Length
-            };
-
-            try
-            {
-                Marshal.Copy(key, 0, keyStruct.data, key.Length);
-                Marshal.Copy(value, 0, valueStruct.data, value.Length);
-
-                var res = Native.mdb_put(this.Transaction._handle, _handle, ref keyStruct, ref valueStruct, options);
-                if (res != 0)
-                    throw new LightningException(res);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(keyStruct.data);
-                Marshal.FreeHGlobal(valueStruct.data);
+                Native.Execute(() => Native.mdb_put(this.Transaction._handle, _handle, ref keyStruct, ref valueStruct, options));
             }
         }
 
         public void Delete(byte[] key, byte[] value)
         {
-            var keyStructure = new ValueStructure
+            using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
-                data = Marshal.AllocHGlobal(key.Length),
-                size = key.Length
-            };
-
-            int res;
-
-            try
-            {
-                Marshal.Copy(key, 0, keyStructure.data, key.Length);
-                
+                var keyStructure = keyMarshalStruct.ValueStructure;
                 if (value != null)
                 {
-                    var valueStructure = new ValueStructure
+                    using (var valueMarshalStruct = new MarshalValueStructure(value))
                     {
-                        data = Marshal.AllocHGlobal(value.Length),
-                        size = value.Length
-                    };
-
-                    try
-                    {
-                        Marshal.Copy(value, 0, valueStructure.data, value.Length);
-
-                        res = Native.mdb_del(this.Transaction._handle, _handle, ref keyStructure, ref valueStructure);
-                    }
-                    finally
-                    {
-                        Marshal.FreeHGlobal(valueStructure.data);
+                        var valueStructure = valueMarshalStruct.ValueStructure;
+                        Native.Execute(() => Native.mdb_del(this.Transaction._handle, _handle, ref keyStructure, ref valueStructure));
+                        return;
                     }
                 }
-                else
-                {
-                    res = Native.mdb_del(this.Transaction._handle, _handle, ref keyStructure, IntPtr.Zero);
-                }
+                Native.Execute(() => Native.mdb_del(this.Transaction._handle, _handle, ref keyStructure, IntPtr.Zero));
             }
-            finally
-            {
-                Marshal.FreeHGlobal(keyStructure.data);
-            }
-
-            if (res != 0)
-                throw new LightningException(res);
         }
 
         public void Close()

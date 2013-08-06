@@ -95,5 +95,17 @@ namespace LightningDB.BasicExtensions
             var bytes = GetKey(db, key);
             db.Delete(bytes, value);
         }
+
+        internal static byte[] ToByteArray(this ValueStructure valueStructure, int resultCode)
+        {
+            if (resultCode == Native.MDB_NOTFOUND)
+                return null;
+
+            var buffer = new byte[valueStructure.size];
+            Marshal.Copy(valueStructure.data, buffer, 0, valueStructure.size);
+
+            //TODO: Possible leak. Is the original data which is copied to buffer stays in memory?
+            return buffer;
+        }
     }
 }
