@@ -5,7 +5,7 @@
     <version>0.0.0</version>
     <authors>Ilya Lukyanov, Corey Kaylor</authors>
     <owners>Ilya Lukyanov</owners>
-    <projectUrl>http://mvc.fubu-project.org/</projectUrl>
+    <projectUrl>https://github.com/ilyalukyanov/Lightning.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>.NET-wrapper library for OpenLDAP's Lightning DB key-value store.</description>
     <tags>lmdb lightning storage persistance</tags>
