@@ -8,7 +8,7 @@
     <projectUrl>https://github.com/ilyalukyanov/Lightning.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>.NET-wrapper library for OpenLDAP's Lightning DB key-value store.</description>
-    <tags>lmdb lightning storage persistance</tags>
+    <tags>lmdb lightning storage persistance key-value nosql</tags>
     <dependencies>
     </dependencies>
   </metadata>
