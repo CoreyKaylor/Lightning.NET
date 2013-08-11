@@ -53,14 +53,14 @@ namespace LightningDB.Extensions
             _intProvider.Put(db, key, value, options);
         }
 
-        public static KeyValuePair<Int32, TValue> GetWithIntKey<TValue>(LightningCursor cursor, CursorOperation operation)
+        public static KeyValuePair<Int32, TValue> GetWithIntKey<TValue>(LightningCursor cursor)
         {
-            return _intProvider.Get<TValue>(cursor, operation);
+            return _intProvider.GetCurrent<TValue>(cursor);
         }
 
-        public static KeyValuePair<string, TValue> GetWithStringKey<TValue>(LightningCursor cursor, CursorOperation operation)
+        public static KeyValuePair<string, TValue> GetWithStringKey<TValue>(LightningCursor cursor)
         {
-            return _stringProvider.Get<TValue>(cursor, operation);
+            return _stringProvider.GetCurrent<TValue>(cursor);
         }
     }
 }

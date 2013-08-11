@@ -213,9 +213,9 @@ namespace LightningDB.Extensions
             return this.GetValueFromBytes<TValue>(db, valueBytes);
         }
 
-        public KeyValuePair<TKey, TValue> Get<TValue>(LightningCursor cursor, CursorOperation operation)
+        public KeyValuePair<TKey, TValue> GetCurrent<TValue>(LightningCursor cursor)
         {
-            var pair = cursor.Get(operation);
+            var pair = cursor.GetCurrent();
 
             var key = this.GetKeyFromBytes(cursor, pair.Key);
             var value = this.GetValueFromBytes<TValue>(cursor, pair.Value);

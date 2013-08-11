@@ -60,11 +60,112 @@ namespace LightningDB
 
         public LightningTransaction Transaction { get; private set; }
 
-        //TODO: tests
-        public KeyValuePair<byte[], byte[]> Get(CursorOperation operation)
+        public KeyValuePair<byte[], byte[]> MoveTo(byte[] key)
         {
-            var keyStruct = new ValueStructure();
-            var valueStruct = new ValueStructure();
+            using (var marshalKey = new MarshalValueStructure(key))
+                return this.Get(CursorOperation.Set, marshalKey.ValueStructure, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveTo(byte[] key, byte[] value)
+        {
+            using (var marshalKey = new MarshalValueStructure(key))
+            using (var marshalValue = new MarshalValueStructure(value))
+                return this.Get(CursorOperation.GetBoth, marshalKey.ValueStructure, marshalValue.ValueStructure);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveToFirstValueAfter(byte[] key, byte[] value)
+        {
+            using (var marshalKey = new MarshalValueStructure(key))
+            using (var marshalValue = new MarshalValueStructure(value))
+                return this.Get(CursorOperation.GetBothRange, marshalKey.ValueStructure, marshalValue.ValueStructure);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveToFirstAfter(byte[] key)
+        {
+            using(var marshalKey = new MarshalValueStructure(key))
+                return this.Get(CursorOperation.SetRange, marshalKey.ValueStructure, null);
+        }
+
+        //What difference from CursorOperation.Set
+        //public KeyValuePair<byte[], byte[]> MoveTo(ValueStructure key)
+        //{
+        //    return this.Get(CursorOperation.SetKey, key, null);
+        //}
+
+        public KeyValuePair<byte[], byte[]> MoveToFirst()
+        {
+            return this.Get(CursorOperation.First, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveToFirstDuplicate()
+        {
+            return this.Get(CursorOperation.FirstDuplicate, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveToLast()
+        {
+            return this.Get(CursorOperation.Last, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveToLastDuplicate()
+        {
+            return this.Get(CursorOperation.LastDuplicate, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> GetCurrent()
+        {
+            return this.Get(CursorOperation.GetCurrent, null, null);
+        }
+
+        //Not sure what it should do and if the wrapper is correct
+        public byte[] GetMultiple()
+        {
+            return this.Get(CursorOperation.GetMultiple, null, null)
+                .Value;
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveNext()
+        {
+            return this.Get(CursorOperation.Next, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveNextDuplicate()
+        {
+            return this.Get(CursorOperation.NextDuplicate, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MoveNextNoDuplicate()
+        {
+            return this.Get(CursorOperation.NextNoDuplicate, null, null);
+        }
+
+        //Not sure what it should do and if the wrapper is correct
+        public byte[] MoveNextMultiple()
+        {
+            return this.Get(CursorOperation.NextMultiple, null, null)
+                .Value;
+        }
+
+        public KeyValuePair<byte[], byte[]> MovePrev()
+        {
+            return this.Get(CursorOperation.Previous, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MovePrevDuplicate()
+        {
+            return this.Get(CursorOperation.PreviousDuplicate, null, null);
+        }
+
+        public KeyValuePair<byte[], byte[]> MovePrevNoDuplicate()
+        {
+            return this.Get(CursorOperation.PreviousNoDuplicate, null, null);
+        }
+
+        //TODO: tests
+        private KeyValuePair<byte[], byte[]> Get(CursorOperation operation, ValueStructure? key, ValueStructure? value)
+        {
+            var keyStruct = key.GetValueOrDefault();
+            var valueStruct = value.GetValueOrDefault();
 
             var res = Native.Read(() => Native.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
 
