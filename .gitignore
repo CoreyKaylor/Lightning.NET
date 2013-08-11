@@ -1,5 +1,11 @@
 obj
 bin
+artifacts/
+results/
+logs/
+packages
+Gemfile.lock
+CommonAssemblyInfo.cs
 *.csproj.user
 _ReSharper.*
 *.[Rr]e[Ss]harper.user
