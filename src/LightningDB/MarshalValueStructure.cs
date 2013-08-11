@@ -23,13 +23,15 @@ namespace LightningDB
 
 		private ValueStructure CreateStructure()
 		{
-			ValueStructure = new ValueStructure
+			var valueStructure = new ValueStructure
 			{
-				data = Marshal.AllocHGlobal(value.Length),
-				size = value.Length
+				data = Marshal.AllocHGlobal(_value.Length),
+				size = _value.Length
 			};
 
-			Marshal.Copy(value, 0, ValueStructure.data, value.Length);
+            Marshal.Copy(_value, 0, valueStructure.data, _value.Length);
+
+            return valueStructure;
 		}
 
 		public ValueStructure ValueStructure { get { return _structure.Value; } }
