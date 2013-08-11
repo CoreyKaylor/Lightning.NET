@@ -5,21 +5,42 @@ namespace LightningDB
 {
     internal class MarshalValueStructure : IDisposable
     {
+		private byte[] _value;
+		private Lazy<ValueStructure> _structure;
+
         public MarshalValueStructure(byte[] value)
         {
-            ValueStructure = new ValueStructure
-            {
-                data = Marshal.AllocHGlobal(value.Length),
-                size = value.Length
-            };
-            Marshal.Copy(value, 0, ValueStructure.data, value.Length);
+			if (value == null)
+				throw new ArgumentNullException ("value");
+
+			_value = value;
+
+			//Lazy initialization prevents possible leak.
+			//If initialization was in ctor, Dispose could never be called
+			//due to possible exception thrown by Marshal.Copy
+			_structure = new Lazy<ValueStructure> (this.CreateStructure);
         }
 
-        public ValueStructure ValueStructure { get; private set; }
+		private ValueStructure CreateStructure()
+		{
+			ValueStructure = new ValueStructure
+			{
+				data = Marshal.AllocHGlobal(value.Length),
+				size = value.Length
+			};
+
+			Marshal.Copy(value, 0, ValueStructure.data, value.Length);
+		}
+
+		public ValueStructure ValueStructure { get { return _structure.Value; } }
 
         public void Dispose()
         {
-            Marshal.FreeHGlobal(ValueStructure.data);
+			try
+			{
+            	Marshal.FreeHGlobal(ValueStructure.data);
+			}
+			catch {}
         }
     }
 }

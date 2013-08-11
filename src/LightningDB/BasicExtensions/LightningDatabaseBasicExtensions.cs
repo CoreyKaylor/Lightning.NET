@@ -104,7 +104,6 @@ namespace LightningDB.BasicExtensions
             var buffer = new byte[valueStructure.size];
             Marshal.Copy(valueStructure.data, buffer, 0, valueStructure.size);
 
-            //TODO: Possible leak. Is the original data which is copied to buffer stays in memory?
             return buffer;
         }
     }
