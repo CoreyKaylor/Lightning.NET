@@ -20,3 +20,4 @@ _ReSharper.*
 *.swp
 *.dotCover
 *ncrunch*
+*.o

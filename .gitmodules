@@ -1,0 +1,3 @@
+[submodule "mdb"]
+	path = mdb
+	url = git://gitorious.org/mdb/mdb.git
