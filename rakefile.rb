@@ -31,6 +31,8 @@ end
   sln.precompile = [:native_compile]
 end
 
+directory BIN_DIR
+
 rule ".o" => ".c" do |t|
   sh "#{@cc} -pthread -O2 -g -W -Wno-unused-parameter -Wbad-function-cast -fPIC -c -o #{t.name} #{t.source}"
 end
@@ -51,7 +53,7 @@ file "#{BIN_DIR}/liblmdb.so" => ["#{LMDB_DIR}/mdb.o", "#{LMDB_DIR}/midl.o"] do |
   sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
 end
 
-task :native_compile do
+task :native_compile => BIN_DIR do
   host = RbConfig::CONFIG['host_os']
   puts "Native compiling #{host}"
   case host
