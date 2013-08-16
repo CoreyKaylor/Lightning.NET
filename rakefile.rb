@@ -4,9 +4,10 @@ include RbConfig
 
 CLEAN.include("**/*.o", "**/bin/**/*.{dylib,dll,dbg,mdb,so}")
 
-LMDB_DIR = "mdb/libraries/liblmdb"
-BIN_DIR = "src/LightningDB.Tests/bin/Debug"
 @cc = "cc"
+@platformPath = ENV["platform"].nil? ? '' : ENV["platform"] + "/"
+LMDB_DIR = "mdb/libraries/liblmdb"
+BIN_DIR = "src/LightningDB.Tests/bin/#{@platformPath}Debug"
 
 begin
   require 'bundler/setup'

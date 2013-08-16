@@ -8,22 +8,32 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x86.ActiveCfg = Debug|x86
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x86.Build.0 = Debug|x86
 		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = LightningDB\LightningDB.csproj
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x86.ActiveCfg = Release|x86
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x86.Build.0 = Release|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x86.ActiveCfg = Debug|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x86.Build.0 = Debug|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x86.ActiveCfg = Release|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = LightningDB\LightningDB.csproj
 	EndGlobalSection
 EndGlobal
