@@ -63,20 +63,22 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="BasicExtensions\LightningDatabaseBasicExtensions.cs" />
+    <Compile Include="LightningDatabaseExtensions.cs" />
+    <Compile Include="Converters\ConverterExtensions.cs" />
+    <Compile Include="Converters\ConverterNotFoundException.cs" />
+    <Compile Include="Converters\ConverterStore.cs" />
+    <Compile Include="Converters\ConvertFromBytesInstance.cs" />
+    <Compile Include="Converters\ConvertToBytesInstance.cs" />
+    <Compile Include="Converters\DefaultConverters.cs" />
+    <Compile Include="Converters\IConvertFromBytes.cs" />
+    <Compile Include="Converters\IConvertToBytes.cs" />
     <Compile Include="CursorDeleteOption.cs" />
     <Compile Include="CursorOperation.cs" />
     <Compile Include="DatabaseOpenFlags.cs" />
-    <Compile Include="Extensions\LightningCRUDIntKeyProvider.cs" />
-    <Compile Include="Extensions\LightningCRUDProvider.cs" />
-    <Compile Include="Extensions\LightningCRUDStringKeyProvider.cs" />
-    <Compile Include="IDatabaseAttributesProvider.cs" />
     <Compile Include="IClosingEventSource.cs" />
-    <Compile Include="IPutter.cs" />
     <Compile Include="LightningClosingEventArgs.cs" />
     <Compile Include="LightningCursor.cs" />
     <Compile Include="LightningDatabase.cs" />
-    <Compile Include="Extensions\LightningDatabaseExtensions.cs" />
     <Compile Include="LightningEnvironment.cs" />
     <Compile Include="LightningException.cs" />
     <Compile Include="EnvironmentOpenFlags.cs" />

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using LightningDB.Converters;
 
 namespace LightningDB
 {
@@ -48,6 +49,10 @@ namespace LightningDB
 
             _openedDatabases = new ConcurrentDictionary<string, LightningDatabase>();
             _databasesForReuse = new HashSet<uint>();
+
+            ConverterStore = new ConverterStore();
+            var defaultConverters = new DefaultConverters();
+            defaultConverters.RegisterDefault(this);
         }
 
         public event EventHandler<LightningClosingEventArgs> Closing;
@@ -109,6 +114,8 @@ namespace LightningDB
         }
 
         public string Directory { get; private set; }
+
+        public ConverterStore ConverterStore { get; private set; }
 
         public void Open()
         {

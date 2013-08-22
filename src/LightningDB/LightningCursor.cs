@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using LightningDB.BasicExtensions;
 
 namespace LightningDB
 {
-    public class LightningCursor : IDatabaseAttributesProvider, IPutter, IDisposable
+    public class LightningCursor : IDisposable
     {
         private readonly IntPtr _handle;
         private bool _shouldDispose;
@@ -94,75 +92,75 @@ namespace LightningDB
 
         public KeyValuePair<byte[], byte[]> MoveToFirst()
         {
-            return this.Get(CursorOperation.First, null, null);
+            return this.Get(CursorOperation.First);
         }
 
         public KeyValuePair<byte[], byte[]> MoveToFirstDuplicate()
         {
-            return this.Get(CursorOperation.FirstDuplicate, null, null);
+            return this.Get(CursorOperation.FirstDuplicate);
         }
 
         public KeyValuePair<byte[], byte[]> MoveToLast()
         {
-            return this.Get(CursorOperation.Last, null, null);
+            return this.Get(CursorOperation.Last);
         }
 
         public KeyValuePair<byte[], byte[]> MoveToLastDuplicate()
         {
-            return this.Get(CursorOperation.LastDuplicate, null, null);
+            return this.Get(CursorOperation.LastDuplicate);
         }
 
         public KeyValuePair<byte[], byte[]> GetCurrent()
         {
-            return this.Get(CursorOperation.GetCurrent, null, null);
+            return this.Get(CursorOperation.GetCurrent);
         }
 
         //Not sure what it should do and if the wrapper is correct
         public byte[] GetMultiple()
         {
-            return this.Get(CursorOperation.GetMultiple, null, null)
+            return this.Get(CursorOperation.GetMultiple)
                 .Value;
         }
 
         public KeyValuePair<byte[], byte[]> MoveNext()
         {
-            return this.Get(CursorOperation.Next, null, null);
+            return this.Get(CursorOperation.Next);
         }
 
         public KeyValuePair<byte[], byte[]> MoveNextDuplicate()
         {
-            return this.Get(CursorOperation.NextDuplicate, null, null);
+            return this.Get(CursorOperation.NextDuplicate);
         }
 
         public KeyValuePair<byte[], byte[]> MoveNextNoDuplicate()
         {
-            return this.Get(CursorOperation.NextNoDuplicate, null, null);
+            return this.Get(CursorOperation.NextNoDuplicate);
         }
 
         //Not sure what it should do and if the wrapper is correct
         public byte[] MoveNextMultiple()
         {
-            return this.Get(CursorOperation.NextMultiple, null, null)
+            return this.Get(CursorOperation.NextMultiple)
                 .Value;
         }
 
         public KeyValuePair<byte[], byte[]> MovePrev()
         {
-            return this.Get(CursorOperation.Previous, null, null);
+            return this.Get(CursorOperation.Previous);
         }
 
         public KeyValuePair<byte[], byte[]> MovePrevDuplicate()
         {
-            return this.Get(CursorOperation.PreviousDuplicate, null, null);
+            return this.Get(CursorOperation.PreviousDuplicate);
         }
 
         public KeyValuePair<byte[], byte[]> MovePrevNoDuplicate()
         {
-            return this.Get(CursorOperation.PreviousNoDuplicate, null, null);
+            return this.Get(CursorOperation.PreviousNoDuplicate);
         }
 
         //TODO: tests
-        private KeyValuePair<byte[], byte[]> Get(CursorOperation operation, ValueStructure? key, ValueStructure? value)
+        private KeyValuePair<byte[], byte[]> Get(CursorOperation operation, ValueStructure? key = null, ValueStructure? value = null)
         {
             var keyStruct = key.GetValueOrDefault();
             var valueStruct = value.GetValueOrDefault();
@@ -193,13 +191,14 @@ namespace LightningDB
 
         public void Renew()
         {
-            this.Renew(null);
+            this.Renew(this.Transaction);
         }
 
         //TODO: tests
         public void Renew(LightningTransaction txn)
         {
-            txn = txn ?? this.Transaction;
+            if(txn == null)
+                throw new ArgumentNullException("txn");
 
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
@@ -226,24 +225,10 @@ namespace LightningDB
                 this.Close();
         }
 
-        #region IDisposable Members
-
         public void Dispose()
         {
             this.Dispose(_shouldDispose);
             _shouldDispose = false;
         }
-
-        #endregion
-
-        #region IDatabaseAttributesProvider Members
-
-        DatabaseOpenFlags IDatabaseAttributesProvider.OpenFlags { get { return this.Database.OpenFlags; } }
-
-        string IDatabaseAttributesProvider.Name { get { return this.Database.Name; } }
-
-        Encoding IDatabaseAttributesProvider.Encoding { get { return this.Database.Encoding; } }
-
-        #endregion
     }
 }

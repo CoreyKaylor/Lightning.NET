@@ -89,10 +89,10 @@ namespace LightningDB.Tests
             //arrange
             var key = Encoding.UTF8.GetBytes("key");
             var value = Encoding.UTF8.GetBytes("value");
-            _db.Put(key, value, PutOptions.None);
+            _db.Put(key, value);
 
             //act
-            _db.Delete(key, null);
+            _db.Delete(key);
 
             //assert
             Assert.IsNull(_db.Get(key));

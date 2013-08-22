@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Text;
-using LightningDB.BasicExtensions;
 
 namespace LightningDB
 {
-    public class LightningDatabase : IDatabaseAttributesProvider, IPutter, IDisposable
+    public class LightningDatabase : IDisposable
     {
         public const string DefaultDatabaseName = "master";
 
         internal UInt32 _handle;
 
-        private string _name;
+        private readonly string _name;
+        private readonly EventHandler<LightningClosingEventArgs> _transactionClosing;
         private bool _shouldDispose;
-        private EventHandler<LightningClosingEventArgs> _transactionClosing;
 
         public LightningDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran)
             : this (name, flags, tran, Encoding.UTF8)
@@ -80,7 +79,7 @@ namespace LightningDB
             }
         }
 
-        public void Put(byte[] key, byte[] value, PutOptions options)
+        public void Put(byte[] key, byte[] value, PutOptions options = PutOptions.None)
         {
             using (var keyStructureMarshal = new MarshalValueStructure(key))
             using (var valueStructureMarshal = new MarshalValueStructure(value))
@@ -92,7 +91,7 @@ namespace LightningDB
             }
         }
 
-        public void Delete(byte[] key, byte[] value)
+        public void Delete(byte[] key, byte[] value = null)
         {
             using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
