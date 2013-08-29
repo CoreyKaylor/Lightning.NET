@@ -61,7 +61,7 @@ namespace LightningDB
         public KeyValuePair<byte[], byte[]> MoveTo(byte[] key)
         {
             using (var marshalKey = new MarshalValueStructure(key))
-                return this.Get(CursorOperation.Set, marshalKey.ValueStructure, null);
+                return this.Get(CursorOperation.Set, marshalKey.ValueStructure);
         }
 
         public KeyValuePair<byte[], byte[]> MoveTo(byte[] key, byte[] value)
@@ -81,7 +81,7 @@ namespace LightningDB
         public KeyValuePair<byte[], byte[]> MoveToFirstAfter(byte[] key)
         {
             using(var marshalKey = new MarshalValueStructure(key))
-                return this.Get(CursorOperation.SetRange, marshalKey.ValueStructure, null);
+                return this.Get(CursorOperation.SetRange, marshalKey.ValueStructure);
         }
 
         //What difference from CursorOperation.Set

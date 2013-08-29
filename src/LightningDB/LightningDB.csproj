@@ -63,6 +63,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="GetByOperation.cs" />
     <Compile Include="LightningDatabaseExtensions.cs" />
     <Compile Include="Converters\ConverterExtensions.cs" />
     <Compile Include="Converters\ConverterNotFoundException.cs" />

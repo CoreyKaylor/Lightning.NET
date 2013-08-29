@@ -5,7 +5,18 @@ namespace LightningDB
 {
     public static class LightningDatabaseExtensions
     {
-        public static byte[] Get<TKey>(this LightningDatabase db, TKey key)
+        public static GetByOperation GetBy<TKey>(this LightningDatabase db, TKey key)
+        {
+            var valueBytes = db.GetRawValue(key);
+            return new GetByOperation(db, valueBytes);
+        }
+
+        public static TType Get<TType>(this LightningDatabase db, TType key)
+        {
+            return db.Get<TType, TType>(key);
+        }
+
+        public static byte[] GetRawValue<TKey>(this LightningDatabase db, TKey key)
         {
             var keyBytes = db.ToBytes(key);
             return db.Get(keyBytes);

@@ -31,7 +31,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             _txn = _env.BeginTransaction();
-            _db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase();
         }
 
         [TearDown]
@@ -46,12 +46,12 @@ namespace LightningDB.Tests
         [Test]
         public void DatabasePutShouldNotThrowExceptions()
         {
-            var key = Encoding.UTF8.GetBytes("key");
-            var value = BitConverter.GetBytes(25);
+            var key = "key";
+            var value = 25;
             //arrange
 
             //act
-            _db.Put(key, value, PutOptions.None);
+            _db.Put(key, value);
 
             //assert
         }
@@ -59,7 +59,7 @@ namespace LightningDB.Tests
         [Test]
         public void DatabaseGetShouldNotThrowExceptions()
         {
-            var key = Encoding.UTF8.GetBytes("key");
+            var key = "key";
             //arrange
 
             //act
@@ -72,23 +72,23 @@ namespace LightningDB.Tests
         public void DatabaseInsertedValueShouldBeRetrivedThen()
         {
             //arrange
-            var key = Encoding.UTF8.GetBytes("key");
-            var value = Encoding.UTF8.GetBytes("value");
-            _db.Put(key, value, PutOptions.None);
+            var key = "key";
+            var value = "value";
+            _db.Put(key, value);
 
             //act
-            var valueBytes = _db.Get(key);
+            var persistedValue = _db.Get(key);
             
             //assert
-            Assert.AreEqual("value", Encoding.UTF8.GetString(valueBytes));
+            Assert.AreEqual(persistedValue, value);
         }
 
         [Test]
         public void DatabaseDeleteShouldRemoveItem()
         {
             //arrange
-            var key = Encoding.UTF8.GetBytes("key");
-            var value = Encoding.UTF8.GetBytes("value");
+            var key = "key";
+            var value = "value";
             _db.Put(key, value);
 
             //act
@@ -96,6 +96,19 @@ namespace LightningDB.Tests
 
             //assert
             Assert.IsNull(_db.Get(key));
+        }
+
+        [Test]
+        public void GetByOperationCanMixTypesWithGenerics()
+        {
+            var key = "key";
+            var value = 25;
+
+            _db.Put(key, value);
+
+            var persistedValue = _db.GetBy(key).Value<int>();
+
+            Assert.AreEqual(value, persistedValue);
         }
     }
 }

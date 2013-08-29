@@ -18,7 +18,7 @@ namespace LightningDB.Converters
 
         public TTo Convert(LightningDatabase db, byte[] bytes)
         {
-            return _convert(db, bytes);
+            return bytes == null ? default(TTo) : _convert(db, bytes);
         }
     }
 }
