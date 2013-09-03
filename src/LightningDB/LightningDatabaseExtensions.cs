@@ -11,6 +11,38 @@ namespace LightningDB
             return new GetByOperation(db, valueBytes);
         }
 
+        public static bool ContainsKey<TKey>(this LightningDatabase db, TKey key)
+        {
+            var keyBytes = db.ToBytes(key);
+            return db.ContainsKey(keyBytes);
+        }
+
+        public static bool TryGetBy<TKey>(this LightningDatabase db, TKey key, out GetByOperation value)
+        {
+            byte[] valueBytes;
+
+            var keyBytes = db.ToBytes(key);
+            var result = db.TryGet(keyBytes, out valueBytes);
+
+            value = result
+                ? new GetByOperation(db, valueBytes)
+                : null;
+
+            return result;
+        }
+
+        public static bool TryGet<TKey, TValue>(this LightningDatabase db, TKey key, out TValue value)
+        {
+            GetByOperation operation;
+            var result = db.TryGetBy(key, out operation);
+
+            value = result
+                ? operation.Value<TValue>()
+                : default(TValue);
+
+            return result;
+        }
+
         public static TType Get<TType>(this LightningDatabase db, TType key)
         {
             return db.Get<TType, TType>(key);

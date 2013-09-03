@@ -22,8 +22,11 @@ namespace LightningDB.Converters
             return (db, x) =>
             {
                 var actualSize = size ?? Marshal.SizeOf(typeof(TTo));
-                if(x.Length == actualSize) 
-                    throw new InvalidCastException("Invalid byte count");
+                if (x.Length != actualSize)
+                {
+                    var message = String.Format("Invalid byte count. {0} given {1} required.", x.Length, actualSize);
+                    throw new InvalidCastException(message);
+                }
 
                 return convert(db, x);
             };

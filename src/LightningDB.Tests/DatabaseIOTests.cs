@@ -110,5 +110,46 @@ namespace LightningDB.Tests
 
             Assert.AreEqual(value, persistedValue);
         }
+
+        [Test]
+        public void ContainsKeyShouldReturnTrueIfKeyExists()
+        {
+            var key = "key";
+            var value = 25;
+
+            _db.Put(key, value);
+
+            var exists = _db.ContainsKey(key);
+
+            Assert.IsTrue(exists);
+        }
+
+        [Test]
+        public void ContainsKeyShouldReturnFalseIfKeyNotExists()
+        {
+            var key = "key";
+            var value = 25;
+
+            _db.Put(key, value);
+
+            var exists = _db.ContainsKey(key);
+
+            Assert.IsTrue(exists);
+        }
+
+        [Test]
+        public void TryGetShouldReturnValueIfKeyExists()
+        {
+            var key = "key";
+            var value = 25;
+
+            _db.Put(key, value);
+
+            int persistedValue;
+            var exists = _db.TryGet(key, out persistedValue);
+
+            Assert.IsTrue(exists);
+            Assert.AreEqual(value, persistedValue);
+        }
     }
 }

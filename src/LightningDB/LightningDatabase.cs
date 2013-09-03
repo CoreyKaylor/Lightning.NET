@@ -68,15 +68,49 @@ namespace LightningDB
             this.Close(false);
         }
 
-        public byte[] Get(byte[] key)
+        private bool TryGetInternal(byte[] key, out Func<byte[]> valueFactory)
         {
+            valueFactory = null;
+
             using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
-                var value = default(ValueStructure);
+                var valueStruct = default(ValueStructure);
                 var keyStructure = keyMarshalStruct.ValueStructure;
-                var res = Native.Read(() => Native.mdb_get(Transaction._handle, _handle, ref keyStructure, out value));
-                return value.ToByteArray(res);
+
+                var res = Native.Read(() => Native.mdb_get(Transaction._handle, _handle, ref keyStructure, out valueStruct));
+
+                var exists = res != Native.MDB_NOTFOUND;
+                if (exists)
+                    valueFactory = () => valueStruct.ToByteArray(res);
+
+                return exists;
             }
+        }
+
+        public byte[] Get(byte[] key)
+        {
+            byte[] value = null;
+            this.TryGet(key, out value);
+
+            return value;
+        }
+
+        public bool TryGet(byte[] key, out byte[] value)
+        {
+            Func<byte[]> factory;
+            var result = this.TryGetInternal(key, out factory);
+
+            value = result
+                ? value = factory.Invoke()
+                : null;
+
+            return result;
+        }
+
+        public bool ContainsKey(byte[] key)
+        {
+            Func<byte[]> factory;
+            return this.TryGetInternal(key, out factory);
         }
 
         public void Put(byte[] key, byte[] value, PutOptions options = PutOptions.None)
