@@ -122,7 +122,8 @@ namespace LightningDB
             if (!System.IO.Directory.Exists(this.Directory))
                 System.IO.Directory.CreateDirectory(this.Directory);
 
-            Native.Execute(() => Native.mdb_env_open(_handle, this.Directory, _openFlags, 666));
+            if (!this.IsOpened)
+                Native.Execute(() => Native.mdb_env_open(_handle, this.Directory, _openFlags, 666));
 
             this.IsOpened = true;
         }
@@ -191,9 +192,6 @@ namespace LightningDB
 
             if (db.OpenFlags != flags)
                 throw new InvalidOperationException("Database " + internalName + " already opened with different flags");
-
-            if (db.Transaction != tran)
-                throw new InvalidOperationException("Database " + internalName + " already opened in another transaction");
 
             return db;
         }

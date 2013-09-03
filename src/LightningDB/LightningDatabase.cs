@@ -10,7 +10,6 @@ namespace LightningDB
         internal UInt32 _handle;
 
         private readonly string _name;
-        private readonly EventHandler<LightningClosingEventArgs> _transactionClosing;
         private bool _shouldDispose;
 
         public LightningDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran)
@@ -33,20 +32,8 @@ namespace LightningDB
                         
             this.IsOpened = true;
             this.Encoding = encoding;
-            this.Transaction = tran;
             this.OpenFlags = flags;
-
-            _transactionClosing = this.TransactionClosing;
-            this.Transaction.Closing += _transactionClosing;
-        }
-
-        private void TransactionClosing(object sender, LightningClosingEventArgs e)
-        {
-            try
-            {
-                this.Close(e.EnvironmentClosing);
-            }
-            catch { }
+            this.Environment = tran.Environment;
         }
 
         public bool IsOpened { get; private set; }
@@ -55,100 +42,16 @@ namespace LightningDB
 
         public Encoding Encoding { get; private set; }
 
-        public LightningEnvironment Environment { get { return this.Transaction.Environment; } }
-
-        public LightningTransaction Transaction { get; private set; }
+        public LightningEnvironment Environment { get; private set; }
 
         public DatabaseOpenFlags OpenFlags { get; private set; }
-
-        public void DropDatabase(bool delete)
-        {
-            Native.Execute(() => Native.mdb_drop(this.Transaction._handle, _handle, delete));
-
-            this.Close(false);
-        }
-
-        private bool TryGetInternal(byte[] key, out Func<byte[]> valueFactory)
-        {
-            valueFactory = null;
-
-            using (var keyMarshalStruct = new MarshalValueStructure(key))
-            {
-                var valueStruct = default(ValueStructure);
-                var keyStructure = keyMarshalStruct.ValueStructure;
-
-                var res = Native.Read(() => Native.mdb_get(Transaction._handle, _handle, ref keyStructure, out valueStruct));
-
-                var exists = res != Native.MDB_NOTFOUND;
-                if (exists)
-                    valueFactory = () => valueStruct.ToByteArray(res);
-
-                return exists;
-            }
-        }
-
-        public byte[] Get(byte[] key)
-        {
-            byte[] value = null;
-            this.TryGet(key, out value);
-
-            return value;
-        }
-
-        public bool TryGet(byte[] key, out byte[] value)
-        {
-            Func<byte[]> factory;
-            var result = this.TryGetInternal(key, out factory);
-
-            value = result
-                ? value = factory.Invoke()
-                : null;
-
-            return result;
-        }
-
-        public bool ContainsKey(byte[] key)
-        {
-            Func<byte[]> factory;
-            return this.TryGetInternal(key, out factory);
-        }
-
-        public void Put(byte[] key, byte[] value, PutOptions options = PutOptions.None)
-        {
-            using (var keyStructureMarshal = new MarshalValueStructure(key))
-            using (var valueStructureMarshal = new MarshalValueStructure(value))
-            {
-                var keyStruct = keyStructureMarshal.ValueStructure;
-                var valueStruct = valueStructureMarshal.ValueStructure;
-
-                Native.Execute(() => Native.mdb_put(this.Transaction._handle, _handle, ref keyStruct, ref valueStruct, options));
-            }
-        }
-
-        public void Delete(byte[] key, byte[] value = null)
-        {
-            using (var keyMarshalStruct = new MarshalValueStructure(key))
-            {
-                var keyStructure = keyMarshalStruct.ValueStructure;
-                if (value != null)
-                {
-                    using (var valueMarshalStruct = new MarshalValueStructure(value))
-                    {
-                        var valueStructure = valueMarshalStruct.ValueStructure;
-                        Native.Execute(() => Native.mdb_del(this.Transaction._handle, _handle, ref keyStructure, ref valueStructure));
-                        return;
-                    }
-                }
-                Native.Execute(() => Native.mdb_del(this.Transaction._handle, _handle, ref keyStructure, IntPtr.Zero));
-            }
-        }
 
         public void Close()
         {
             this.Close(true);
         }
 
-        private void Close(bool releaseHandle)
+        internal void Close(bool releaseHandle)
         {
             lock (this.Environment)
             {
@@ -166,12 +69,10 @@ namespace LightningDB
 
                     this.Environment.ReuseDatabase(this);
                     if (releaseHandle)
+                    {
                         this.Environment.ReleaseDatabase(this);
-
-                    this.Transaction.Closing -= _transactionClosing;
-
-                    if (releaseHandle)
                         _shouldDispose = false;
+                    }
                 }
             }
         }
