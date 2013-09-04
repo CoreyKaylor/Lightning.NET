@@ -15,7 +15,7 @@ namespace LightningDB
 			if (value == null)
 				throw new ArgumentNullException ("value");
 
-            _shouldDispose = true;
+            _shouldDispose = false;
 			_value = value;
 
             this.ValueInitialized = false;
@@ -30,13 +30,15 @@ namespace LightningDB
         { 
             get 
             {
-                if (!ValueInitialized)
+                if (!this.ValueInitialized)
                 {
                     _structure = new ValueStructure
                     {
                         data = Marshal.AllocHGlobal(_value.Length),
                         size = _value.Length
                     };
+                    
+                    _shouldDispose = true;
 
                     try
                     {
@@ -47,7 +49,7 @@ namespace LightningDB
                         this.Dispose();
                     }
 
-                    ValueInitialized = true;
+                    this.ValueInitialized = true;
                 }
 
                 return _structure; 
@@ -60,10 +62,10 @@ namespace LightningDB
                 return;
 
             try
-			{
-            	Marshal.FreeHGlobal(ValueStructure.data);
-			}
-			catch {}
+	    {
+                Marshal.FreeHGlobal(_structure.data);
+	    }
+	    catch {}
         }
 
         public void Dispose()
