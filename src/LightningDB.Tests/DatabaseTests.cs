@@ -78,18 +78,31 @@ namespace LightningDB.Tests
         }
 
         [Test]
-        public void DefaultDatabaseShouldBeDropped()
+        public void DatabaseFromCommitedTransactionShouldBeAccessable()
         {
-            _env.Open();
-            _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
             //arrange
+            _env.Open();
 
+            LightningDatabase db;
+            using (var committed = _env.BeginTransaction())
+            {
+                db = committed.OpenDatabase(null, DatabaseOpenFlags.None);
+                committed.Commit();
+            }
+            
             //act
-            db.DropDatabase(true);
+            try
+            {
+                _txn = _env.BeginTransaction();
+                _txn.Put(db, "key", 1);
+            }
+            finally
+            {
+                db.Close();
+            }
 
             //assert
-            Assert.AreEqual(false, db.IsOpened);
+            
         }
     }
 }

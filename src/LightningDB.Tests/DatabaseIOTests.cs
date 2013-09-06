@@ -51,7 +51,7 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
             //assert
         }
@@ -63,7 +63,7 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            _db.Get(key);
+            _txn.Get(_db, key);
 
             //assert
         }
@@ -74,10 +74,10 @@ namespace LightningDB.Tests
             //arrange
             var key = "key";
             var value = "value";
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
             //act
-            var persistedValue = _db.Get(key);
+            var persistedValue = _txn.Get(_db, key);
             
             //assert
             Assert.AreEqual(persistedValue, value);
@@ -89,13 +89,13 @@ namespace LightningDB.Tests
             //arrange
             var key = "key";
             var value = "value";
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
             //act
-            _db.Delete(key);
+            _txn.Delete(_db, key);
 
             //assert
-            Assert.IsNull(_db.Get(key));
+            Assert.IsNull(_txn.Get(_db, key));
         }
 
         [Test]
@@ -104,9 +104,9 @@ namespace LightningDB.Tests
             var key = "key";
             var value = 25;
 
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
-            var persistedValue = _db.GetBy(key).Value<int>();
+            var persistedValue = _txn.GetBy(_db, key).Value<int>();
 
             Assert.AreEqual(value, persistedValue);
         }
@@ -117,9 +117,9 @@ namespace LightningDB.Tests
             var key = "key";
             var value = 25;
 
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
-            var exists = _db.ContainsKey(key);
+            var exists = _txn.ContainsKey(_db, key);
 
             Assert.IsTrue(exists);
         }
@@ -130,9 +130,9 @@ namespace LightningDB.Tests
             var key = "key";
             var value = 25;
 
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
-            var exists = _db.ContainsKey(key);
+            var exists = _txn.ContainsKey(_db, key);
 
             Assert.IsTrue(exists);
         }
@@ -143,10 +143,10 @@ namespace LightningDB.Tests
             var key = "key";
             var value = 25;
 
-            _db.Put(key, value);
+            _txn.Put(_db, key, value);
 
             int persistedValue;
-            var exists = _db.TryGet(key, out persistedValue);
+            var exists = _txn.TryGet(_db, key, out persistedValue);
 
             Assert.IsTrue(exists);
             Assert.AreEqual(value, persistedValue);

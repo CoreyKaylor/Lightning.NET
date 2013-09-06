@@ -70,6 +70,100 @@ namespace LightningDB
             return this.Environment.OpenDatabase(name, flags, this);
         }
 
+        public void DropDatabase(LightningDatabase db, bool delete)
+        {
+            Native.Execute(() => Native.mdb_drop(_handle, db._handle, delete));
+
+            db.Close(false);
+        }
+
+        private bool TryGetInternal(UInt32 dbi, byte[] key, out Func<byte[]> valueFactory)
+        {
+            valueFactory = null;
+
+            using (var keyMarshalStruct = new MarshalValueStructure(key))
+            {
+                var valueStruct = default(ValueStructure);
+                var keyStructure = keyMarshalStruct.ValueStructure;
+
+                var res = Native.Read(() => Native.mdb_get(_handle, dbi, ref keyStructure, out valueStruct));
+
+                var exists = res != Native.MDB_NOTFOUND;
+                if (exists)
+                    valueFactory = () => valueStruct.ToByteArray(res);
+
+                return exists;
+            }
+        }
+
+        public byte[] Get(LightningDatabase db, byte[] key)
+        {
+            byte[] value = null;
+            this.TryGet(db, key, out value);
+
+            return value;
+        }
+
+        public bool TryGet(LightningDatabase db, byte[] key, out byte[] value)
+        {
+            if (db == null)
+                throw new ArgumentNullException("db");
+
+            Func<byte[]> factory;
+            var result = this.TryGetInternal(db._handle, key, out factory);
+
+            value = result
+                ? value = factory.Invoke()
+                : null;
+
+            return result;
+        }
+
+        public bool ContainsKey(LightningDatabase db, byte[] key)
+        {
+            if (db == null)
+                throw new ArgumentNullException("db");
+
+            Func<byte[]> factory;
+            return this.TryGetInternal(db._handle, key, out factory);
+        }
+
+        public void Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
+        {
+            if (db == null)
+                throw new ArgumentNullException("db");
+
+            using (var keyStructureMarshal = new MarshalValueStructure(key))
+            using (var valueStructureMarshal = new MarshalValueStructure(value))
+            {
+                var keyStruct = keyStructureMarshal.ValueStructure;
+                var valueStruct = valueStructureMarshal.ValueStructure;
+
+                Native.Execute(() => Native.mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options));
+            }
+        }
+
+        public void Delete(LightningDatabase db, byte[] key, byte[] value = null)
+        {
+            if (db == null)
+                throw new ArgumentNullException("db");
+
+            using (var keyMarshalStruct = new MarshalValueStructure(key))
+            {
+                var keyStructure = keyMarshalStruct.ValueStructure;
+                if (value != null)
+                {
+                    using (var valueMarshalStruct = new MarshalValueStructure(value))
+                    {
+                        var valueStructure = valueMarshalStruct.ValueStructure;
+                        Native.Execute(() => Native.mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure));
+                        return;
+                    }
+                }
+                Native.Execute(() => Native.mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero));
+            }
+        }
+
         public void Reset()
         {
             if (!this.IsReadOnly)
