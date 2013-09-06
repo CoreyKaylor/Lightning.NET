@@ -580,6 +580,11 @@ namespace LightningDB
             return ExecuteHelper(action, err => err != MDB_NOTFOUND);
         }
 
+        public static bool TryRead(Func<int> action)
+        {
+            return Read(action) != MDB_NOTFOUND;
+        }
+
         private static int ExecuteHelper(Func<int> action, Func<int, bool> shouldThrow)
         {
             var res = action();
