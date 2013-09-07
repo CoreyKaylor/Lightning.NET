@@ -6,17 +6,17 @@ namespace LightningDB
     internal class MarshalValueStructure : IDisposable
     {
         private bool _shouldDispose;
-		private byte[] _value;
+        private byte[] _value;
 
-		private ValueStructure _structure;
+        private ValueStructure _structure;
 
         public MarshalValueStructure(byte[] value)
         {
-			if (value == null)
-				throw new ArgumentNullException ("value");
+            if (value == null)
+                throw new ArgumentNullException("value");
 
             _shouldDispose = false;
-			_value = value;
+            _value = value;
 
             this.ValueInitialized = false;
         }
@@ -26,9 +26,9 @@ namespace LightningDB
         //Lazy initialization prevents possible leak.
         //If initialization was in ctor, Dispose could never be called
         //due to possible exception thrown by Marshal.Copy
-		public ValueStructure ValueStructure 
-        { 
-            get 
+        public ValueStructure ValueStructure
+        {
+            get
             {
                 if (!this.ValueInitialized)
                 {
@@ -37,14 +37,14 @@ namespace LightningDB
                         data = Marshal.AllocHGlobal(_value.Length),
                         size = _value.Length
                     };
-                    
+
                     _shouldDispose = true;
 
                     try
                     {
                         Marshal.Copy(_value, 0, _structure.data, _value.Length);
                     }
-                    finally
+                    catch
                     {
                         this.Dispose();
                     }
@@ -52,8 +52,8 @@ namespace LightningDB
                     this.ValueInitialized = true;
                 }
 
-                return _structure; 
-            } 
+                return _structure;
+            }
         }
 
         protected virtual void Dispose(bool shouldDispose)
@@ -62,10 +62,10 @@ namespace LightningDB
                 return;
 
             try
-	    {
+            {
                 Marshal.FreeHGlobal(_structure.data);
-	    }
-	    catch {}
+            }
+            catch { }
         }
 
         public void Dispose()

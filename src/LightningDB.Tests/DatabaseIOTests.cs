@@ -95,7 +95,7 @@ namespace LightningDB.Tests
             _txn.Delete(_db, key);
 
             //assert
-            Assert.IsNull(_txn.Get(_db, key));
+            Assert.IsFalse(_txn.ContainsKey(_db, key));
         }
 
         [Test]
@@ -128,13 +128,10 @@ namespace LightningDB.Tests
         public void ContainsKeyShouldReturnFalseIfKeyNotExists()
         {
             var key = "key";
-            var value = 25;
-
-            _txn.Put(_db, key, value);
 
             var exists = _txn.ContainsKey(_db, key);
 
-            Assert.IsTrue(exists);
+            Assert.IsFalse(exists);
         }
 
         [Test]
