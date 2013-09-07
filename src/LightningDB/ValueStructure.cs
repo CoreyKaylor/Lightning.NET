@@ -6,7 +6,7 @@ namespace LightningDB
     [StructLayout(LayoutKind.Sequential)]
     internal struct ValueStructure
     {
-        public int size;
+        public IntPtr size;
 
         public IntPtr data; 
     }

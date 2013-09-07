@@ -52,7 +52,9 @@ namespace LightningDB
         /// </summary>
         public const int MDB_NOTFOUND = -30798;
 
-        #endregion
+        #endregion Constants
+
+        #region Native functions
 
         /// <summary>
         /// Create an MDB environment handle.
@@ -64,7 +66,7 @@ namespace LightningDB
         /// <param name="env">The address where the new handle will be stored</param>
         /// <returns>A non-zero error value on failure and 0 on success.</returns>
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_env_create(out IntPtr env); // OK
+        public static extern int mdb_env_create(out IntPtr env);
 
         /// <summary>
         /// Close the environment and release the memory map.
@@ -74,7 +76,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="env">An environment handle returned by mdb_env_create()</param>
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void mdb_env_close(IntPtr env); //OK
+        public static extern void mdb_env_close(IntPtr env);
 
         /// <summary>
         /// Open an environment handle.
@@ -570,6 +572,10 @@ namespace LightningDB
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
         public static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags); //OK
 
+        #endregion Native functions
+
+        #region Helpers
+
         public static int Execute(Func<int> action)
         {
             return ExecuteHelper(action, err => true);
@@ -592,5 +598,7 @@ namespace LightningDB
                 throw new LightningException(res);
             return res;
         }
+
+        #endregion Helpers
     }
 }

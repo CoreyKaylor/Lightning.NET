@@ -96,8 +96,8 @@ namespace LightningDB
             if (resultCode == Native.MDB_NOTFOUND)
                 return null;
 
-            var buffer = new byte[valueStructure.size];
-            Marshal.Copy(valueStructure.data, buffer, 0, valueStructure.size);
+            var buffer = new byte[valueStructure.size.ToInt32()];
+            Marshal.Copy(valueStructure.data, buffer, 0, buffer.Length);
 
             return buffer;
         }
