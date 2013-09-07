@@ -64,7 +64,9 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Native64BitLibraryFacade.cs" />
     <Compile Include="GetByOperation.cs" />
+    <Compile Include="INativeLibraryFacade.cs" />
     <Compile Include="LightningDatabaseExtensions.cs" />
     <Compile Include="Converters\ConverterExtensions.cs" />
     <Compile Include="Converters\ConverterNotFoundException.cs" />
@@ -89,6 +91,7 @@
     <Compile Include="LightningVersionInfo.cs" />
     <Compile Include="MarshalValueStructure.cs" />
     <Compile Include="Native.cs" />
+    <Compile Include="Native32BitLibraryFacade.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PutOptions.cs" />

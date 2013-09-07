@@ -20,7 +20,7 @@ namespace LightningDB
                 throw new ArgumentException("db and txn belong to different environments");
 
             IntPtr handle = default(IntPtr);
-            Native.Execute(() => Native.mdb_cursor_open(txn._handle, db._handle, out handle));
+            Native.Execute(lib => lib.mdb_cursor_open(txn._handle, db._handle, out handle));
 
             _handle = handle;
 
@@ -165,7 +165,7 @@ namespace LightningDB
             var keyStruct = key.GetValueOrDefault();
             var valueStruct = value.GetValueOrDefault();
 
-            var res = Native.Read(() => Native.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
+            var res = Native.Read(lib => lib.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
 
             return new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
         }
@@ -179,14 +179,14 @@ namespace LightningDB
                 var keyStruct = keyMarshalStruct.ValueStructure;
                 var valueStruct = valueMarshalStruct.ValueStructure;
 
-                Native.Execute(() => Native.mdb_cursor_put(_handle, keyStruct, valueStruct, options));
+                Native.Execute(lib => lib.mdb_cursor_put(_handle, keyStruct, valueStruct, options));
             }
         }
 
         //TODO: tests
         public void Delete(CursorDeleteOption option)
         {
-            Native.Execute(() => Native.mdb_cursor_del(_handle, option));
+            Native.Execute(lib => lib.mdb_cursor_del(_handle, option));
         }
 
         public void Renew()
@@ -203,7 +203,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            Native.Execute(() => Native.mdb_cursor_renew(txn._handle, _handle));
+            Native.Execute(lib => lib.mdb_cursor_renew(txn._handle, _handle));
         }
 
         //TODO: tests
@@ -211,7 +211,7 @@ namespace LightningDB
         {
             try
             {
-                Native.mdb_cursor_close(_handle);
+                Native.Library.mdb_cursor_close(_handle);
             }
             finally
             {

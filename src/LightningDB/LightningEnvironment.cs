@@ -35,7 +35,7 @@ namespace LightningDB
                 throw new ArgumentException("Invalid directory name");
 
             IntPtr handle = default(IntPtr);
-            Native.Execute(() => Native.mdb_env_create(out handle));
+            Native.Execute(lib => lib.mdb_env_create(out handle));
 
             _shouldDispose = true;
             
@@ -72,7 +72,7 @@ namespace LightningDB
                 if (value == _mapSize) 
                     return;
 
-                Native.Execute(() => Native.mdb_env_set_mapsize(_handle, value));
+                Native.Execute(lib => lib.mdb_env_set_mapsize(_handle, value));
 
                 _mapSize = value;
             }
@@ -83,7 +83,7 @@ namespace LightningDB
             get
             {
                 UInt32 readers = default(UInt32);
-                Native.Execute(() => Native.mdb_env_get_maxreaders(_handle, out readers));
+                Native.Execute(lib => lib.mdb_env_get_maxreaders(_handle, out readers));
 
                 return (int)readers;
             }
@@ -92,7 +92,7 @@ namespace LightningDB
                 if (this.IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
-                Native.Execute(() => Native.mdb_env_set_maxreaders(_handle, (UInt32) value));
+                Native.Execute(lib => lib.mdb_env_set_maxreaders(_handle, (UInt32)value));
             }
         }
 
@@ -107,7 +107,7 @@ namespace LightningDB
                 if (value == _maxDbs) 
                     return;
 
-                Native.Execute(() => Native.mdb_env_set_maxdbs(_handle, (UInt32) value));
+                Native.Execute(lib => lib.mdb_env_set_maxdbs(_handle, (UInt32)value));
 
                 _maxDbs = value;
             }
@@ -123,7 +123,7 @@ namespace LightningDB
                 System.IO.Directory.CreateDirectory(this.Directory);
 
             if (!this.IsOpened)
-                Native.Execute(() => Native.mdb_env_open(_handle, this.Directory, _openFlags, 666));
+                Native.Execute(lib => lib.mdb_env_open(_handle, this.Directory, _openFlags, 666));
 
             this.IsOpened = true;
         }
@@ -136,9 +136,9 @@ namespace LightningDB
             this.OnClosing();
 
             foreach (var hdb in _databasesForReuse)
-                Native.mdb_dbi_close(_handle, hdb);
+                Native.Library.mdb_dbi_close(_handle, hdb);
 
-            Native.mdb_env_close(_handle);
+            Native.Library.mdb_env_close(_handle);
 
             this.IsOpened = false;
 
@@ -200,13 +200,13 @@ namespace LightningDB
         {
             this.EnsureOpened();
 
-            Native.Execute(() => Native.mdb_env_copy(_handle, path));
+            Native.Execute(lib => lib.mdb_env_copy(_handle, path));
         }
 
         //TODO: tests
         public void Flush(bool force)
         {
-            Native.Execute(() => Native.mdb_env_sync(_handle, force));
+            Native.Execute(lib => lib.mdb_env_sync(_handle, force));
         }
 
         private void EnsureOpened()

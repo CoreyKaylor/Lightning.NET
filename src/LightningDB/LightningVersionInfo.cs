@@ -5,7 +5,7 @@
         public LightningVersionInfo()
         {
             int minor, major, patch;
-            this.Version = Native.mdb_version(out major, out minor, out patch);
+            this.Version = Native.Library.mdb_version(out major, out minor, out patch);
 
             this.Major = major;
             this.Minor = minor;

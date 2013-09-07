@@ -23,7 +23,7 @@ namespace LightningDB
                 throw new ArgumentNullException("tran");
 
             UInt32 handle = default(UInt32);
-            Native.Execute(() => Native.mdb_dbi_open(tran._handle, name, flags, out handle));
+            Native.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags, out handle));
 
             _name = name ?? DefaultDatabaseName;
 
@@ -61,7 +61,7 @@ namespace LightningDB
                 try
                 {
                     if (releaseHandle)
-                        Native.mdb_dbi_close(this.Environment._handle, _handle);
+                        Native.Library.mdb_dbi_close(this.Environment._handle, _handle);
                 }
                 finally
                 {
