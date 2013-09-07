@@ -5,24 +5,24 @@ namespace LightningDB
 {
     public static class LightningDatabaseExtensions
     {
-        public static GetByOperation GetBy<TKey>(this LightningDatabase db, TKey key)
+        public static GetByOperation GetBy<TKey>(this LightningTransaction txn, LightningDatabase db, TKey key)
         {
-            var valueBytes = db.GetRawValue(key);
+            var valueBytes = txn.GetRawValue(db, key);
             return new GetByOperation(db, valueBytes);
         }
 
-        public static bool ContainsKey<TKey>(this LightningDatabase db, TKey key)
+        public static bool ContainsKey<TKey>(this LightningTransaction txn, LightningDatabase db, TKey key)
         {
             var keyBytes = db.ToBytes(key);
-            return db.ContainsKey(keyBytes);
+            return txn.ContainsKey(db, keyBytes);
         }
 
-        public static bool TryGetBy<TKey>(this LightningDatabase db, TKey key, out GetByOperation value)
+        public static bool TryGetBy<TKey>(this LightningTransaction txn, LightningDatabase db, TKey key, out GetByOperation value)
         {
             byte[] valueBytes;
 
             var keyBytes = db.ToBytes(key);
-            var result = db.TryGet(keyBytes, out valueBytes);
+            var result = txn.TryGet(db, keyBytes, out valueBytes);
 
             value = result
                 ? new GetByOperation(db, valueBytes)
@@ -31,10 +31,10 @@ namespace LightningDB
             return result;
         }
 
-        public static bool TryGet<TKey, TValue>(this LightningDatabase db, TKey key, out TValue value)
+        public static bool TryGet<TKey, TValue>(this LightningTransaction txn, LightningDatabase db, TKey key, out TValue value)
         {
             GetByOperation operation;
-            var result = db.TryGetBy(key, out operation);
+            var result = txn.TryGetBy(db, key, out operation);
 
             value = result
                 ? operation.Value<TValue>()
@@ -43,42 +43,42 @@ namespace LightningDB
             return result;
         }
 
-        public static TType Get<TType>(this LightningDatabase db, TType key)
+        public static TType Get<TType>(this LightningTransaction txn, LightningDatabase db, TType key)
         {
-            return db.Get<TType, TType>(key);
+            return txn.Get<TType, TType>(db, key);
         }
 
-        public static byte[] GetRawValue<TKey>(this LightningDatabase db, TKey key)
+        public static byte[] GetRawValue<TKey>(this LightningTransaction txn, LightningDatabase db, TKey key)
         {
             var keyBytes = db.ToBytes(key);
-            return db.Get(keyBytes);
+            return txn.Get(db, keyBytes);
         }
 
-        public static TValue Get<TKey, TValue>(this LightningDatabase db, TKey key)
+        public static TValue Get<TKey, TValue>(this LightningTransaction txn, LightningDatabase db, TKey key)
         {
             var keyBytes = db.ToBytes(key);
-            var valueBytes = db.Get(keyBytes);
+            var valueBytes = txn.Get(db, keyBytes);
             return db.FromBytes<TValue>(valueBytes);
         }
 
-        public static void Delete<TKey>(this LightningDatabase db, TKey key)
+        public static void Delete<TKey>(this LightningTransaction txn, LightningDatabase db, TKey key)
         {
             var keyBytes = db.ToBytes(key);
-            db.Delete(keyBytes);
+            txn.Delete(db, keyBytes);
         }
 
-        public static void Delete<TKey, TValue>(this LightningDatabase db, TKey key, TValue value)
+        public static void Delete<TKey, TValue>(this LightningTransaction txn, LightningDatabase db, TKey key, TValue value)
         {
             var keyBytes = db.ToBytes(key);
             var valueBytes = db.ToBytes(value);
-            db.Delete(keyBytes, valueBytes);
+            txn.Delete(db, keyBytes, valueBytes);
         }
 
-        public static void Put<TKey, TValue>(this LightningDatabase db, TKey key, TValue value, PutOptions options = PutOptions.None)
+        public static void Put<TKey, TValue>(this LightningTransaction txn, LightningDatabase db, TKey key, TValue value, PutOptions options = PutOptions.None)
         {
             var keyBytes = db.ToBytes(key);
             var valueBytes = db.ToBytes(value);
-            db.Put(keyBytes, valueBytes, options);
+            txn.Put(db, keyBytes, valueBytes, options);
         }
 
         public static KeyValuePair<TKey, TValue> GetCurrent<TKey, TValue>(this LightningCursor cursor)

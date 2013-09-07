@@ -152,5 +152,19 @@ namespace LightningDB.Tests
             //assert
             Assert.AreEqual(LightningTransacrionState.Active, _txn.State);
         }
+
+        [Test]
+        public void DefaultDatabaseShouldBeDropped()
+        {
+            _txn = _env.BeginTransaction();
+            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+            //arrange
+
+            //act
+            _txn.DropDatabase(db, true);
+
+            //assert
+            Assert.AreEqual(false, db.IsOpened);
+        }
     }
 }
