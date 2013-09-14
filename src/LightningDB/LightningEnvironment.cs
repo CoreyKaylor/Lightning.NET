@@ -17,7 +17,8 @@ namespace LightningDB
         public const int DefaultMapSize = 10485760;
         public const int DefaultMaxReaders = 126;
         public const int DefaultMaxDatabases = 0;
-                
+
+        private readonly UnixAccessMode _accessMode;
         private readonly EnvironmentOpenFlags _openFlags;
         internal IntPtr _handle;
 
@@ -29,7 +30,7 @@ namespace LightningDB
         private readonly ConcurrentDictionary<string, LightningDatabase> _openedDatabases;
         private readonly HashSet<uint> _databasesForReuse;
 
-        public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags)
+        public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags, UnixAccessMode accessMode = UnixAccessMode.Default)
         {
             if (String.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("Invalid directory name");
@@ -123,7 +124,7 @@ namespace LightningDB
                 System.IO.Directory.CreateDirectory(this.Directory);
 
             if (!this.IsOpened)
-                Native.Execute(lib => lib.mdb_env_open(_handle, this.Directory, _openFlags, 666));
+				Native.Execute(lib => lib.mdb_env_open(_handle, this.Directory, _openFlags, _accessMode));
 
             this.IsOpened = true;
         }
