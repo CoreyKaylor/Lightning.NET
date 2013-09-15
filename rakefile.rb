@@ -5,9 +5,8 @@ include RbConfig
 CLEAN.include("**/*.o", "**/bin/**/*.{dylib,dll,dbg,mdb,so}")
 
 @cc = "cc"
-@platformPath = ENV["platform"].nil? ? '' : ENV["platform"] + "/"
 LMDB_DIR = "mdb/libraries/liblmdb"
-BIN_DIR = "src/LightningDB.Tests/bin/#{@platformPath}Debug"
+BIN_DIR = "src/LightningDB.Tests/bin/Debug"
 
 begin
   require 'bundler/setup'
@@ -29,42 +28,57 @@ end
 	}
 
 	sln.ripple_enabled = true
-  sln.precompile = [:native_compile]
+  sln.precompile = [:native_compile_32, :native_compile_64]
 end
 
 directory BIN_DIR
 
-rule ".o" => ".c" do |t|
-  sh "#{@cc} -pthread -O2 -g -W -Wno-unused-parameter -Wbad-function-cast -fPIC -c -o #{t.name} #{t.source}"
+def add_tasks(bits)
+
+  file "#{LMDB_DIR}/mdb#{bits}.o" => ["#{LMDB_DIR}/mdb.c"] do |t|
+    sh "#{@cc} -pthread -O2 -g -W -Wno-unused-parameter -Wbad-function-cast -fPIC -c -o #{t.name} #{t.prerequisites.first}"
+  end
+
+  file "#{LMDB_DIR}/midl#{bits}.o" => ["#{LMDB_DIR}/midl.c"] do |t|
+    sh "#{@cc} -pthread -O2 -g -W -Wno-unused-parameter -Wbad-function-cast -fPIC -c -o #{t.name} #{t.prerequisites.first}"
+  end
+
+  file "#{BIN_DIR}/liblmdb#{bits}.dylib" => ["#{LMDB_DIR}/mdb#{bits}.o", "#{LMDB_DIR}/midl#{bits}.o"] do |t|
+    sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
+  end
+
+  file "#{BIN_DIR}/lmdb#{bits}.dll" => ["#{LMDB_DIR}/mdb#{bits}.o", "#{LMDB_DIR}/midl#{bits}.o"] do |t|
+    sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
+  end
+
+  file "#{BIN_DIR}/liblmdb#{bits}.so" => ["#{LMDB_DIR}/mdb#{bits}.o", "#{LMDB_DIR}/midl#{bits}.o"] do |t|
+    sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
+  end
+
+  task "native_compile_#{bits}" => [BIN_DIR] do
+    native_compile(bits)
+  end
 end
 
-file "#{LMDB_DIR}/mdb.o" => ["#{LMDB_DIR}/mdb.c", "#{LMDB_DIR}/lmdb.h", "#{LMDB_DIR}/midl.h"]
+add_tasks(32)
+add_tasks(64)
 
-file "#{LMDB_DIR}/midl.o" => ["#{LMDB_DIR}/midl.c", "#{LMDB_DIR}/midl.h"]
-
-file "#{BIN_DIR}/liblmdb.dylib" => ["#{LMDB_DIR}/mdb.o", "#{LMDB_DIR}/midl.o"] do |t|
-  sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
-end
-
-file "#{BIN_DIR}/lmdb.dll" => ["#{LMDB_DIR}/mdb.o", "#{LMDB_DIR}/midl.o"] do |t|
-  sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
-end
-
-file "#{BIN_DIR}/liblmdb.so" => ["#{LMDB_DIR}/mdb.o", "#{LMDB_DIR}/midl.o"] do |t|
-  sh "#{@cc} -shared -o #{t.name} #{t.prerequisites.join(' ')}"
-end
-
-task :native_compile => BIN_DIR do
+def native_compile(bits)
   host = RbConfig::CONFIG['host_os']
   puts "Native compiling #{host}"
+
+  @cc = "cc -m32" if bits == 32
+  @cc = "cc -m64" if bits == 64
+
   case host
     when /mswin|mingw/i
-      @cc = "gcc"
-      Rake::Task["#{BIN_DIR}/lmdb.dll"].invoke
+      @cc = "i686-w64-mingw32-gcc" if bits == 32
+      @cc = "x86_64-w64-mingw32-gcc" if bits == 64
+
+      Rake::Task["#{BIN_DIR}/lmdb#{bits}.dll"].invoke
     when /linux/i
-      Rake::Task["#{BIN_DIR}/liblmdb.so"].invoke
+      Rake::Task["#{BIN_DIR}/liblmdb#{bits}.so"].invoke
     when /darwin/i
-      @cc = "cc -m32"
-      Rake::Task["#{BIN_DIR}/liblmdb.dylib"].invoke
+      Rake::Task["#{BIN_DIR}/liblmdb#{bits}.dylib"].invoke
   end
 end
