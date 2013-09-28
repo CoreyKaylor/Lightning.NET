@@ -272,7 +272,7 @@ namespace LightningDB
         /// <param name="minor">if non-NULL, the library minor version number is copied here</param>
         /// <param name="patch">if non-NULL, the library patch version number is copied here</param>
         /// <returns>The library version as a string</returns>
-        string mdb_version(out int major, out int minor, out int patch); //OK
+        IntPtr mdb_version(out IntPtr major, out IntPtr minor, out IntPtr patch); //OK
 
         /// <summary>
         /// Return a string describing a given error code.

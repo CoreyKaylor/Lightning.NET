@@ -1,4 +1,15 @@
-﻿using System;
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<#
+	var facades = new Dictionary<string, string>
+	{
+		{ "lmdb32", "Native32Bit" },
+		{ "lmdb64", "Native64Bit" },
+		{ "lmdb", "Fallback" }
+	};
+#>
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -6,9 +17,14 @@ using System.Text;
 
 namespace LightningDB
 {
-    class Native64BitLibraryFacade : INativeLibraryFacade
+	<# 
+		foreach (var pair in facades) 
+		{ 
+	#>
+
+	class <#= pair.Value #>LibraryFacade : INativeLibraryFacade
     {
-        public const string LibraryName = "lmdb64";
+        public const string LibraryName = "<#= pair.Key #>";
 
         #region Native functions
 
@@ -61,7 +77,7 @@ namespace LightningDB
         private static extern int mdb_txn_renew(IntPtr txn);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern string mdb_version(out int major, out int minor, out int patch);
+        private static extern IntPtr mdb_version(out IntPtr major, out IntPtr minor, out IntPtr patch);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr mdb_strerror(int err);
@@ -106,152 +122,157 @@ namespace LightningDB
 
         int INativeLibraryFacade.mdb_env_create(out IntPtr env)
         {
-            return mdb_env_create(out env);
+            return <#= pair.Value #>LibraryFacade.mdb_env_create(out env);
         }
 
         void INativeLibraryFacade.mdb_env_close(IntPtr env)
         {
-            mdb_env_close(env);
+            <#= pair.Value #>LibraryFacade.mdb_env_close(env);
         }
 
         int INativeLibraryFacade.mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, UnixAccessMode mode)
         {
-            return mdb_env_open(env, path, flags, mode);
+            return <#= pair.Value #>LibraryFacade.mdb_env_open(env, path, flags, mode);
         }
 
         int INativeLibraryFacade.mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, int mode)
         {
-            return mdb_env_open(env, path, flags, mode);
+            return <#= pair.Value #>LibraryFacade.mdb_env_open(env, path, flags, mode);
         }
 
         int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, int size)
         {
-            return mdb_env_set_mapsize(env, size);
+            return <#= pair.Value #>LibraryFacade.mdb_env_set_mapsize(env, size);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
         {
-            return mdb_env_get_maxreaders(env, out readers);
+            return <#= pair.Value #>LibraryFacade.mdb_env_get_maxreaders(env, out readers);
         }
 
         int INativeLibraryFacade.mdb_env_set_maxreaders(IntPtr env, uint readers)
         {
-            return mdb_env_set_maxreaders(env, readers);
+            return <#= pair.Value #>LibraryFacade.mdb_env_set_maxreaders(env, readers);
         }
 
         int INativeLibraryFacade.mdb_env_set_maxdbs(IntPtr env, uint dbs)
         {
-            return mdb_env_set_maxdbs(env, dbs);
+            return <#= pair.Value #>LibraryFacade.mdb_env_set_maxdbs(env, dbs);
         }
 
         int INativeLibraryFacade.mdb_dbi_open(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db)
         {
-            return mdb_dbi_open(txn, name, flags, out db);
+            return <#= pair.Value #>LibraryFacade.mdb_dbi_open(txn, name, flags, out db);
         }
 
         void INativeLibraryFacade.mdb_dbi_close(IntPtr env, uint dbi)
         {
-            mdb_dbi_close(env, dbi);
+            <#= pair.Value #>LibraryFacade.mdb_dbi_close(env, dbi);
         }
 
         int INativeLibraryFacade.mdb_drop(IntPtr txn, uint dbi, bool del)
         {
-            return mdb_drop(txn, dbi, del);
+            return <#= pair.Value #>LibraryFacade.mdb_drop(txn, dbi, del);
         }
 
         int INativeLibraryFacade.mdb_txn_begin(IntPtr env, IntPtr parent, TransactionBeginFlags flags, out IntPtr txn)
         {
-            return mdb_txn_begin(env, parent, flags, out txn);
+            return <#= pair.Value #>LibraryFacade.mdb_txn_begin(env, parent, flags, out txn);
         }
 
         int INativeLibraryFacade.mdb_txn_commit(IntPtr txn)
         {
-            return mdb_txn_commit(txn);
+            return <#= pair.Value #>LibraryFacade.mdb_txn_commit(txn);
         }
 
         void INativeLibraryFacade.mdb_txn_abort(IntPtr txn)
         {
-            mdb_txn_abort(txn);
+            <#= pair.Value #>LibraryFacade.mdb_txn_abort(txn);
         }
 
         void INativeLibraryFacade.mdb_txn_reset(IntPtr txn)
         {
-            mdb_txn_reset(txn);
+            <#= pair.Value #>LibraryFacade.mdb_txn_reset(txn);
         }
 
         int INativeLibraryFacade.mdb_txn_renew(IntPtr txn)
         {
-            return mdb_txn_renew(txn);
+            return <#= pair.Value #>LibraryFacade.mdb_txn_renew(txn);
         }
 
-        string INativeLibraryFacade.mdb_version(out int major, out int minor, out int patch)
+        IntPtr INativeLibraryFacade.mdb_version(out IntPtr major, out IntPtr minor, out IntPtr patch)
         {
-            return mdb_version(out major, out minor, out patch);
+            return <#= pair.Value #>LibraryFacade.mdb_version(out major, out minor, out patch);
         }
 
         IntPtr INativeLibraryFacade.mdb_strerror(int err)
         {
-            return mdb_strerror(err);
+            return <#= pair.Value #>LibraryFacade.mdb_strerror(err);
         }
 
         int INativeLibraryFacade.mdb_env_copy(IntPtr env, string path)
         {
-            return mdb_env_copy(env, path);
+            return <#= pair.Value #>LibraryFacade.mdb_env_copy(env, path);
         }
 
         int INativeLibraryFacade.mdb_env_sync(IntPtr env, bool force)
         {
-            return mdb_env_sync(env, force);
+            return <#= pair.Value #>LibraryFacade.mdb_env_sync(env, force);
         }
 
         int INativeLibraryFacade.mdb_get(IntPtr txn, uint dbi, ref ValueStructure key, out ValueStructure data)
         {
-            return mdb_get(txn, dbi, ref key, out data);
+            return <#= pair.Value #>LibraryFacade.mdb_get(txn, dbi, ref key, out data);
         }
 
         int INativeLibraryFacade.mdb_put(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
         {
-            return mdb_put(txn, dbi, ref key, ref data, flags);
+            return <#= pair.Value #>LibraryFacade.mdb_put(txn, dbi, ref key, ref data, flags);
         }
 
         int INativeLibraryFacade.mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data)
         {
-            return mdb_del(txn, dbi, ref key, ref data);
+            return <#= pair.Value #>LibraryFacade.mdb_del(txn, dbi, ref key, ref data);
         }
 
         int INativeLibraryFacade.mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, IntPtr data)
         {
-            return mdb_del(txn, dbi, ref key, data);
+            return <#= pair.Value #>LibraryFacade.mdb_del(txn, dbi, ref key, data);
         }
 
         int INativeLibraryFacade.mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor)
         {
-            return mdb_cursor_open(txn, dbi, out cursor);
+            return <#= pair.Value #>LibraryFacade.mdb_cursor_open(txn, dbi, out cursor);
         }
 
         void INativeLibraryFacade.mdb_cursor_close(IntPtr cursor)
         {
-            mdb_cursor_close(cursor);
+            <#= pair.Value #>LibraryFacade.mdb_cursor_close(cursor);
         }
 
         int INativeLibraryFacade.mdb_cursor_renew(IntPtr txn, IntPtr cursor)
         {
-            return mdb_cursor_renew(txn, cursor);
+            return <#= pair.Value #>LibraryFacade.mdb_cursor_renew(txn, cursor);
         }
 
         int INativeLibraryFacade.mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op)
         {
-            return mdb_cursor_get(cursor, ref key, ref data, op);
+            return <#= pair.Value #>LibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
         int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags)
         {
-            return mdb_cursor_put(cursor, key, data, flags);
+            return <#= pair.Value #>LibraryFacade.mdb_cursor_put(cursor, key, data, flags);
         }
 
         int INativeLibraryFacade.mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
         {
-            return mdb_cursor_del(cursor, flags);
+            return <#= pair.Value #>LibraryFacade.mdb_cursor_del(cursor, flags);
         }
-    }
+	}
+	<# 
+		} 
+		/* foreach pair in facades */ 
+	#>
+
 }

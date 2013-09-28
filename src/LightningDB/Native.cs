@@ -5,15 +5,57 @@ namespace LightningDB
 {
     internal static class Native
     {
+        private static readonly LightningVersionInfo _libraryVersion;
+
         private static readonly INativeLibraryFacade _libraryFacade;
 
         public static INativeLibraryFacade Library { get { return _libraryFacade; } }
 
+        public static LightningVersionInfo LibraryVersion { get { return _libraryVersion; } }
+
         static Native()
         {
-            _libraryFacade = Platform.Is64Bit
+            _libraryFacade = Environment.Is64BitProcess
                 ? new Native64BitLibraryFacade()
                 : (INativeLibraryFacade) new Native32BitLibraryFacade();
+
+            Exception archSpecificException;
+            _libraryVersion = GetVersionInfo(_libraryFacade, out archSpecificException);
+
+            if (archSpecificException != null)
+            {
+                Exception fallbackException;
+
+                var fallbackLibrary = new FallbackLibraryFacade();
+                _libraryVersion = GetVersionInfo(fallbackLibrary, out fallbackException);
+
+                if (fallbackException != null)
+                    throw archSpecificException;
+
+                _libraryFacade = fallbackLibrary;
+            }
+        }
+
+        private static LightningVersionInfo GetVersionInfo(INativeLibraryFacade lib, out Exception exception)
+        {
+            exception = null;
+
+            LightningVersionInfo versionInfo = null;
+
+            try
+            {
+                versionInfo = LightningVersionInfo.Create(lib);
+            }
+            catch (DllNotFoundException dllNotFoundException)
+            {
+                exception = dllNotFoundException;
+            }
+            catch (BadImageFormatException badImageFormatException)
+            {
+                exception = badImageFormatException;
+            }
+
+            return versionInfo;
         }
 
         #region Constants

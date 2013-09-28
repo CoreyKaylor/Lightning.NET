@@ -7,13 +7,6 @@ namespace LightningDB
 {
     public class LightningEnvironment : IClosingEventSource, IDisposable
     {
-        static LightningEnvironment()
-        {
-            _version = new Lazy<LightningVersionInfo>(() => new LightningVersionInfo());
-        }
-
-        private static readonly Lazy<LightningVersionInfo> _version;
-
         public const int DefaultMapSize = 10485760;
         public const int DefaultMaxReaders = 126;
         public const int DefaultMaxDatabases = 0;
@@ -60,7 +53,7 @@ namespace LightningDB
 
         public bool IsOpened { get; private set; }
 
-        public LightningVersionInfo Version { get { return _version.Value; } }
+        public LightningVersionInfo Version { get { return Native.LibraryVersion; } }
 
         public int MapSize
         {
