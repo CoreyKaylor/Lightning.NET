@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -64,6 +65,7 @@
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="GetByOperation.cs" />
+    <Compile Include="INativeLibraryFacade.cs" />
     <Compile Include="LightningDatabaseExtensions.cs" />
     <Compile Include="Converters\ConverterExtensions.cs" />
     <Compile Include="Converters\ConverterNotFoundException.cs" />
@@ -88,11 +90,25 @@
     <Compile Include="LightningVersionInfo.cs" />
     <Compile Include="MarshalValueStructure.cs" />
     <Compile Include="Native.cs" />
+    <Compile Include="NativeLibraryFacades.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>NativeLibraryFacades.tt</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PutOptions.cs" />
     <Compile Include="TransactionBeginFlags.cs" />
     <Compile Include="UnixAccessMode.cs" />
     <Compile Include="ValueStructure.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NativeLibraryFacades.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>NativeLibraryFacades.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

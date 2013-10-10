@@ -30,7 +30,11 @@ namespace LightningDB.Tests
         {
             _env.Close();
 
-            Directory.Delete(_path, true);
+            try
+            {
+                Directory.Delete(_path, true);
+            }
+            catch { }
         }
 
         [Test]

@@ -7,7 +7,7 @@ namespace LightningDB
     {
         private static string GetMessageByCode(int code)
         {
-            var ptr = Native.mdb_strerror(code);
+            var ptr = Native.Library.mdb_strerror(code);
             return Marshal.PtrToStringAnsi(ptr);
         }
 
