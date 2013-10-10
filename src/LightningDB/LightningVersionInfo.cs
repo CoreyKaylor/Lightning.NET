@@ -1,16 +1,28 @@
-﻿namespace LightningDB
+﻿using System;
+using System.Runtime.InteropServices;
+namespace LightningDB
 {
     public class LightningVersionInfo
     {
-        public LightningVersionInfo()
+        internal static LightningVersionInfo Create(INativeLibraryFacade library)
         {
-            int minor, major, patch;
-            this.Version = Native.mdb_version(out major, out minor, out patch);
+            if (library == null)
+                throw new ArgumentNullException("library");
 
-            this.Major = major;
-            this.Minor = minor;
-            this.Patch = patch;
+            IntPtr minor, major, patch;
+            var version = library.mdb_version(out major, out minor, out patch);
+
+            return new LightningVersionInfo
+            {
+                Version = Marshal.PtrToStringAnsi(version),
+                Major = major.ToInt32(),
+                Minor = minor.ToInt32(),
+                Patch = patch.ToInt32()
+            };
         }
+
+        private LightningVersionInfo()
+        {}
 
         public int Major { get; private set; }
 

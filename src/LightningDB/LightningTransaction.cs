@@ -22,7 +22,7 @@ namespace LightningDB
                 : IntPtr.Zero;
 
             IntPtr handle = default(IntPtr);
-            Native.Execute(() => Native.mdb_txn_begin(environment._handle, parentHandle, flags, out handle));
+            Native.Execute(lib => lib.mdb_txn_begin(environment._handle, parentHandle, flags, out handle));
 
             _handle = handle;
 
@@ -72,7 +72,7 @@ namespace LightningDB
 
         public void DropDatabase(LightningDatabase db, bool delete)
         {
-            Native.Execute(() => Native.mdb_drop(_handle, db._handle, delete));
+            Native.Execute(lib => lib.mdb_drop(_handle, db._handle, delete));
 
             db.Close(false);
         }
@@ -86,7 +86,7 @@ namespace LightningDB
                 var valueStruct = default(ValueStructure);
                 var keyStructure = keyMarshalStruct.ValueStructure;
 
-                var res = Native.Read(() => Native.mdb_get(_handle, dbi, ref keyStructure, out valueStruct));
+                var res = Native.Read(lib => lib.mdb_get(_handle, dbi, ref keyStructure, out valueStruct));
 
                 var exists = res != Native.MDB_NOTFOUND;
                 if (exists)
@@ -139,7 +139,7 @@ namespace LightningDB
                 var keyStruct = keyStructureMarshal.ValueStructure;
                 var valueStruct = valueStructureMarshal.ValueStructure;
 
-                Native.Execute(() => Native.mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options));
+                Native.Execute(lib => lib.mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options));
             }
         }
 
@@ -156,11 +156,11 @@ namespace LightningDB
                     using (var valueMarshalStruct = new MarshalValueStructure(value))
                     {
                         var valueStructure = valueMarshalStruct.ValueStructure;
-                        Native.Execute(() => Native.mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure));
+                        Native.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure));
                         return;
                     }
                 }
-                Native.Execute(() => Native.mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero));
+                Native.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero));
             }
         }
 
@@ -169,7 +169,7 @@ namespace LightningDB
             if (!this.IsReadOnly)
                 throw new InvalidOperationException("Can't reset non-readonly transaction");
 
-            Native.mdb_txn_reset(_handle);
+            Native.Library.mdb_txn_reset(_handle);
             this.State = LightningTransacrionState.Reseted;
         }
 
@@ -181,7 +181,7 @@ namespace LightningDB
             if (this.State != LightningTransacrionState.Reseted)
                 throw new InvalidOperationException("Transaction should be reseted first");
 
-            Native.mdb_txn_renew(_handle);
+            Native.Library.mdb_txn_renew(_handle);
             this.State = LightningTransacrionState.Active;
         }
 
@@ -197,7 +197,7 @@ namespace LightningDB
                 {
                     try
                     {
-                        Native.Execute(() => Native.mdb_txn_commit(_handle));
+                        Native.Execute(lib => lib.mdb_txn_commit(_handle));
                     }
                     catch (LightningException)
                     {
@@ -228,7 +228,7 @@ namespace LightningDB
                 }
                 finally
                 {
-                    Native.mdb_txn_abort(_handle);
+                    Native.Library.mdb_txn_abort(_handle);
                 }
             }
             finally

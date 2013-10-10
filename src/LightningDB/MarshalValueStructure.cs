@@ -23,6 +23,11 @@ namespace LightningDB
 
         public bool ValueInitialized { get; private set; }
 
+        private IntPtr GetSize(byte[] array)
+        {
+            return new IntPtr(array.Length);
+        }
+
         //Lazy initialization prevents possible leak.
         //If initialization was in ctor, Dispose could never be called
         //due to possible exception thrown by Marshal.Copy
@@ -32,10 +37,12 @@ namespace LightningDB
             {
                 if (!this.ValueInitialized)
                 {
+                    var size = this.GetSize(_value);
+                    
                     _structure = new ValueStructure
                     {
-                        data = Marshal.AllocHGlobal(_value.Length),
-                        size = _value.Length
+                        data = Marshal.AllocHGlobal(size),
+                        size = size
                     };
 
                     _shouldDispose = true;

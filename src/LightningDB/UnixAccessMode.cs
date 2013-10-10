@@ -3,7 +3,7 @@
 namespace LightningDB
 {
     [Flags]
-    internal enum UnixAccessMode : uint
+    public enum UnixAccessMode : uint
     {
         /// <summary>
         /// S_IRUSR
