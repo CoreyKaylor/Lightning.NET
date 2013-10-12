@@ -33,7 +33,7 @@ namespace LightningDB
         /// <summary>
         /// S_IXGRP
         /// </summary>
-        GroupExecute = 0x0008, 
+        GroupExec = 0x0008, 
 
         /// <summary>
         /// S_IROTH
@@ -48,7 +48,7 @@ namespace LightningDB
         /// <summary>
         /// S_IXOTH
         /// </summary>
-        OtherExecute = 0x0001,
+        OtherExec = 0x0001,
 
         Default = OwnerRead | OwnerWrite | GroupRead | GroupWrite | OtherRead | OtherWrite
     }

@@ -34,6 +34,7 @@ namespace LightningDB
             _shouldDispose = true;
             
             _handle = handle;
+            _accessMode = accessMode;
 
             this.Directory = directory;
             _openFlags = openFlags;
