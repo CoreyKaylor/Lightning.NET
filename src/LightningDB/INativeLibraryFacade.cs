@@ -98,7 +98,7 @@ namespace LightningDB
         /// A non-zero error value on failure and 0 on success. Some possible errors are:
         ///     EINVAL - an invalid parameter was specified, or the environment is already open.
         /// </returns>
-        int mdb_env_set_mapsize(IntPtr env, Int32 size); //OK
+        int mdb_env_set_mapsize(IntPtr env, long size); //OK
 
         /// <summary>
         /// Get the maximum number of threads for the environment.

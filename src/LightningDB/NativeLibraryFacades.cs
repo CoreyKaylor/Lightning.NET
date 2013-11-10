@@ -1,4 +1,8 @@
-﻿using System;
+﻿
+
+
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -7,6 +11,7 @@ using System.Text;
 namespace LightningDB
 {
 	
+
 	class Native32BitLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb32";
@@ -26,7 +31,7 @@ namespace LightningDB
         private static extern int mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, int mode);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_env_set_mapsize(IntPtr env, Int32 size);
+        private static extern int mdb_env_set_mapsize(IntPtr env, IntPtr size);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_get_maxreaders(IntPtr env, out UInt32 readers);
@@ -125,9 +130,22 @@ namespace LightningDB
             return Native32BitLibraryFacade.mdb_env_open(env, path, flags, mode);
         }
 
-        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, int size)
-        {
-            return Native32BitLibraryFacade.mdb_env_set_mapsize(env, size);
+        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, long size)
+        {		
+			IntPtr sizeValue;
+			if (size > Int32.MaxValue)
+			{
+				if (LightningConfig.Environment.AutoReduceMapSizeIn32BitProcess)
+					sizeValue = new IntPtr(Int32.MaxValue);
+				else
+					throw new InvalidOperationException("Can't set MapSize larger than Int32.MaxValue in 32-bit process");
+			}
+			else
+			{
+				sizeValue = new IntPtr((int) size);
+			}
+			
+            return Native32BitLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
@@ -256,6 +274,7 @@ namespace LightningDB
         }
 	}
 	
+
 	class Native64BitLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb64";
@@ -275,7 +294,7 @@ namespace LightningDB
         private static extern int mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, int mode);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_env_set_mapsize(IntPtr env, Int32 size);
+        private static extern int mdb_env_set_mapsize(IntPtr env, IntPtr size);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_get_maxreaders(IntPtr env, out UInt32 readers);
@@ -374,9 +393,11 @@ namespace LightningDB
             return Native64BitLibraryFacade.mdb_env_open(env, path, flags, mode);
         }
 
-        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, int size)
+        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, long size)
         {
-            return Native64BitLibraryFacade.mdb_env_set_mapsize(env, size);
+			var sizeValue = new IntPtr(size);
+			
+            return Native64BitLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
@@ -505,6 +526,7 @@ namespace LightningDB
         }
 	}
 	
+
 	class FallbackLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb";
@@ -524,7 +546,7 @@ namespace LightningDB
         private static extern int mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, int mode);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_env_set_mapsize(IntPtr env, Int32 size);
+        private static extern int mdb_env_set_mapsize(IntPtr env, IntPtr size);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_get_maxreaders(IntPtr env, out UInt32 readers);
@@ -623,9 +645,22 @@ namespace LightningDB
             return FallbackLibraryFacade.mdb_env_open(env, path, flags, mode);
         }
 
-        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, int size)
-        {
-            return FallbackLibraryFacade.mdb_env_set_mapsize(env, size);
+        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, long size)
+        {		
+			IntPtr sizeValue;
+			if (!Environment.Is64BitProcess && size > Int32.MaxValue)
+			{
+				if (LightningConfig.Environment.AutoReduceMapSizeIn32BitProcess)
+					sizeValue = new IntPtr(Int32.MaxValue);
+				else
+					throw new InvalidOperationException("Can't set MapSize larger than Int32.MaxValue in 32-bit process");
+			}
+			else
+			{
+				sizeValue = new IntPtr((int) size);
+			}
+			
+            return FallbackLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
@@ -754,4 +789,5 @@ namespace LightningDB
         }
 	}
 	
+
 }

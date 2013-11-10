@@ -66,6 +66,7 @@
     </Compile>
     <Compile Include="GetByOperation.cs" />
     <Compile Include="INativeLibraryFacade.cs" />
+    <Compile Include="LightningConfig.cs" />
     <Compile Include="LightningDatabaseExtensions.cs" />
     <Compile Include="Converters\ConverterExtensions.cs" />
     <Compile Include="Converters\ConverterNotFoundException.cs" />

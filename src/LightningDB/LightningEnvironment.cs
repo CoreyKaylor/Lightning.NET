@@ -7,17 +7,13 @@ namespace LightningDB
 {
     public class LightningEnvironment : IClosingEventSource, IDisposable
     {
-        public const int DefaultMapSize = 10485760;
-        public const int DefaultMaxReaders = 126;
-        public const int DefaultMaxDatabases = 0;
-
         private readonly UnixAccessMode _accessMode;
         private readonly EnvironmentOpenFlags _openFlags;
         internal IntPtr _handle;
 
         private bool _shouldDispose;
 
-        private int _mapSize;
+        private long _mapSize;
         private int _maxDbs;
 
         private readonly ConcurrentDictionary<string, LightningDatabase> _openedDatabases;
@@ -39,8 +35,15 @@ namespace LightningDB
             this.Directory = directory;
             _openFlags = openFlags;
 
-            _mapSize = DefaultMapSize;
-            _maxDbs = DefaultMaxDatabases;
+            if (LightningConfig.Environment.DefaultMapSize != LightningConfig.Environment.LibDefaultMapSize)
+                this.MapSize = LightningConfig.Environment.DefaultMapSize;
+            else
+                _mapSize = LightningConfig.Environment.LibDefaultMapSize;
+
+            if (LightningConfig.Environment.DefaultMaxDatabases != LightningConfig.Environment.LibDefaultMaxDatabases)
+                this.MapDatabases = LightningConfig.Environment.DefaultMaxDatabases;
+            else
+                _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
 
             _openedDatabases = new ConcurrentDictionary<string, LightningDatabase>();
             _databasesForReuse = new HashSet<uint>();
@@ -56,7 +59,7 @@ namespace LightningDB
 
         public LightningVersionInfo Version { get { return Native.LibraryVersion; } }
 
-        public int MapSize
+        public long MapSize
         {
             get { return _mapSize; }
             set
@@ -65,7 +68,7 @@ namespace LightningDB
                     throw new InvalidOperationException("Can't change MapSize of opened environment");
 
                 if (value == _mapSize) 
-                    return;
+                    return;                
 
                 Native.Execute(lib => lib.mdb_env_set_mapsize(_handle, value));
 

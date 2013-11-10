@@ -41,7 +41,7 @@ namespace LightningDB
         private static extern int mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, int mode);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_env_set_mapsize(IntPtr env, Int32 size);
+        private static extern int mdb_env_set_mapsize(IntPtr env, IntPtr size);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_get_maxreaders(IntPtr env, out UInt32 readers);
@@ -140,9 +140,25 @@ namespace LightningDB
             return <#= pair.Value #>LibraryFacade.mdb_env_open(env, path, flags, mode);
         }
 
-        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, int size)
-        {
-            return <#= pair.Value #>LibraryFacade.mdb_env_set_mapsize(env, size);
+        int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, long size)
+        {<# if (!pair.Value.EndsWith("64Bit")) { #>
+		
+			IntPtr sizeValue;
+			if (<#= pair.Value.Equals("Fallback") ? "!Environment.Is64BitProcess && " : "" #>size > Int32.MaxValue)
+			{
+				if (LightningConfig.Environment.AutoReduceMapSizeIn32BitProcess)
+					sizeValue = new IntPtr(Int32.MaxValue);
+				else
+					throw new InvalidOperationException("Can't set MapSize larger than Int32.MaxValue in 32-bit process");
+			}
+			else
+			{
+				sizeValue = new IntPtr((int) size);
+			}
+			<# } else { #>
+			var sizeValue = new IntPtr(size);
+			<# } #>
+            return <#= pair.Value #>LibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
