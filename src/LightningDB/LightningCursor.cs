@@ -179,7 +179,7 @@ namespace LightningDB
                 var keyStruct = keyMarshalStruct.ValueStructure;
                 var valueStruct = valueMarshalStruct.ValueStructure;
 
-                Native.Execute(lib => lib.mdb_cursor_put(_handle, keyStruct, valueStruct, options));
+                Native.Execute(lib => lib.mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, options));
             }
         }
 

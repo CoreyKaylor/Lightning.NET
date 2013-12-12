@@ -477,7 +477,7 @@ namespace LightningDB
         ///     EACCES - an attempt was made to modify a read-only database.
         ///     EINVAL - an invalid parameter was specified.
         /// </returns>
-        int mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags); //OK
+        int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags); //OK
 
         /// <summary>
         /// Delete current key/data pair.

@@ -103,7 +103,7 @@ namespace LightningDB
         private static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags);
+        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -263,9 +263,9 @@ namespace LightningDB
             return Native32BitLibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
         {
-            return Native32BitLibraryFacade.mdb_cursor_put(cursor, key, data, flags);
+            return Native32BitLibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }
 
         int INativeLibraryFacade.mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
@@ -366,7 +366,7 @@ namespace LightningDB
         private static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags);
+        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -515,9 +515,9 @@ namespace LightningDB
             return Native64BitLibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
         {
-            return Native64BitLibraryFacade.mdb_cursor_put(cursor, key, data, flags);
+            return Native64BitLibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }
 
         int INativeLibraryFacade.mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
@@ -618,7 +618,7 @@ namespace LightningDB
         private static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags);
+        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -778,9 +778,9 @@ namespace LightningDB
             return FallbackLibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
         {
-            return FallbackLibraryFacade.mdb_cursor_put(cursor, key, data, flags);
+            return FallbackLibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }
 
         int INativeLibraryFacade.mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
