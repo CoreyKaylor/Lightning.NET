@@ -64,10 +64,21 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Collections\CursorGenericEnumerator.cs" />
+    <Compile Include="Collections\CursorGenericEnumerable.cs" />
+    <Compile Include="Collections\CursorEnumerable.cs" />
+    <Compile Include="Collections\CursorEnumerator.cs" />
+    <Compile Include="CursorGetByOperation.cs" />
     <Compile Include="GetByOperation.cs" />
-    <Compile Include="INativeLibraryFacade.cs" />
+    <Compile Include="LightningCursorExtensions.cs" />
+    <Compile Include="LightningCursorMoveExtensions.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>LightningCursorMoveExtensions.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Native\INativeLibraryFacade.cs" />
     <Compile Include="LightningConfig.cs" />
-    <Compile Include="LightningDatabaseExtensions.cs" />
+    <Compile Include="LightningTransactionExtensions.cs" />
     <Compile Include="Converters\ConverterExtensions.cs" />
     <Compile Include="Converters\ConverterNotFoundException.cs" />
     <Compile Include="Converters\ConverterStore.cs" />
@@ -89,9 +100,9 @@
     <Compile Include="LightningTransacrionState.cs" />
     <Compile Include="LightningTransaction.cs" />
     <Compile Include="LightningVersionInfo.cs" />
-    <Compile Include="MarshalValueStructure.cs" />
-    <Compile Include="Native.cs" />
-    <Compile Include="NativeLibraryFacades.cs">
+    <Compile Include="Native\MarshalValueStructure.cs" />
+    <Compile Include="Native\Native.cs" />
+    <Compile Include="Native\NativeLibraryFacades.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>NativeLibraryFacades.tt</DependentUpon>
@@ -100,10 +111,14 @@
     <Compile Include="PutOptions.cs" />
     <Compile Include="TransactionBeginFlags.cs" />
     <Compile Include="UnixAccessMode.cs" />
-    <Compile Include="ValueStructure.cs" />
+    <Compile Include="Native\ValueStructure.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="NativeLibraryFacades.tt">
+    <None Include="LightningCursorMoveExtensions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>LightningCursorMoveExtensions.cs</LastGenOutput>
+    </None>
+    <None Include="Native\NativeLibraryFacades.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>NativeLibraryFacades.cs</LastGenOutput>
     </None>

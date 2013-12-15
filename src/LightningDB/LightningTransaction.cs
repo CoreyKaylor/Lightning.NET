@@ -1,4 +1,5 @@
 ﻿using System;
+using LightningDB.Native;
 
 namespace LightningDB
 {
@@ -22,7 +23,7 @@ namespace LightningDB
                 : IntPtr.Zero;
 
             IntPtr handle = default(IntPtr);
-            Native.Execute(lib => lib.mdb_txn_begin(environment._handle, parentHandle, flags, out handle));
+            NativeMethods.Execute(lib => lib.mdb_txn_begin(environment._handle, parentHandle, flags, out handle));
 
             _handle = handle;
 
@@ -72,9 +73,14 @@ namespace LightningDB
 
         public void DropDatabase(LightningDatabase db, bool delete)
         {
-            Native.Execute(lib => lib.mdb_drop(_handle, db._handle, delete));
+            NativeMethods.Execute(lib => lib.mdb_drop(_handle, db._handle, delete));
 
             db.Close(false);
+        }
+
+        public LightningCursor CreateCursor(LightningDatabase db)
+        {
+            return new LightningCursor(db, this);
         }
 
         private bool TryGetInternal(UInt32 dbi, byte[] key, out Func<byte[]> valueFactory)
@@ -86,9 +92,9 @@ namespace LightningDB
                 var valueStruct = default(ValueStructure);
                 var keyStructure = keyMarshalStruct.ValueStructure;
 
-                var res = Native.Read(lib => lib.mdb_get(_handle, dbi, ref keyStructure, out valueStruct));
+                var res = NativeMethods.Read(lib => lib.mdb_get(_handle, dbi, ref keyStructure, out valueStruct));
 
-                var exists = res != Native.MDB_NOTFOUND;
+                var exists = res != NativeMethods.MDB_NOTFOUND;
                 if (exists)
                     valueFactory = () => valueStruct.ToByteArray(res);
 
@@ -113,7 +119,7 @@ namespace LightningDB
             var result = this.TryGetInternal(db._handle, key, out factory);
 
             value = result
-                ? value = factory.Invoke()
+                ? factory.Invoke()
                 : null;
 
             return result;
@@ -139,7 +145,7 @@ namespace LightningDB
                 var keyStruct = keyStructureMarshal.ValueStructure;
                 var valueStruct = valueStructureMarshal.ValueStructure;
 
-                Native.Execute(lib => lib.mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options));
+                NativeMethods.Execute(lib => lib.mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options));
             }
         }
 
@@ -156,11 +162,11 @@ namespace LightningDB
                     using (var valueMarshalStruct = new MarshalValueStructure(value))
                     {
                         var valueStructure = valueMarshalStruct.ValueStructure;
-                        Native.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure));
+                        NativeMethods.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure));
                         return;
                     }
                 }
-                Native.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero));
+                NativeMethods.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero));
             }
         }
 
@@ -169,7 +175,7 @@ namespace LightningDB
             if (!this.IsReadOnly)
                 throw new InvalidOperationException("Can't reset non-readonly transaction");
 
-            Native.Library.mdb_txn_reset(_handle);
+            NativeMethods.Library.mdb_txn_reset(_handle);
             this.State = LightningTransacrionState.Reseted;
         }
 
@@ -181,7 +187,7 @@ namespace LightningDB
             if (this.State != LightningTransacrionState.Reseted)
                 throw new InvalidOperationException("Transaction should be reseted first");
 
-            Native.Library.mdb_txn_renew(_handle);
+            NativeMethods.Library.mdb_txn_renew(_handle);
             this.State = LightningTransacrionState.Active;
         }
 
@@ -197,7 +203,7 @@ namespace LightningDB
                 {
                     try
                     {
-                        Native.Execute(lib => lib.mdb_txn_commit(_handle));
+                        NativeMethods.Execute(lib => lib.mdb_txn_commit(_handle));
                     }
                     catch (LightningException)
                     {
@@ -228,7 +234,7 @@ namespace LightningDB
                 }
                 finally
                 {
-                    Native.Library.mdb_txn_abort(_handle);
+                    NativeMethods.Library.mdb_txn_abort(_handle);
                 }
             }
             finally

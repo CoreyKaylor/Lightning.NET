@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using LightningDB.Native;
 
 namespace LightningDB
 {
@@ -7,7 +8,7 @@ namespace LightningDB
     {
         private static string GetMessageByCode(int code)
         {
-            var ptr = Native.Library.mdb_strerror(code);
+            var ptr = NativeMethods.Library.mdb_strerror(code);
             return Marshal.PtrToStringAnsi(ptr);
         }
 

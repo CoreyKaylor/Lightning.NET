@@ -1,17 +1,12 @@
-﻿
-
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace LightningDB
+namespace LightningDB.Native
 {
 	
-
 	class Native32BitLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb32";
@@ -144,8 +139,7 @@ namespace LightningDB
 			{
 				sizeValue = new IntPtr((int) size);
 			}
-			
-            return Native32BitLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
+			            return Native32BitLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
@@ -274,7 +268,6 @@ namespace LightningDB
         }
 	}
 	
-
 	class Native64BitLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb64";
@@ -394,10 +387,8 @@ namespace LightningDB
         }
 
         int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, long size)
-        {
-			var sizeValue = new IntPtr(size);
-			
-            return Native64BitLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
+        {			var sizeValue = new IntPtr(size);
+			            return Native64BitLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
@@ -526,7 +517,6 @@ namespace LightningDB
         }
 	}
 	
-
 	class FallbackLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb";
@@ -659,8 +649,7 @@ namespace LightningDB
 			{
 				sizeValue = new IntPtr((int) size);
 			}
-			
-            return FallbackLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
+			            return FallbackLibraryFacade.mdb_env_set_mapsize(env, sizeValue);
         }
 
         int INativeLibraryFacade.mdb_env_get_maxreaders(IntPtr env, out uint readers)
@@ -789,5 +778,4 @@ namespace LightningDB
         }
 	}
 	
-
 }

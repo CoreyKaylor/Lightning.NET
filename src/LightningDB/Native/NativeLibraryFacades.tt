@@ -15,7 +15,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace LightningDB
+namespace LightningDB.Native
 {
 	<# 
 		foreach (var pair in facades) 
@@ -276,9 +276,9 @@ namespace LightningDB
             return <#= pair.Value #>LibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ValueStructure key, ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
         {
-            return <#= pair.Value #>LibraryFacade.mdb_cursor_put(cursor, key, data, flags);
+            return <#= pair.Value #>LibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }
 
         int INativeLibraryFacade.mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)

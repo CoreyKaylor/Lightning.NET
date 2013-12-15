@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using LightningDB.Native;
+
 namespace LightningDB
 {
     public class LightningVersionInfo

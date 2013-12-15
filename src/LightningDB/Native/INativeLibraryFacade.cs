@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace LightningDB
+namespace LightningDB.Native
 {
     interface INativeLibraryFacade
     {

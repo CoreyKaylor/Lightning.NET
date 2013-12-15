@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using LightningDB.Collections;
+using LightningDB.Native;
 
 namespace LightningDB
 {
-    public static class LightningDatabaseExtensions
+    public static class LightningTransactionExtensions
     {
         public static GetByOperation GetBy<TKey>(this LightningTransaction txn, LightningDatabase db, TKey key)
         {
@@ -81,19 +83,19 @@ namespace LightningDB
             txn.Put(db, keyBytes, valueBytes, options);
         }
 
-        public static KeyValuePair<TKey, TValue> GetCurrent<TKey, TValue>(this LightningCursor cursor)
+        public static IEnumerable<KeyValuePair<TKey, TValue>> EnumerateDatabase<TKey, TValue>(this LightningTransaction txn, LightningDatabase db)
         {
-            var pair = cursor.GetCurrent();
+            return new CursorGenericEnumerable<TKey, TValue>(txn, db);
+        }
 
-            var key = cursor.Database.FromBytes<TKey>(pair.Key);
-            var value = cursor.Database.FromBytes<TValue>(pair.Value);
-
-            return new KeyValuePair<TKey, TValue>(key, value);
+        public static IEnumerable<CursorGetByOperation> EnumerateDatabase(this LightningTransaction txn, LightningDatabase db)
+        {
+            return new CursorEnumerable(txn, db);
         }
 
         internal static byte[] ToByteArray(this ValueStructure valueStructure, int resultCode)
         {
-            if (resultCode == Native.MDB_NOTFOUND)
+            if (resultCode == NativeMethods.MDB_NOTFOUND)
                 return null;
 
             var buffer = new byte[valueStructure.size.ToInt32()];

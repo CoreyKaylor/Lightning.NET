@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using LightningDB.Native;
 
 namespace LightningDB
 {
@@ -20,7 +21,7 @@ namespace LightningDB
                 throw new ArgumentException("db and txn belong to different environments");
 
             IntPtr handle = default(IntPtr);
-            Native.Execute(lib => lib.mdb_cursor_open(txn._handle, db._handle, out handle));
+            NativeMethods.Execute(lib => lib.mdb_cursor_open(txn._handle, db._handle, out handle));
 
             _handle = handle;
 
@@ -58,59 +59,60 @@ namespace LightningDB
 
         public LightningTransaction Transaction { get; private set; }
 
-        public KeyValuePair<byte[], byte[]> MoveTo(byte[] key)
+        public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key)
         {
             using (var marshalKey = new MarshalValueStructure(key))
                 return this.Get(CursorOperation.Set, marshalKey.ValueStructure);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveTo(byte[] key, byte[] value)
+        public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key, byte[] value)
         {
             using (var marshalKey = new MarshalValueStructure(key))
             using (var marshalValue = new MarshalValueStructure(value))
                 return this.Get(CursorOperation.GetBoth, marshalKey.ValueStructure, marshalValue.ValueStructure);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveToFirstValueAfter(byte[] key, byte[] value)
+        public KeyValuePair<byte[], byte[]>? MoveToFirstValueAfter(byte[] key, byte[] value)
         {
             using (var marshalKey = new MarshalValueStructure(key))
             using (var marshalValue = new MarshalValueStructure(value))
                 return this.Get(CursorOperation.GetBothRange, marshalKey.ValueStructure, marshalValue.ValueStructure);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveToFirstAfter(byte[] key)
+        public KeyValuePair<byte[], byte[]>? MoveToFirstAfter(byte[] key)
         {
             using(var marshalKey = new MarshalValueStructure(key))
                 return this.Get(CursorOperation.SetRange, marshalKey.ValueStructure);
         }
 
         //What difference from CursorOperation.Set
-        //public KeyValuePair<byte[], byte[]> MoveTo(ValueStructure key)
-        //{
-        //    return this.Get(CursorOperation.SetKey, key, null);
-        //}
+        /*public KeyValuePair<byte[], byte[]> MoveTo(byte[] key)
+        {
+            using (var marshalKey = new MarshalValueStructure(key))
+                return this.Get(CursorOperation.SetKey, marshalKey.ValueStructure, null);
+        }*/
 
-        public KeyValuePair<byte[], byte[]> MoveToFirst()
+        public KeyValuePair<byte[], byte[]>? MoveToFirst()
         {
             return this.Get(CursorOperation.First);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveToFirstDuplicate()
+        public KeyValuePair<byte[], byte[]>? MoveToFirstDuplicate()
         {
             return this.Get(CursorOperation.FirstDuplicate);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveToLast()
+        public KeyValuePair<byte[], byte[]>? MoveToLast()
         {
             return this.Get(CursorOperation.Last);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveToLastDuplicate()
+        public KeyValuePair<byte[], byte[]>? MoveToLastDuplicate()
         {
             return this.Get(CursorOperation.LastDuplicate);
         }
 
-        public KeyValuePair<byte[], byte[]> GetCurrent()
+        public KeyValuePair<byte[], byte[]>? GetCurrent()
         {
             return this.Get(CursorOperation.GetCurrent);
         }
@@ -118,21 +120,24 @@ namespace LightningDB
         //Not sure what it should do and if the wrapper is correct
         public byte[] GetMultiple()
         {
-            return this.Get(CursorOperation.GetMultiple)
-                .Value;
+            var result = this.Get(CursorOperation.GetMultiple);
+            if (!result.HasValue)
+                return null;
+
+            return result.Value.Value;
         }
 
-        public KeyValuePair<byte[], byte[]> MoveNext()
+        public KeyValuePair<byte[], byte[]>? MoveNext()
         {
             return this.Get(CursorOperation.Next);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveNextDuplicate()
+        public KeyValuePair<byte[], byte[]>? MoveNextDuplicate()
         {
             return this.Get(CursorOperation.NextDuplicate);
         }
 
-        public KeyValuePair<byte[], byte[]> MoveNextNoDuplicate()
+        public KeyValuePair<byte[], byte[]>? MoveNextNoDuplicate()
         {
             return this.Get(CursorOperation.NextNoDuplicate);
         }
@@ -140,37 +145,40 @@ namespace LightningDB
         //Not sure what it should do and if the wrapper is correct
         public byte[] MoveNextMultiple()
         {
-            return this.Get(CursorOperation.NextMultiple)
-                .Value;
+            var result =  this.Get(CursorOperation.NextMultiple);
+            if (!result.HasValue)
+                return null;
+
+            return result.Value.Value;
         }
 
-        public KeyValuePair<byte[], byte[]> MovePrev()
+        public KeyValuePair<byte[], byte[]>? MovePrev()
         {
             return this.Get(CursorOperation.Previous);
         }
 
-        public KeyValuePair<byte[], byte[]> MovePrevDuplicate()
+        public KeyValuePair<byte[], byte[]>? MovePrevDuplicate()
         {
             return this.Get(CursorOperation.PreviousDuplicate);
         }
 
-        public KeyValuePair<byte[], byte[]> MovePrevNoDuplicate()
+        public KeyValuePair<byte[], byte[]>? MovePrevNoDuplicate()
         {
             return this.Get(CursorOperation.PreviousNoDuplicate);
         }
-
-        //TODO: tests
-        private KeyValuePair<byte[], byte[]> Get(CursorOperation operation, ValueStructure? key = null, ValueStructure? value = null)
+        
+        private KeyValuePair<byte[], byte[]>? Get(CursorOperation operation, ValueStructure? key = null, ValueStructure? value = null)
         {
             var keyStruct = key.GetValueOrDefault();
             var valueStruct = value.GetValueOrDefault();
 
-            var res = Native.Read(lib => lib.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
+            var res = NativeMethods.Read(lib => lib.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
 
-            return new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
+            return res == NativeMethods.MDB_NOTFOUND
+                ? (KeyValuePair<byte[], byte[]>?) null
+                : new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
         }
 
-        //TODO: tests
         public void Put(byte[] key, byte[] value, PutOptions options)
         {
             using(var keyMarshalStruct = new MarshalValueStructure(key))
@@ -179,14 +187,14 @@ namespace LightningDB
                 var keyStruct = keyMarshalStruct.ValueStructure;
                 var valueStruct = valueMarshalStruct.ValueStructure;
 
-                Native.Execute(lib => lib.mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, options));
+                NativeMethods.Execute(lib => lib.mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, options));
             }
         }
 
         //TODO: tests
         public void Delete(CursorDeleteOption option)
         {
-            Native.Execute(lib => lib.mdb_cursor_del(_handle, option));
+            NativeMethods.Execute(lib => lib.mdb_cursor_del(_handle, option));
         }
 
         public void Renew()
@@ -203,7 +211,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            Native.Execute(lib => lib.mdb_cursor_renew(txn._handle, _handle));
+            NativeMethods.Execute(lib => lib.mdb_cursor_renew(txn._handle, _handle));
         }
 
         //TODO: tests
@@ -211,7 +219,7 @@ namespace LightningDB
         {
             try
             {
-                Native.Library.mdb_cursor_close(_handle);
+                NativeMethods.Library.mdb_cursor_close(_handle);
             }
             finally
             {

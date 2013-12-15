@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using LightningDB.Native;
 
 namespace LightningDB
 {
@@ -23,7 +24,7 @@ namespace LightningDB
                 throw new ArgumentNullException("tran");
 
             UInt32 handle = default(UInt32);
-            Native.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags, out handle));
+            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags, out handle));
 
             _name = name ?? DefaultDatabaseName;
 
@@ -61,7 +62,7 @@ namespace LightningDB
                 try
                 {
                     if (releaseHandle)
-                        Native.Library.mdb_dbi_close(this.Environment._handle, _handle);
+                        NativeMethods.Library.mdb_dbi_close(this.Environment._handle, _handle);
                 }
                 finally
                 {

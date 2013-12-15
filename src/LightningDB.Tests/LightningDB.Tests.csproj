@@ -68,6 +68,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="CursorTests.cs" />
     <Compile Include="DatabaseIOTests.cs" />
     <Compile Include="DatabaseTests.cs" />
     <Compile Include="EnvironmentTests.cs" />

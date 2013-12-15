@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace LightningDB
+namespace LightningDB.Native
 {
     internal class MarshalValueStructure : IDisposable
     {

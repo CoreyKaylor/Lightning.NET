@@ -1,4 +1,6 @@
-﻿namespace LightningDB
+﻿using System;
+using System.Collections.Generic;
+namespace LightningDB
 {
     public class GetByOperation
     {
@@ -15,5 +17,5 @@
         {
             return _db.FromBytes<TValue>(_rawValue);
         }
-    }
+    }    
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace LightningDB
+namespace LightningDB.Native
 {
-    internal static class Native
+    internal static class NativeMethods
     {
         private static readonly LightningVersionInfo _libraryVersion;
 
@@ -13,7 +13,7 @@ namespace LightningDB
 
         public static LightningVersionInfo LibraryVersion { get { return _libraryVersion; } }
 
-        static Native()
+        static NativeMethods()
         {
             _libraryFacade = Environment.Is64BitProcess
                 ? new Native64BitLibraryFacade()
