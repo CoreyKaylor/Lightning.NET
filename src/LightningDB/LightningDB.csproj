@@ -97,7 +97,7 @@
     <Compile Include="LightningEnvironment.cs" />
     <Compile Include="LightningException.cs" />
     <Compile Include="EnvironmentOpenFlags.cs" />
-    <Compile Include="LightningTransacrionState.cs" />
+    <Compile Include="LightningTransactionState.cs" />
     <Compile Include="LightningTransaction.cs" />
     <Compile Include="LightningVersionInfo.cs" />
     <Compile Include="Native\MarshalValueStructure.cs" />

@@ -42,7 +42,7 @@ namespace LightningDB
                 _mapSize = LightningConfig.Environment.LibDefaultMapSize;
 
             if (LightningConfig.Environment.DefaultMaxDatabases != LightningConfig.Environment.LibDefaultMaxDatabases)
-                this.MapDatabases = LightningConfig.Environment.DefaultMaxDatabases;
+                this.MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
             else
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
 
@@ -95,7 +95,7 @@ namespace LightningDB
             }
         }
 
-        public int MapDatabases
+        public int MaxDatabases
         {
             get { return _maxDbs; }
             set

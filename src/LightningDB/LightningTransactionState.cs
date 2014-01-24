@@ -1,6 +1,6 @@
 ﻿namespace LightningDB
 {
-    public enum LightningTransacrionState
+    public enum LightningTransactionState
     {
         Active,
         Reseted,

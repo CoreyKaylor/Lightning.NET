@@ -27,7 +27,7 @@ namespace LightningDB
 
             _handle = handle;
 
-            this.State = LightningTransacrionState.Active;
+            this.State = LightningTransactionState.Active;
 
             if (parent == null)
                 this.Environment.Closing += EnvironmentOrParentTransactionClosing;
@@ -54,7 +54,7 @@ namespace LightningDB
             }
         }
 
-        public LightningTransacrionState State { get; private set; }
+        public LightningTransactionState State { get; private set; }
 
         public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
         {
@@ -176,7 +176,7 @@ namespace LightningDB
                 throw new InvalidOperationException("Can't reset non-readonly transaction");
 
             NativeMethods.Library.mdb_txn_reset(_handle);
-            this.State = LightningTransacrionState.Reseted;
+            this.State = LightningTransactionState.Reseted;
         }
 
         public void Renew()
@@ -184,11 +184,11 @@ namespace LightningDB
             if (!this.IsReadOnly)
                 throw new InvalidOperationException("Can't renew non-readonly transaction");
 
-            if (this.State != LightningTransacrionState.Reseted)
+            if (this.State != LightningTransactionState.Reseted)
                 throw new InvalidOperationException("Transaction should be reseted first");
 
             NativeMethods.Library.mdb_txn_renew(_handle);
-            this.State = LightningTransacrionState.Active;
+            this.State = LightningTransactionState.Active;
         }
 
         public void Commit()
@@ -210,7 +210,7 @@ namespace LightningDB
                         this.Abort(false);
                         throw;
                     }
-                    this.State = LightningTransacrionState.Commited;
+                    this.State = LightningTransactionState.Commited;
                 }
             }
             finally
@@ -240,7 +240,7 @@ namespace LightningDB
             finally
             {
                 this.DetachClosingHandler();
-                this.State = LightningTransacrionState.Aborted;
+                this.State = LightningTransactionState.Aborted;
             }
         }
 
@@ -272,7 +272,7 @@ namespace LightningDB
 
         public void Dispose()
         {
-            this.Dispose(this.State != LightningTransacrionState.Aborted && this.State != LightningTransacrionState.Commited);
+            this.Dispose(this.State != LightningTransactionState.Aborted && this.State != LightningTransactionState.Commited);
         }
     }
 }

@@ -46,7 +46,7 @@ namespace LightningDB.Tests
             _txn = _env.BeginTransaction();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Active, _txn.State);
+            Assert.AreEqual(LightningTransactionState.Active, _txn.State);
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace LightningDB.Tests
             _env.Close();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Aborted, _txn.State);
+            Assert.AreEqual(LightningTransactionState.Aborted, _txn.State);
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace LightningDB.Tests
             _txn.Commit();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Commited, _txn.State);
+            Assert.AreEqual(LightningTransactionState.Commited, _txn.State);
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace LightningDB.Tests
             var subTxn = _txn.BeginTransaction();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Active, subTxn.State);
+            Assert.AreEqual(LightningTransactionState.Active, subTxn.State);
         }
 
         [Test]
@@ -99,7 +99,7 @@ namespace LightningDB.Tests
             _txn.Abort();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Aborted, child.State);
+            Assert.AreEqual(LightningTransactionState.Aborted, child.State);
         }
 
         [Test]
@@ -113,7 +113,7 @@ namespace LightningDB.Tests
             _txn.Commit();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Aborted, child.State);
+            Assert.AreEqual(LightningTransactionState.Aborted, child.State);
         }
 
         [Test]
@@ -127,7 +127,7 @@ namespace LightningDB.Tests
             _env.Close();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Aborted, child.State);
+            Assert.AreEqual(LightningTransactionState.Aborted, child.State);
         }
 
         [Test]
@@ -140,7 +140,7 @@ namespace LightningDB.Tests
             _txn.Reset();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Reseted, _txn.State);
+            Assert.AreEqual(LightningTransactionState.Reseted, _txn.State);
         }
 
         [Test]
@@ -154,7 +154,7 @@ namespace LightningDB.Tests
             _txn.Renew();
 
             //assert
-            Assert.AreEqual(LightningTransacrionState.Active, _txn.State);
+            Assert.AreEqual(LightningTransactionState.Active, _txn.State);
         }
 
         [Test]

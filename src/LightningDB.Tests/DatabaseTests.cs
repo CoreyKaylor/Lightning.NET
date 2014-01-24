@@ -37,7 +37,7 @@ namespace LightningDB.Tests
         public void DatabaseShouldBeCreated()
         {
             var dbName = "test";
-            _env.MapDatabases = 2;
+            _env.MaxDatabases = 2;
             _env.Open();
             _txn = _env.BeginTransaction();
             //arrange
