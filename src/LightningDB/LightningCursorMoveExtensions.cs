@@ -5,6 +5,9 @@ using LightningDB.Native;
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Extensions for LightningCursor's Move* methods
+    /// </summary>
     public static class LightningCursorMoveExtensions
     {
         private static CursorGetByOperation CursorMoveBy(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover)
@@ -137,5 +140,5 @@ namespace LightningDB
         {
             return CursorMove<TKey, TValue>(cur, cur.MovePrevNoDuplicate, out pair);
         }
-            }
+    }
 }

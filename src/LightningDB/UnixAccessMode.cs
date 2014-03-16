@@ -2,6 +2,9 @@
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Unix file access privilegies
+    /// </summary>
     [Flags]
     public enum UnixAccessMode : uint
     {
@@ -50,6 +53,9 @@ namespace LightningDB
         /// </summary>
         OtherExec = 0x0001,
 
+        /// <summary>
+        /// Owner, Group, Other Read/Write
+        /// </summary>
         Default = OwnerRead | OwnerWrite | GroupRead | GroupWrite | OtherRead | OtherWrite
     }
 }

@@ -2,9 +2,15 @@
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Options to open LMDB environment
+    /// </summary>
     [Flags]
     public enum EnvironmentOpenFlags
     {
+        /// <summary>
+        /// No special options.
+        /// </summary>
         None = 0,
 
         /// <summary>

@@ -4,6 +4,9 @@ using LightningDB.Native;
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Represents lmdb version information.
+    /// </summary>
     public class LightningVersionInfo
     {
         internal static LightningVersionInfo Create(INativeLibraryFacade library)
@@ -26,12 +29,24 @@ namespace LightningDB
         private LightningVersionInfo()
         {}
 
+        /// <summary>
+        /// Major version number.
+        /// </summary>
         public int Major { get; private set; }
 
+        /// <summary>
+        /// Minor version number.
+        /// </summary>
         public int Minor { get; private set; }
 
+        /// <summary>
+        /// Patch version number.
+        /// </summary>
         public int Patch { get; private set; }
 
+        /// <summary>
+        /// Version string.
+        /// </summary>
         public string Version { get; private set; }
     }
 }

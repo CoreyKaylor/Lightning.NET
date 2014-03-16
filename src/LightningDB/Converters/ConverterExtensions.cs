@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Converters
 {
+    /// <summary>
+    /// Extension methods for converters and ConverterStore
+    /// </summary>
     public static class ConverterExtensions
     {
         public static void AddConvertToBytes<TFrom>(this ConverterStore store, Func<LightningDatabase, TFrom, byte[]> convert)

@@ -82,7 +82,6 @@ namespace LightningDB.Native
         int mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, int mode);
 
         /// <summary>
-        /// Use with native library built for 32-bit systems.
         /// Set the size of the memory map to use for this environment.
         /// The size should be a multiple of the OS page size. 
         /// The default is 10485760 bytes. 

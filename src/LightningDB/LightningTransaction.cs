@@ -3,12 +3,24 @@ using LightningDB.Native;
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Represents a transaction.
+    /// </summary>
     public class LightningTransaction : IClosingEventSource, IDisposable
     {
+        /// <summary>
+        /// Default options used to begin new transactions.
+        /// </summary>
         public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
         internal IntPtr _handle;
 
+        /// <summary>
+        /// Created new instance of LightningTransaction
+        /// </summary>
+        /// <param name="environment">Environment.</param>
+        /// <param name="parent">Parent transaction or null.</param>
+        /// <param name="flags">Transaction open options.</param>
         public LightningTransaction(LightningEnvironment environment, LightningTransaction parent, TransactionBeginFlags flags)
         {
             if (environment == null)
@@ -35,8 +47,15 @@ namespace LightningDB
                 parent.Closing += EnvironmentOrParentTransactionClosing;
         }
 
+        /// <summary>
+        /// Triggered when the transaction is going to be deallocated.
+        /// </summary>
         public event EventHandler<LightningClosingEventArgs> Closing;
 
+        /// <summary>
+        /// Called when the transaction is going to be deallocated.
+        /// </summary>
+        /// <param name="environmentClosing">Is this deallocation caused by closing corresponding environment.</param>
         protected virtual void OnClosing(bool environmentClosing)
         {
             if (this.Closing != null)
@@ -54,23 +73,46 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Current transaction state.
+        /// </summary>
         public LightningTransactionState State { get; private set; }
 
+        /// <summary>
+        /// Begin a child transaction.
+        /// </summary>
+        /// <param name="beginFlags">Options for a new transaction.</param>
+        /// <returns>New child transaction.</returns>
         public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
         {
             return this.Environment.BeginTransaction(this, beginFlags);
         }
 
+        /// <summary>
+        /// Begins a child transaction.
+        /// </summary>
+        /// <returns>New child transaction with default options.</returns>
         public LightningTransaction BeginTransaction()
         {
             return this.BeginTransaction(DefaultTransactionBeginFlags);
         }
 
+        /// <summary>
+        /// Opens a database in context of this transaction.
+        /// </summary>
+        /// <param name="name">Database name (optional). If null then the default name is used.</param>
+        /// <param name="flags">Database open options (optionsl).</param>
+        /// <returns>Created database wrapper.</returns>
         public LightningDatabase OpenDatabase(string name = null, DatabaseOpenFlags flags = DatabaseOpenFlags.None)
         {
             return this.Environment.OpenDatabase(name, flags, this);
         }
 
+        /// <summary>
+        /// Deletes or closes a database.
+        /// </summary>
+        /// <param name="db">Database</param>
+        /// <param name="delete">Database is deleted permanently if true, or just closed if false.</param>
         public void DropDatabase(LightningDatabase db, bool delete)
         {
             NativeMethods.Execute(lib => lib.mdb_drop(_handle, db._handle, delete));
@@ -78,6 +120,11 @@ namespace LightningDB
             db.Close(false);
         }
 
+        /// <summary>
+        /// Create a cursor.
+        /// Cursors are associated with a specific transaction and database and may not span threads.
+        /// </summary>
+        /// <param name="db">A database.</param>
         public LightningCursor CreateCursor(LightningDatabase db)
         {
             return new LightningCursor(db, this);
@@ -102,6 +149,12 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Get value from a database.
+        /// </summary>
+        /// <param name="db">Database </param>
+        /// <param name="key">Key byte array.</param>
+        /// <returns>Requested value's byte array if exists, or null if not.</returns>
         public byte[] Get(LightningDatabase db, byte[] key)
         {
             byte[] value = null;
@@ -110,6 +163,13 @@ namespace LightningDB
             return value;
         }
 
+        /// <summary>
+        /// Tries to get a value by its key.
+        /// </summary>
+        /// <param name="db">Database.</param>
+        /// <param name="key">Key byte array.</param>
+        /// <param name="value">Value byte array if exists.</param>
+        /// <returns>True if key exists, false if not.</returns>
         public bool TryGet(LightningDatabase db, byte[] key, out byte[] value)
         {
             if (db == null)
@@ -125,6 +185,12 @@ namespace LightningDB
             return result;
         }
 
+        /// <summary>
+        /// Check whether data exists in database.
+        /// </summary>
+        /// <param name="db">Database.</param>
+        /// <param name="key">Key.</param>
+        /// <returns>True if key exists, false if not.</returns>
         public bool ContainsKey(LightningDatabase db, byte[] key)
         {
             if (db == null)
@@ -134,6 +200,13 @@ namespace LightningDB
             return this.TryGetInternal(db._handle, key, out factory);
         }
 
+        /// <summary>
+        /// Put data into a database.
+        /// </summary>
+        /// <param name="db">Database.</param>
+        /// <param name="key">Key byte array.</param>
+        /// <param name="value">Value byte array.</param>
+        /// <param name="options">Operation options (optional).</param>
         public void Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
         {
             if (db == null)
@@ -170,6 +243,9 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Reset current transaction.
+        /// </summary>
         public void Reset()
         {
             if (!this.IsReadOnly)
@@ -179,6 +255,9 @@ namespace LightningDB
             this.State = LightningTransactionState.Reseted;
         }
 
+        /// <summary>
+        /// Renew current transaction.
+        /// </summary>
         public void Renew()
         {
             if (!this.IsReadOnly)
@@ -191,6 +270,11 @@ namespace LightningDB
             this.State = LightningTransactionState.Active;
         }
 
+        /// <summary>
+        /// Commit all the operations of a transaction into the database.
+        /// All cursors opened within the transaction will be closed by this call. 
+        /// The cursors and transaction handle will be freed and must not be used again after this call.
+        /// </summary>
         public void Commit()
         {
             try
@@ -219,6 +303,11 @@ namespace LightningDB
             }            
         }
 
+        /// <summary>
+        /// Abandon all the operations of the transaction instead of saving them.
+        /// All cursors opened within the transaction will be closed by this call.
+        /// The cursors and transaction handle will be freed and must not be used again after this call.
+        /// </summary>
         public void Abort()
         {
             this.Abort(false);
@@ -252,12 +341,25 @@ namespace LightningDB
                 this.ParentTransaction.Closing -= EnvironmentOrParentTransactionClosing;
         }
 
+        /// <summary>
+        /// Environment in which the transaction was opened.
+        /// </summary>
         public LightningEnvironment Environment { get; private set; }
 
+        /// <summary>
+        /// Parent transaction of this transaction.
+        /// </summary>
         public LightningTransaction ParentTransaction { get; private set; }
 
+        /// <summary>
+        /// Whether this transaction is read-only.
+        /// </summary>
         public bool IsReadOnly { get; private set; }
 
+        /// <summary>
+        /// Abort this transaction and deallocate all resources associated with it (including databases).
+        /// </summary>
+        /// <param name="shouldDispose">True if not disposed yet.</param>
         protected virtual void Dispose(bool shouldDispose)
         {
             if (shouldDispose && !IntPtr.Zero.Equals(_handle))
@@ -270,6 +372,9 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Abort this transaction and deallocate all resources associated with it (including databases).
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(this.State != LightningTransactionState.Aborted && this.State != LightningTransactionState.Commited);

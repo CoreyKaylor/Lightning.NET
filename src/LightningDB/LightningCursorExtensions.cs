@@ -5,6 +5,9 @@ using System.Text;
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Extensions for LightningCursor
+    /// </summary>
     public static class LightningCursorExtensions
     {
         public static void Delete(this LightningCursor cur, bool removeAllDuplicateData = true)

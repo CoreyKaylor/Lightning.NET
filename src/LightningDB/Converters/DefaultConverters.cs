@@ -2,8 +2,15 @@
 
 namespace LightningDB.Converters
 {
+    /// <summary>
+    /// Class to setup default converters for LightningEnvironment
+    /// </summary>
     public class DefaultConverters
     {
+        /// <summary>
+        /// Registers predefined list of converters.
+        /// </summary>
+        /// <param name="environment">Environment to register converters in.</param>
         public void RegisterDefault(LightningEnvironment environment)
         {
             var store = environment.ConverterStore;

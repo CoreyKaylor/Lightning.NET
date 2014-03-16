@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 namespace LightningDB.Converters
 {
+    /// <summary>
+    /// Encapsulates collections to store converters used by LightningEnvironment.
+    /// </summary>
     public class ConverterStore
     {
         private readonly IDictionary<Type, object> _convertToBytes = new ConcurrentDictionary<Type, object>(); 

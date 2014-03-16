@@ -6,6 +6,9 @@ using LightningDB.Native;
 
 namespace LightningDB
 {
+    /// <summary>
+    /// LMDB Environment.
+    /// </summary>
     public class LightningEnvironment : IClosingEventSource, IDisposable
     {
         private readonly UnixAccessMode _accessMode;
@@ -20,6 +23,12 @@ namespace LightningDB
         private readonly ConcurrentDictionary<string, LightningDatabase> _openedDatabases;
         private readonly HashSet<uint> _databasesForReuse;
 
+        /// <summary>
+        /// Creates a new instance of LightningEnvironment.
+        /// </summary>
+        /// <param name="directory">Directory for storing database files.</param>
+        /// <param name="openFlags">Database open options.</param>
+        /// <param name="accessMode">Unix file access privelegies (optional). Only makes sense on unix operationg systems.</param>
         public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags, UnixAccessMode accessMode = UnixAccessMode.Default)
         {
             if (String.IsNullOrWhiteSpace(directory))
@@ -54,12 +63,29 @@ namespace LightningDB
             defaultConverters.RegisterDefault(this);
         }
 
+        /// <summary>
+        /// Triggered when the environment is going to close.
+        /// </summary>
         public event EventHandler<LightningClosingEventArgs> Closing;
 
+        /// <summary>
+        /// Whether the environment is opened.
+        /// </summary>
         public bool IsOpened { get; private set; }
 
+        /// <summary>
+        /// Current lmdb version.
+        /// </summary>
         public LightningVersionInfo Version { get { return NativeMethods.LibraryVersion; } }
 
+        /// Set the size of the memory map to use for this environment.
+        /// The size should be a multiple of the OS page size. 
+        /// The default is 10485760 bytes. 
+        /// The size of the memory map is also the maximum size of the database. 
+        /// The value should be chosen as large as possible, to accommodate future growth of the database. 
+        /// This function may only be called before the environment is opened. 
+        /// The size may be changed by closing and reopening the environment. 
+        /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space.
         public long MapSize
         {
             get { return _mapSize; }
@@ -77,6 +103,9 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Get the maximum number of threads for the environment.
+        /// </summary>
         public int MaxReaders
         {
             get
@@ -95,6 +124,12 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Set the maximum number of named databases for the environment.
+        /// This function is only needed if multiple databases will be used in the environment. 
+        /// Simpler applications that use the environment as a single unnamed database can ignore this option. 
+        /// This function may only be called before the environment is opened.
+        /// </summary>
         public int MaxDatabases
         {
             get { return _maxDbs; }
@@ -112,10 +147,19 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Directory path to store database files.
+        /// </summary>
         public string Directory { get; private set; }
 
+        /// <summary>
+        /// Converters to use when converting database keys and values.
+        /// </summary>
         public ConverterStore ConverterStore { get; private set; }
 
+        /// <summary>
+        /// Open the environment.
+        /// </summary>
         public void Open()
         {
             if (!System.IO.Directory.Exists(this.Directory))
@@ -127,6 +171,12 @@ namespace LightningDB
             this.IsOpened = true;
         }
 
+        /// <summary>
+        /// Close the environment and release the memory map.
+        /// Only a single thread may call this function. All transactions, databases, and cursors must already be closed before calling this function. 
+        /// Attempts to use any such handles after calling this function will cause a SIGSEGV. 
+        /// The environment handle will be freed and must not be used again after this call.
+        /// </summary>
         public void Close()
         {
             if (!this.IsOpened)
@@ -144,12 +194,33 @@ namespace LightningDB
             _shouldDispose = false;
         }
 
+        /// <summary>
+        /// Called when the environment is going to close.
+        /// </summary>
         protected virtual void OnClosing()
         {
             if (this.Closing != null)
                 this.Closing(this, new LightningClosingEventArgs(true));
         }
 
+        /// <summary>
+        /// Create a transaction for use with the environment.
+        /// The transaction handle may be discarded using Abort() or Commit().
+        /// Note:
+        /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
+        /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
+        /// </summary>
+        /// <param name="parent">
+        /// If this parameter is non-NULL, the new transaction will be a nested transaction, with the transaction indicated by parent as its parent. 
+        /// Transactions may be nested to any level. 
+        /// A parent transaction may not issue any other operations besides BeginTransaction, Abort, or Commit while it has active child transactions.
+        /// </param>
+        /// <param name="beginFlags">
+        /// Special options for this transaction. 
+        /// </param>
+        /// <returns>
+        /// New LightningTransaction
+        /// </returns>
         public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
         {
             this.EnsureOpened();
@@ -157,11 +228,34 @@ namespace LightningDB
             return new LightningTransaction(this, parent, beginFlags);
         }
 
+        /// <summary>
+        /// Create a transaction for use with the environment.
+        /// The transaction handle may be discarded usingAbort() or Commit().
+        /// Note:
+        /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
+        /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
+        /// </summary>
+        /// <param name="beginFlags">
+        /// Special options for this transaction. 
+        /// </param>
+        /// <returns>
+        /// New LightningTransaction
+        /// </returns>
         public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
         {
             return this.BeginTransaction(null, beginFlags);
         }
 
+        /// <summary>
+        /// Create a transaction for use with the environment.
+        /// The transaction handle may be discarded using Abort() or Commit().
+        /// Note:
+        /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
+        /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
+        /// </summary>        
+        /// <returns>
+        /// New LightningTransaction
+        /// </returns>
         public LightningTransaction BeginTransaction()
         {
             return this.BeginTransaction(null, LightningTransaction.DefaultTransactionBeginFlags);
@@ -195,6 +289,11 @@ namespace LightningDB
             return db;
         }
 
+        /// <summary>
+        /// Copy an MDB environment to the specified path.
+        /// This function may be used to make a backup of an existing environment.
+        /// </summary>
+        /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
         public void CopyTo(string path)
         {
             this.EnsureOpened();
@@ -203,6 +302,12 @@ namespace LightningDB
         }
 
         //TODO: tests
+        /// <summary>
+        /// Flush the data buffers to disk. 
+        /// Data is always written to disk when LightningTransaction.Commit is called, but the operating system may keep it buffered. 
+        /// MDB always flushes the OS buffers upon commit as well, unless the environment was opened with EnvironmentOpenFlags.NoSync or in part EnvironmentOpenFlags.NoMetaSync.
+        /// </summary>
+        /// <param name="force">If true, force a synchronous flush. Otherwise if the environment has the EnvironmentOpenFlags.NoSync flag set the flushes will be omitted, and with MDB_MAPASYNC they will be asynchronous.</param>
         public void Flush(bool force)
         {
             NativeMethods.Execute(lib => lib.mdb_env_sync(_handle, force));
@@ -214,6 +319,10 @@ namespace LightningDB
                 throw new InvalidOperationException("Environment should be opened");
         }
 
+        /// <summary>
+        /// Closes the environment and deallocates all resources associated with it.
+        /// </summary>
+        /// <param name="shouldDispose">True if not disposed yet.</param>
         protected virtual void Dispose(bool shouldDispose)
         {
             if (!shouldDispose || IntPtr.Zero.Equals(_handle)) 
@@ -227,6 +336,9 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Closes the environment and deallocates all resources associated with it.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(_shouldDispose);

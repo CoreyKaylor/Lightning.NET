@@ -4,8 +4,14 @@ using LightningDB.Native;
 
 namespace LightningDB
 {
+    /// <summary>
+    /// Lightning database.
+    /// </summary>
     public class LightningDatabase : IDisposable
     {
+        /// <summary>
+        /// Database name by default.
+        /// </summary>
         public const string DefaultDatabaseName = "master";
 
         internal UInt32 _handle;
@@ -13,11 +19,24 @@ namespace LightningDB
         private readonly string _name;
         private bool _shouldDispose;
 
+        /// <summary>
+        /// Creates a LightningDatabase instance.
+        /// </summary>
+        /// <param name="name">Database name.</param>
+        /// <param name="flags">Database open flags.</param>
+        /// <param name="tran">Active transaction.</param>
         public LightningDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran)
             : this (name, flags, tran, Encoding.UTF8)
         {
         }
 
+        /// <summary>
+        /// Creates a LightningDatabase instance.
+        /// </summary>
+        /// <param name="name">Database name.</param>
+        /// <param name="flags">Database open flags/</param>
+        /// <param name="tran">Active transaction.</param>
+        /// <param name="encoding">Default strings encoding.</param>
         public LightningDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran, Encoding encoding)
         {
             if (tran == null)
@@ -37,16 +56,34 @@ namespace LightningDB
             this.Environment = tran.Environment;
         }
 
+        /// <summary>
+        /// Is database opened.
+        /// </summary>
         public bool IsOpened { get; private set; }
 
+        /// <summary>
+        /// Database name.
+        /// </summary>
         public string Name { get { return _name; } }
 
+        /// <summary>
+        /// Default strings encoding.
+        /// </summary>
         public Encoding Encoding { get; private set; }
 
+        /// <summary>
+        /// Environment in which the database was opened.
+        /// </summary>
         public LightningEnvironment Environment { get; private set; }
 
+        /// <summary>
+        /// Flags with which the database was opened.
+        /// </summary>
         public DatabaseOpenFlags OpenFlags { get; private set; }
 
+        /// <summary>
+        /// Clode the database.
+        /// </summary>
         public void Close()
         {
             this.Close(true);
@@ -78,6 +115,10 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Deallocates resources opeened by the database.
+        /// </summary>
+        /// <param name="shouldDispose">true if not disposed yet.</param>
         protected virtual void Dispose(bool shouldDispose)
         {
             if (!shouldDispose)
@@ -86,6 +127,9 @@ namespace LightningDB
             this.Close(true);
         }
 
+        /// <summary>
+        /// Deallocates resources opeened by the database.
+        /// </summary>
         public void Dispose()
         {
             this.Dispose(_shouldDispose);

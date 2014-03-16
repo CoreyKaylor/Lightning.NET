@@ -8,6 +8,9 @@ namespace LightningDB
     [Flags]
     public enum PutOptions
     {
+        /// <summary>
+        /// No special behavior.
+        /// </summary>
         None = 0,
 
         /// <summary>

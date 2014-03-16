@@ -1,7 +1,13 @@
 ﻿namespace LightningDB
 {
+    /// <summary>
+    /// Transaction open mode
+    /// </summary>
     public enum TransactionBeginFlags
     {
+        /// <summary>
+        /// Normal mode
+        /// </summary>
         None = 0,
 
         /// <summary>

@@ -1,5 +1,8 @@
 ﻿namespace LightningDB
 {
+    /// <summary>
+    /// Cursor operation types
+    /// </summary>
     public enum CursorOperation
     {
         /// <summary>
