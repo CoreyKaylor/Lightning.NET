@@ -54,7 +54,7 @@ namespace LightningDB.Tests
                 //act
                 foreach (var k in keys)
                 {
-                    cur.Put(k, k, PutOptions.None);
+                    cur.Put(k, k, CursorPutOptions.None);
                 }
             }
         }

@@ -98,7 +98,7 @@ namespace LightningDB.Native
         private static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
+        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -257,7 +257,7 @@ namespace LightningDB.Native
             return Native32BitLibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags)
         {
             return Native32BitLibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }
@@ -359,7 +359,7 @@ namespace LightningDB.Native
         private static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
+        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -506,7 +506,7 @@ namespace LightningDB.Native
             return Native64BitLibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags)
         {
             return Native64BitLibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }
@@ -608,7 +608,7 @@ namespace LightningDB.Native
         private static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
+        private static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -767,7 +767,7 @@ namespace LightningDB.Native
             return FallbackLibraryFacade.mdb_cursor_get(cursor, ref key, ref data, op);
         }
 
-        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags)
+        int INativeLibraryFacade.mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags)
         {
             return FallbackLibraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags);
         }

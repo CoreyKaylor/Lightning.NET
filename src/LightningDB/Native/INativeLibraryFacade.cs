@@ -359,7 +359,6 @@ namespace LightningDB.Native
         int mdb_put(IntPtr txn, UInt32 dbi, ref ValueStructure key, ref ValueStructure data, PutOptions flags); //OK
 
         /// <summary>
-        /// Use with native library built for 32-bit systems.
         /// Delete items from a database.
         /// This function removes key/data pairs from the database. 
         /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
@@ -451,7 +450,6 @@ namespace LightningDB.Native
 
 
         /// <summary>
-        /// Use with native library built for 32-bit systems.
         /// Store by cursor.
         /// This function stores key/data pairs into the database. 
         /// If the function fails for any reason, the state of the cursor will be unchanged. 
@@ -476,7 +474,7 @@ namespace LightningDB.Native
         ///     EACCES - an attempt was made to modify a read-only database.
         ///     EINVAL - an invalid parameter was specified.
         /// </returns>
-        int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, PutOptions flags); //OK
+        int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags); //OK
 
         /// <summary>
         /// Delete current key/data pair.

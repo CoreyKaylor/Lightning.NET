@@ -76,12 +76,23 @@ namespace LightningDB
         /// </summary>
         public LightningTransaction Transaction { get; private set; }
 
+        /// <summary>
+        /// Position at specified key
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>Key-value pair for the specified key</returns>
         public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key)
         {
             using (var marshalKey = new MarshalValueStructure(key))
                 return this.Get(CursorOperation.Set, marshalKey.ValueStructure);
         }
 
+        /// <summary>
+        /// Position at key/data pair. Only for MDB_DUPSORT
+        /// </summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value</param>
+        /// <returns>Current key/data pair.</returns>
         public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key, byte[] value)
         {
             using (var marshalKey = new MarshalValueStructure(key))
@@ -89,6 +100,12 @@ namespace LightningDB
                 return this.Get(CursorOperation.GetBoth, marshalKey.ValueStructure, marshalValue.ValueStructure);
         }
 
+        /// <summary>
+        /// position at key, nearest data. Only for MDB_DUPSORT
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <param name="value">Value</param>
+        /// <returns>Nearest value and corresponding key</returns>
         public KeyValuePair<byte[], byte[]>? MoveToFirstValueAfter(byte[] key, byte[] value)
         {
             using (var marshalKey = new MarshalValueStructure(key))
@@ -96,13 +113,18 @@ namespace LightningDB
                 return this.Get(CursorOperation.GetBothRange, marshalKey.ValueStructure, marshalValue.ValueStructure);
         }
 
+        /// <summary>
+        /// Position at first key greater than or equal to specified key.
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>First key-value pair with a key greater than or equal to specified key.</returns>
         public KeyValuePair<byte[], byte[]>? MoveToFirstAfter(byte[] key)
         {
             using(var marshalKey = new MarshalValueStructure(key))
                 return this.Get(CursorOperation.SetRange, marshalKey.ValueStructure);
         }
 
-        //What difference from CursorOperation.Set
+        //What is the difference from CursorOperation.Set?
         /*public KeyValuePair<byte[], byte[]> MoveTo(byte[] key)
         {
             using (var marshalKey = new MarshalValueStructure(key))
@@ -250,7 +272,24 @@ namespace LightningDB
                 : new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
         }
 
-        public void Put(byte[] key, byte[] value, PutOptions options)
+        /// <summary>
+        /// Store by cursor.
+        /// This function stores key/data pairs into the database. 
+        /// If the function fails for any reason, the state of the cursor will be unchanged. 
+        /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
+        /// </summary>
+        /// <param name="key">The key operated on.</param>
+        /// <param name="value">The data operated on.</param>
+        /// <param name="options">
+        /// Options for this operation. This parameter must be set to 0 or one of the values described here.
+        ///     CursorPutOptions.Current - overwrite the data of the key/data pair to which the cursor refers with the specified data item. The key parameter is ignored.
+        ///     CursorPutOptions.NoDuplicateData - enter the new key/data pair only if it does not already appear in the database. This flag may only be specified if the database was opened with MDB_DUPSORT. The function will return MDB_KEYEXIST if the key/data pair already appears in the database.
+        ///     CursorPutOptions.NoOverwrite - enter the new key/data pair only if the key does not already appear in the database. The function will return MDB_KEYEXIST if the key already appears in the database, even if the database supports duplicates (MDB_DUPSORT).
+        ///     CursorPutOptions.ReserveSpace - reserve space for data of the given size, but don't copy the given data. Instead, return a pointer to the reserved space, which the caller can fill in later. This saves an extra memcpy if the data is being generated later.
+        ///     CursorPutOptions.AppendData - append the given key/data pair to the end of the database. No key comparisons are performed. This option allows fast bulk loading when keys are already known to be in the correct order. Loading unsorted keys with this flag will cause data corruption.
+        ///     CursorPutOptions.AppendDuplicateData - as above, but for sorted dup data.
+        /// </param>
+        public void Put(byte[] key, byte[] value, CursorPutOptions options)
         {
             using(var keyMarshalStruct = new MarshalValueStructure(key))
             using (var valueMarshalStruct = new MarshalValueStructure(value))
