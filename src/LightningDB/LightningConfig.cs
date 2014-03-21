@@ -78,6 +78,9 @@ namespace LightningDB
             /// </summary>
             public static DatabaseOpenFlags DefaultOpenFlags { get; set; }
 
+            /// <summary>
+            /// Default database encoding
+            /// </summary>
             public static Encoding DefaultEncoding
             {
                 get { return _defaultEncoding; }
