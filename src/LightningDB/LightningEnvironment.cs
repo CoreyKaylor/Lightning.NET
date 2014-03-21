@@ -29,7 +29,7 @@ namespace LightningDB
         /// <param name="directory">Directory for storing database files.</param>
         /// <param name="openFlags">Database open options.</param>
         /// <param name="accessMode">Unix file access privelegies (optional). Only makes sense on unix operationg systems.</param>
-        public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags, UnixAccessMode accessMode = UnixAccessMode.Default)
+        public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags = EnvironmentOpenFlags.None, UnixAccessMode accessMode = UnixAccessMode.Default)
         {
             if (String.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("Invalid directory name");
