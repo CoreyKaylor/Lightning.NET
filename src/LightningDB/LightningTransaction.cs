@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using LightningDB.Native;
 
 namespace LightningDB
@@ -14,6 +15,8 @@ namespace LightningDB
         public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
         internal IntPtr _handle;
+
+        private LightningDatabase _defaultDatabase;
 
         /// <summary>
         /// Created new instance of LightningTransaction
@@ -102,10 +105,22 @@ namespace LightningDB
         /// </summary>
         /// <param name="name">Database name (optional). If null then the default name is used.</param>
         /// <param name="flags">Database open options (optionsl).</param>
+        /// <param name="encoding">Database keys encoding.</param>
         /// <returns>Created database wrapper.</returns>
-        public LightningDatabase OpenDatabase(string name = null, DatabaseOpenFlags flags = DatabaseOpenFlags.None)
+        public LightningDatabase OpenDatabase(string name = null, DatabaseOpenFlags? flags = null, Encoding encoding = null)
         {
-            return this.Environment.OpenDatabase(name, flags, this);
+            if (name == null && (!flags.HasValue || flags.Value == LightningConfig.Database.DefaultOpenFlags))
+            {                
+                if (_defaultDatabase == null || _defaultDatabase.IsReleased)
+                    _defaultDatabase = this.Environment.OpenDatabase(name, this, flags, encoding);
+
+                if (_defaultDatabase.Encoding != (encoding ?? LightningConfig.Database.DefaultEncoding))
+                    throw new InvalidOperationException("Can not change encoding of already opened database");
+
+                return _defaultDatabase;
+            }
+
+            return this.Environment.OpenDatabase(name, this, flags, encoding);
         }
 
         /// <summary>

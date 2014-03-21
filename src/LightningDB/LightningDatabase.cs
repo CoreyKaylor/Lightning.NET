@@ -23,27 +23,21 @@ namespace LightningDB
         /// Creates a LightningDatabase instance.
         /// </summary>
         /// <param name="name">Database name.</param>
-        /// <param name="flags">Database open flags.</param>
-        /// <param name="tran">Active transaction.</param>
-        public LightningDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran)
-            : this (name, flags, tran, Encoding.UTF8)
-        {
-        }
-
-        /// <summary>
-        /// Creates a LightningDatabase instance.
-        /// </summary>
-        /// <param name="name">Database name.</param>
         /// <param name="flags">Database open flags/</param>
         /// <param name="tran">Active transaction.</param>
         /// <param name="encoding">Default strings encoding.</param>
-        public LightningDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran, Encoding encoding)
+        public LightningDatabase(string name, LightningTransaction tran, DatabaseOpenFlags? flags, Encoding encoding = null)
         {
             if (tran == null)
                 throw new ArgumentNullException("tran");
 
+            if (!flags.HasValue)
+                flags = LightningConfig.Database.DefaultOpenFlags;
+
+            encoding = encoding ?? LightningConfig.Database.DefaultEncoding;
+
             UInt32 handle = default(UInt32);
-            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags, out handle));
+            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags.Value, out handle));
 
             _name = name ?? DefaultDatabaseName;
 
@@ -52,9 +46,11 @@ namespace LightningDB
                         
             this.IsOpened = true;
             this.Encoding = encoding;
-            this.OpenFlags = flags;
+            this.OpenFlags = flags.Value;
             this.Environment = tran.Environment;
         }
+
+        internal bool IsReleased { get { return !_shouldDispose; } }
 
         /// <summary>
         /// Is database opened.

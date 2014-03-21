@@ -12,7 +12,7 @@ namespace LightningDB
         /// No special options.
         /// </summary>
         None = 0,
-
+                
         /// <summary>
         /// MDB_REVERSEKEY. Keys are strings to be compared in reverse order, from the end of the strings to the beginning. By default, Keys are treated as strings and compared from beginning to end.
         /// </summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text;
 using LightningDB.Converters;
 using LightningDB.Native;
 
@@ -272,19 +273,22 @@ namespace LightningDB
         }
 
         //TODO: Upgrade db flags?
-        internal LightningDatabase OpenDatabase(string name, DatabaseOpenFlags flags, LightningTransaction tran)
+        internal LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags? flags, Encoding encoding)
         {
             var internalName = name ?? LightningDatabase.DefaultDatabaseName;
             var db = _openedDatabases.GetOrAdd(internalName, n => 
             {
-                var ldb = new LightningDatabase(name, flags, tran);
+                var ldb = new LightningDatabase(name, tran, flags, encoding);
                 _databasesForReuse.Add(ldb._handle);
 
                 return ldb;
             });
 
-            if (db.OpenFlags != flags)
+            if (db.OpenFlags != flags.GetValueOrDefault())
                 throw new InvalidOperationException("Database " + internalName + " already opened with different flags");
+
+            if (db.Encoding != (encoding ?? LightningConfig.Database.DefaultEncoding))
+                throw new InvalidOperationException("Can not change encoding of already opened database");
 
             return db;
         }
