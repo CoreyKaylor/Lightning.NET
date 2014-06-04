@@ -103,5 +103,18 @@ namespace LightningDB.Tests
             if (Directory.GetFiles(_pathCopy).Length == 0)
                 Assert.Fail("Copied files doesn't exist");
         }
+
+        [Test]
+        public void CanOpenEnvironmentMoreThan50Mb()
+        {
+            //arrange
+            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None)
+            {
+                MapSize = 55 * 1024 * 1024
+            };
+
+            //act-assert
+            _env.Open();
+        }
     }
 }
