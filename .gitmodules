@@ -1,3 +1,6 @@
 [submodule "mdb"]
 	path = mdb
 	url = git://gitorious.org/mdb/mdb.git
+[submodule "LMDB-Win"]
+	path = LMDB-Win
+	url = git@github.com:buybackoff/LMDB-Win.git

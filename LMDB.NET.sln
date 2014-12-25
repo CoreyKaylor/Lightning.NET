@@ -1,0 +1,71 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liblmdb", "..\LMDB-win\liblmdb\liblmdb.vcxproj", "{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LMDB.NET", "src\LMDB.NET\LMDB.NET.csproj", "{4A034D32-98A2-4A6D-9569-D26B5C151AE0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LMDB.NET.Tests", "src\LMDB.NET.Tests\LMDB.NET.Tests.csproj", "{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{A266579D-9C9B-4F04-A7AE-13B4AB6AEA27}"
+	ProjectSection(SolutionItems) = preProject
+		.ruby-version = .ruby-version
+		Gemfile = Gemfile
+		rakefile.rb = rakefile.rb
+		README.md = README.md
+		ripple.config = ripple.config
+		VERSION.txt = VERSION.txt
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Debug|x64.ActiveCfg = Debug|x64
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Debug|x64.Build.0 = Debug|x64
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Debug|x86.ActiveCfg = Debug|Win32
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Debug|x86.Build.0 = Debug|Win32
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Release|Any CPU.ActiveCfg = Release|Win32
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Release|x64.ActiveCfg = Release|x64
+		{9413869C-DE5D-4E04-97A7-D38EC8B3DA7B}.Release|x86.ActiveCfg = Release|Win32
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x64.ActiveCfg = Debug|x64
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x64.Build.0 = Debug|x64
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x86.ActiveCfg = Debug|x86
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x86.Build.0 = Debug|x86
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x64.ActiveCfg = Release|x64
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x64.Build.0 = Release|x64
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x86.ActiveCfg = Release|x86
+		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x86.Build.0 = Release|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x64.ActiveCfg = Debug|x64
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x64.Build.0 = Debug|x64
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x86.ActiveCfg = Debug|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x86.Build.0 = Debug|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x64.ActiveCfg = Release|x64
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x64.Build.0 = Release|x64
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x86.ActiveCfg = Release|x86
+		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = LightningDB\LightningDB.csproj
+	EndGlobalSection
+EndGlobal

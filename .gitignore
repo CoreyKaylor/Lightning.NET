@@ -22,3 +22,5 @@ _ReSharper.*
 *.dotCover
 *ncrunch*
 *.o
+*.opensdf
+*.sdf
