@@ -30,7 +30,7 @@ namespace LightningDB
         /// <returns>True if key exists, false if not.</returns>
         public static bool TryGet(this LightningTransaction txn, byte[] key, out byte[] value)
         {
-            return txn.TryGet(key, out value);
+            return txn.TryGet(txn.OpenDatabase(), key, out value);
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace LightningDB
         /// <returns>Returns true if key-value pair exists in database or false if not.</returns>
         public static bool TryGetBy<TKey>(this LightningTransaction txn, TKey key, out GetByOperation value)
         {
-            return txn.TryGetBy(key, out value);
+            return txn.TryGetBy(txn.OpenDatabase(), key, out value);
         }
 
         /// <summary>
@@ -357,7 +357,7 @@ namespace LightningDB
         /// <param name="options">Operation options.</param>
         public static void Put<TKey, TValue>(this LightningTransaction txn, TKey key, TValue value, PutOptions options = PutOptions.None)
         {
-            txn.Put(txn.OpenDatabase(), value, options);
+            txn.Put(txn.OpenDatabase(), key, value, options);
         }
 
         /// <summary>
