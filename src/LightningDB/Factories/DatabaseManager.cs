@@ -59,8 +59,7 @@ namespace LightningDB.Factories
                 internalName,
                 key =>
                 {
-                    var entry = OpenDatabaseHandle(name, tran, flags);
-                    _databasesForReuse.Add(entry.Handle);
+                    var entry = OpenDatabaseHandle(name, tran, flags);                    
 
                     return entry;
                 },
@@ -71,6 +70,8 @@ namespace LightningDB.Factories
 
                     return entry;
                 });
+
+            _databasesForReuse.Add(cacheEntry.Handle);
 
             encoding = encoding ?? LightningConfig.Database.DefaultEncoding;
 
@@ -85,7 +86,7 @@ namespace LightningDB.Factories
 
         public bool IsReleased(LightningDatabase db)
         {
-            return _databasesForReuse.Contains(db._handle);
+            return !_databasesForReuse.Contains(db._handle);
         }
 
         public void Close(LightningDatabase db, bool releaseHandle)
