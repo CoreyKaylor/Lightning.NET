@@ -1,7 +1,7 @@
 Lightning.NET
 =============
 
-.NET-wrapper library for OpenLDAP's Lightning DB key-value store.
+.NET-wrapper library for LMDB.
 
 Wrapper should work ob both .NET Framework and Mono. Some unit tests are also included.
 Description, docs and examples are coming soon.
