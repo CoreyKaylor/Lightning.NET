@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NUnit.Framework;
 
 namespace LightningDB.Tests
@@ -14,7 +15,7 @@ namespace LightningDB.Tests
             var location = typeof(EnvironmentTests).Assembly.Location;
             var dir = Path.GetDirectoryName(location);
 
-            _path = Path.Combine(dir, "TestDb");
+            _path = Path.Combine(dir, "TestDb" + Guid.NewGuid().ToString());
             _pathCopy = _path + "Copy";
         }
 

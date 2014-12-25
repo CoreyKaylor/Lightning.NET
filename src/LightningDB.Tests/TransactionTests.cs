@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using NUnit.Framework;
 
 namespace LightningDB.Tests
@@ -13,7 +14,9 @@ namespace LightningDB.Tests
         public TransactionTests()
         {
             var location = typeof(EnvironmentTests).Assembly.Location;
-            _path = Path.Combine(Path.GetDirectoryName(location), "TestDb");
+            _path = Path.Combine(
+                Path.GetDirectoryName(location), 
+                "TestDb" + Guid.NewGuid().ToString());
         }
 
         [SetUp]
@@ -30,11 +33,7 @@ namespace LightningDB.Tests
         {
             _env.Close();
 
-            try
-            {
-                Directory.Delete(_path, true);
-            }
-            catch { }
+            Directory.Delete(_path, true);
         }
 
         [Test]

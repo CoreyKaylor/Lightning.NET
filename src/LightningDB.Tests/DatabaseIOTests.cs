@@ -19,7 +19,9 @@ namespace LightningDB.Tests
         public DatabaseIOTests()
         {
             var location = typeof(EnvironmentTests).Assembly.Location;
-            _path = Path.Combine(Path.GetDirectoryName(location), "TestDb");
+            _path = Path.Combine(
+                Path.GetDirectoryName(location), 
+                "TestDb" + Guid.NewGuid().ToString());
         }
 
         [SetUp]
