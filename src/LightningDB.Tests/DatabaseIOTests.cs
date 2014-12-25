@@ -28,6 +28,7 @@ namespace LightningDB.Tests
             Directory.CreateDirectory(_path);
 
             _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env.MaxDatabases = 2;
             _env.Open();
 
             _txn = _env.BeginTransaction();
@@ -147,6 +148,28 @@ namespace LightningDB.Tests
 
             Assert.IsTrue(exists);
             Assert.AreEqual(value, persistedValue);
+        }
+
+        [Test]
+        [TestCase(null)] 
+        [TestCase("test")]
+        public void CanCommitTransactionToNamedDatabase(string dbName)
+        {
+            using (var db = _txn.OpenDatabase(dbName, DatabaseOpenFlags.Create))
+            {
+                _txn.Put(db, "key1", "value");
+
+                _txn.Commit();
+            }
+
+            using (var txn2 = _env.BeginTransaction())
+            {
+                using (var db = txn2.OpenDatabase(dbName))
+                {
+                    var value = txn2.Get<string, string>(db, "key1");
+                    Assert.AreEqual("value", value);
+                }
+            }
         }
     }
 }
