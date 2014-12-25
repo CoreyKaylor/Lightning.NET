@@ -38,6 +38,7 @@ namespace LightningDB
             if (encoding == null)
                 throw new ArgumentNullException("encoding");
 
+            _name = name;
             _handle = entry.Handle;
             _shouldDispose = true;
                         
