@@ -14,6 +14,7 @@ namespace LightningDB
     {
         private readonly UnixAccessMode _accessMode;
         private readonly EnvironmentOpenFlags _openFlags;
+
         internal IntPtr _handle;
 
         private bool _shouldDispose;
@@ -21,7 +22,7 @@ namespace LightningDB
         private long _mapSize;
         private int _maxDbs;
 
-        private readonly ConcurrentDictionary<string, LightningDatabase> _openedDatabases;
+        private readonly ConcurrentDictionary<string, DatabaseHandleCacheEntry> _openedDatabases;
         private readonly HashSet<uint> _databasesForReuse;
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace LightningDB
             else
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
 
-            _openedDatabases = new ConcurrentDictionary<string, LightningDatabase>();
+            _openedDatabases = new ConcurrentDictionary<string, DatabaseHandleCacheEntry>();
             _databasesForReuse = new HashSet<uint>();
 
             ConverterStore = new ConverterStore();
@@ -264,7 +265,10 @@ namespace LightningDB
 
         internal void ReuseDatabase(LightningDatabase db)
         {
-            _openedDatabases.TryRemove(db.Name, out db);
+            DatabaseHandleCacheEntry entry;
+            _openedDatabases.TryRemove(
+                db.Name ?? LightningDatabase.DefaultDatabaseName, 
+                out entry);
         }
 
         internal void ReleaseDatabase(LightningDatabase db)
@@ -272,25 +276,42 @@ namespace LightningDB
             _databasesForReuse.Remove(db._handle);
         }
 
+        private DatabaseHandleCacheEntry OpenDatabaseHandle(string name, LightningTransaction tran, DatabaseOpenFlags? flags)
+        {
+            if (LightningDatabase.DefaultDatabaseName.Equals(name, StringComparison.OrdinalIgnoreCase))
+                name = null;
+
+            var handle = default(UInt32);
+            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags.Value, out handle));
+
+            return new DatabaseHandleCacheEntry(handle, flags.Value);
+        }
+
         //TODO: Upgrade db flags?
         internal LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags? flags, Encoding encoding)
         {
             var internalName = name ?? LightningDatabase.DefaultDatabaseName;
-            var db = _openedDatabases.GetOrAdd(internalName, n => 
-            {
-                var ldb = new LightningDatabase(name, tran, flags, encoding);
-                _databasesForReuse.Add(ldb._handle);
+            if (!flags.HasValue)
+                flags = LightningConfig.Database.DefaultOpenFlags;
 
-                return ldb;
-            });
+            var cacheEntry = _openedDatabases.AddOrUpdate(
+                internalName,
+                key => 
+                {
+                    var entry = OpenDatabaseHandle(name, tran, flags);
+                    _databasesForReuse.Add(entry.Handle);
 
-            if (db.OpenFlags != flags.GetValueOrDefault())
-                throw new InvalidOperationException("Database " + internalName + " already opened with different flags");
+                    return entry;
+                },
+                (key, entry) => 
+                {
+                    if (entry.OpenFlags != flags.Value)
+                        entry = OpenDatabaseHandle(name, tran, flags);
 
-            if (db.Encoding != (encoding ?? LightningConfig.Database.DefaultEncoding))
-                throw new InvalidOperationException("Can not change encoding of already opened database");
+                    return entry;
+                });
 
-            return db;
+            return new LightningDatabase(internalName, tran, cacheEntry, encoding);
         }
 
         /// <summary>

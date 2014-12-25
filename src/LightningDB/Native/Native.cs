@@ -129,6 +129,7 @@ namespace LightningDB.Native
             var res = action.Invoke(_libraryFacade);
             if (res != 0 && shouldThrow(res))
                 throw new LightningException(res);
+            
             return res;
         }
 

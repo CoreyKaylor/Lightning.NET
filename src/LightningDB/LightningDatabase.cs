@@ -26,27 +26,22 @@ namespace LightningDB
         /// <param name="flags">Database open flags/</param>
         /// <param name="tran">Active transaction.</param>
         /// <param name="encoding">Default strings encoding.</param>
-        public LightningDatabase(string name, LightningTransaction tran, DatabaseOpenFlags? flags, Encoding encoding = null)
+        internal LightningDatabase(string name, LightningTransaction tran, DatabaseHandleCacheEntry entry, Encoding encoding = null)
         {
+            if (name == null)
+                throw new ArgumentNullException("name");
+
             if (tran == null)
                 throw new ArgumentNullException("tran");
 
-            if (!flags.HasValue)
-                flags = LightningConfig.Database.DefaultOpenFlags;
-
             encoding = encoding ?? LightningConfig.Database.DefaultEncoding;
 
-            UInt32 handle = default(UInt32);
-            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags.Value, out handle));
-
-            _name = name ?? DefaultDatabaseName;
-
-            _handle = handle;
+            _handle = entry.Handle;
             _shouldDispose = true;
                         
             this.IsOpened = true;
             this.Encoding = encoding;
-            this.OpenFlags = flags.Value;
+            this.OpenFlags = entry.OpenFlags;
             this.Environment = tran.Environment;
         }
 

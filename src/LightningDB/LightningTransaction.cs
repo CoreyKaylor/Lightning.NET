@@ -16,8 +16,6 @@ namespace LightningDB
 
         internal IntPtr _handle;
 
-        private LightningDatabase _defaultDatabase;
-
         /// <summary>
         /// Created new instance of LightningTransaction
         /// </summary>
@@ -109,17 +107,6 @@ namespace LightningDB
         /// <returns>Created database wrapper.</returns>
         public LightningDatabase OpenDatabase(string name = null, DatabaseOpenFlags? flags = null, Encoding encoding = null)
         {
-            if (name == null && (!flags.HasValue || flags.Value == LightningConfig.Database.DefaultOpenFlags))
-            {                
-                if (_defaultDatabase == null || _defaultDatabase.IsReleased)
-                    _defaultDatabase = this.Environment.OpenDatabase(name, this, flags, encoding);
-
-                if (_defaultDatabase.Encoding != (encoding ?? LightningConfig.Database.DefaultEncoding))
-                    throw new InvalidOperationException("Can not change encoding of already opened database");
-
-                return _defaultDatabase;
-            }
-
             return this.Environment.OpenDatabase(name, this, flags, encoding);
         }
 
@@ -148,7 +135,7 @@ namespace LightningDB
         private bool TryGetInternal(UInt32 dbi, byte[] key, out Func<byte[]> valueFactory)
         {
             valueFactory = null;
-
+            
             using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
                 var valueStruct = default(ValueStructure);
