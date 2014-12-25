@@ -24,6 +24,7 @@ namespace LightningDB
         private int _maxDbs;
 
         private readonly DatabaseManager _databaseManager;
+        private readonly TransactionManager _transactionManager;
 
         /// <summary>
         /// Creates a new instance of LightningEnvironment.
@@ -58,6 +59,7 @@ namespace LightningDB
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
 
             _databaseManager = new DatabaseManager(_handle);
+            _transactionManager = new TransactionManager(this, null);
 
             ConverterStore = new ConverterStore();
             var defaultConverters = new DefaultConverters();
@@ -160,6 +162,8 @@ namespace LightningDB
 
         internal DatabaseManager DatabaseManager { get { return _databaseManager; } }
 
+        internal TransactionManager TransactionManager { get { return _transactionManager; } }
+
         /// <summary>
         /// Open the environment.
         /// </summary>
@@ -187,6 +191,7 @@ namespace LightningDB
 
             this.OnClosing();
 
+            _transactionManager.AbortAll();
             _databaseManager.CloseAll();
 
             NativeMethods.Library.mdb_env_close(_handle);
@@ -225,9 +230,10 @@ namespace LightningDB
         /// </returns>
         public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
         {
-            this.EnsureOpened();
+            if (parent != null)
+                return parent.SubTransactionsManager.Create(beginFlags);
 
-            return new LightningTransaction(this, parent, beginFlags);
+            return _transactionManager.Create(beginFlags);
         }
 
         /// <summary>

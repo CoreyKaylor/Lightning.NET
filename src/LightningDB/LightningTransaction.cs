@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using LightningDB.Factories;
 using LightningDB.Native;
 
 namespace LightningDB
@@ -7,7 +8,7 @@ namespace LightningDB
     /// <summary>
     /// Represents a transaction.
     /// </summary>
-    public class LightningTransaction : IClosingEventSource, IDisposable
+    public class LightningTransaction : IDisposable
     {
         /// <summary>
         /// Default options used to begin new transactions.
@@ -16,13 +17,15 @@ namespace LightningDB
 
         internal IntPtr _handle;
 
+        private readonly TransactionManager _subTransactionsManager;
+
         /// <summary>
         /// Created new instance of LightningTransaction
         /// </summary>
         /// <param name="environment">Environment.</param>
         /// <param name="parent">Parent transaction or null.</param>
         /// <param name="flags">Transaction open options.</param>
-        public LightningTransaction(LightningEnvironment environment, LightningTransaction parent, TransactionBeginFlags flags)
+        internal LightningTransaction(LightningEnvironment environment, IntPtr handle, LightningTransaction parent, TransactionBeginFlags flags)
         {
             if (environment == null)
                 throw new ArgumentNullException("environment");
@@ -30,54 +33,18 @@ namespace LightningDB
             this.Environment = environment;
             this.ParentTransaction = parent;
             this.IsReadOnly = flags == TransactionBeginFlags.ReadOnly;
-            
-            var parentHandle = parent != null
-                ? parent._handle
-                : IntPtr.Zero;
-
-            IntPtr handle = default(IntPtr);
-            NativeMethods.Execute(lib => lib.mdb_txn_begin(environment._handle, parentHandle, flags, out handle));
-
-            _handle = handle;
-
             this.State = LightningTransactionState.Active;
 
-            if (parent == null)
-                this.Environment.Closing += EnvironmentOrParentTransactionClosing;
-            else
-                parent.Closing += EnvironmentOrParentTransactionClosing;
+            _handle = handle;
+            _subTransactionsManager = new TransactionManager(environment, this);
         }
 
-        /// <summary>
-        /// Triggered when the transaction is going to be deallocated.
-        /// </summary>
-        public event EventHandler<LightningClosingEventArgs> Closing;
-
-        /// <summary>
-        /// Called when the transaction is going to be deallocated.
-        /// </summary>
-        /// <param name="environmentClosing">Is this deallocation caused by closing corresponding environment.</param>
-        protected virtual void OnClosing(bool environmentClosing)
-        {
-            if (this.Closing != null)
-                this.Closing(this, new LightningClosingEventArgs(environmentClosing));
-        }
-
-        private void EnvironmentOrParentTransactionClosing(object sender, LightningClosingEventArgs e)
-        {
-            try
-            {
-                this.Abort(e.EnvironmentClosing);
-            }
-            catch
-            {
-            }
-        }
+        internal TransactionManager SubTransactionsManager { get { return _subTransactionsManager; } }
 
         /// <summary>
         /// Current transaction state.
         /// </summary>
-        public LightningTransactionState State { get; private set; }
+        public LightningTransactionState State { get; internal set; }
 
         /// <summary>
         /// Begin a child transaction.
@@ -283,6 +250,15 @@ namespace LightningDB
             this.State = LightningTransactionState.Active;
         }
 
+        private void NotifyDiscarded()
+        {
+            var manager = this.ParentTransaction != null
+                ? this.ParentTransaction.SubTransactionsManager
+                : this.Environment.TransactionManager;
+
+            manager.WasDiscarded(this);
+        }
+
         /// <summary>
         /// Commit all the operations of a transaction into the database.
         /// All cursors opened within the transaction will be closed by this call. 
@@ -292,28 +268,24 @@ namespace LightningDB
         {
             try
             {
-                try
-                {
-                    this.OnClosing(false);
-                }
-                finally
-                {
-                    try
-                    {
-                        NativeMethods.Execute(lib => lib.mdb_txn_commit(_handle));
-                    }
-                    catch (LightningException)
-                    {
-                        this.Abort(false);
-                        throw;
-                    }
-                    this.State = LightningTransactionState.Commited;
-                }
+                _subTransactionsManager.AbortAll();
             }
             finally
             {
-                this.DetachClosingHandler();
-            }            
+                try
+                {
+                    NativeMethods.Execute(lib => lib.mdb_txn_commit(_handle));
+
+                    this.State = LightningTransactionState.Commited;
+
+                    NotifyDiscarded();
+                }
+                catch (LightningException)
+                {
+                    this.Abort();
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -323,35 +295,22 @@ namespace LightningDB
         /// </summary>
         public void Abort()
         {
-            this.Abort(false);
-        }
-
-        private void Abort(bool environmentClosing)
-        {
             try
             {
-                try
-                {
-                    this.OnClosing(environmentClosing);
-                }
-                finally
-                {
-                    NativeMethods.Library.mdb_txn_abort(_handle);
-                }
+                _subTransactionsManager.AbortAll();
             }
             finally
             {
-                this.DetachClosingHandler();
-                this.State = LightningTransactionState.Aborted;
+                try
+                {
+                    this.State = LightningTransactionState.Aborted;
+                    NativeMethods.Library.mdb_txn_abort(_handle);
+                }
+                finally
+                {
+                    NotifyDiscarded();
+                }
             }
-        }
-
-        private void DetachClosingHandler()
-        {
-            if (this.ParentTransaction == null)
-                this.Environment.Closing -= EnvironmentOrParentTransactionClosing;
-            else
-                this.ParentTransaction.Closing -= EnvironmentOrParentTransactionClosing;
         }
 
         /// <summary>
@@ -379,7 +338,7 @@ namespace LightningDB
             {
                 try
                 {
-                    this.Abort(false);
+                    this.Abort();
                 }
                 catch { }
             }
@@ -391,6 +350,20 @@ namespace LightningDB
         public void Dispose()
         {
             this.Dispose(this.State != LightningTransactionState.Aborted && this.State != LightningTransactionState.Commited);
+        }
+
+        public override int GetHashCode()
+        {
+            return _handle.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            var tran = obj as LightningTransaction;
+            if (tran == null)
+                return false;
+
+            return _handle.Equals(tran._handle);
         }
     }
 }

@@ -74,8 +74,10 @@
     <Compile Include="Collections\CursorEnumerator.cs" />
     <Compile Include="CursorGetByOperation.cs" />
     <Compile Include="CursorPutOptions.cs" />
+    <Compile Include="Factories\CursorManager.cs" />
     <Compile Include="Factories\DatabaseHandleCacheEntry.cs" />
     <Compile Include="Factories\DatabaseManager.cs" />
+    <Compile Include="Factories\TransactionManager.cs" />
     <Compile Include="GetByOperation.cs" />
     <Compile Include="LightningCursorExtensions.cs" />
     <Compile Include="LightningCursorMoveExtensions.cs">

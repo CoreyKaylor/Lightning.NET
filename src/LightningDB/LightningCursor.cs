@@ -17,16 +17,13 @@ namespace LightningDB
         /// </summary>
         /// <param name="db">Database</param>
         /// <param name="txn">Transaction</param>
-        public LightningCursor(LightningDatabase db, LightningTransaction txn)
+        internal LightningCursor(LightningDatabase db, LightningTransaction txn)
         {
             if (db == null)
                 throw new ArgumentNullException("db");
 
             if (txn == null)
                 throw new ArgumentNullException("txn");
-
-            if (db.Environment != txn.Environment)
-                throw new ArgumentException("db and txn belong to different environments");
 
             IntPtr handle = default(IntPtr);
             NativeMethods.Execute(lib => lib.mdb_cursor_open(txn._handle, db._handle, out handle));
@@ -38,10 +35,11 @@ namespace LightningDB
 
             _shouldDispose = true;
 
-            if (txn.IsReadOnly)
+            throw new NotImplementedException("Implement cursor manager");
+            /*if (txn.IsReadOnly)
                 this.Environment.Closing += EnvironmentOrTransactionClosing;
             else
-                this.Transaction.Closing += EnvironmentOrTransactionClosing;
+                this.Transaction.Closing += EnvironmentOrTransactionClosing;*/
         }
 
         private void EnvironmentOrTransactionClosing(object sender, EventArgs e)
@@ -55,10 +53,10 @@ namespace LightningDB
 
         private void DetachClosingHandler()
         {
-            if (this.Transaction.IsReadOnly)
+            /*if (this.Transaction.IsReadOnly)
                 this.Environment.Closing -= EnvironmentOrTransactionClosing;
             else
-                this.Transaction.Closing -= EnvironmentOrTransactionClosing;
+                this.Transaction.Closing -= EnvironmentOrTransactionClosing;*/
         }
 
         /// <summary>
