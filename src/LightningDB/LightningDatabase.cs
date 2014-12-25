@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using LightningDB.Factories;
 using LightningDB.Native;
 
 namespace LightningDB
@@ -26,7 +27,7 @@ namespace LightningDB
         /// <param name="flags">Database open flags/</param>
         /// <param name="tran">Active transaction.</param>
         /// <param name="encoding">Default strings encoding.</param>
-        internal LightningDatabase(string name, LightningTransaction tran, DatabaseHandleCacheEntry entry, Encoding encoding = null)
+        internal LightningDatabase(string name, LightningTransaction tran, DatabaseHandleCacheEntry entry, Encoding encoding)
         {
             if (name == null)
                 throw new ArgumentNullException("name");
@@ -34,12 +35,12 @@ namespace LightningDB
             if (tran == null)
                 throw new ArgumentNullException("tran");
 
-            encoding = encoding ?? LightningConfig.Database.DefaultEncoding;
+            if (encoding == null)
+                throw new ArgumentNullException("encoding");
 
             _handle = entry.Handle;
             _shouldDispose = true;
                         
-            this.IsOpened = true;
             this.Encoding = encoding;
             this.OpenFlags = entry.OpenFlags;
             this.Environment = tran.Environment;
@@ -50,7 +51,7 @@ namespace LightningDB
         /// <summary>
         /// Is database opened.
         /// </summary>
-        public bool IsOpened { get; private set; }
+        public bool IsOpened { get { return this.Environment.DatabaseManager.IsOpen(this); } }
 
         /// <summary>
         /// Database name.
@@ -82,28 +83,8 @@ namespace LightningDB
 
         internal void Close(bool releaseHandle)
         {
-            lock (this.Environment)
-            {
-                if (!this.IsOpened)
-                    return;
-
-                try
-                {
-                    if (releaseHandle)
-                        NativeMethods.Library.mdb_dbi_close(this.Environment._handle, _handle);
-                }
-                finally
-                {
-                    this.IsOpened = false;
-
-                    this.Environment.ReuseDatabase(this);
-                    if (releaseHandle)
-                    {
-                        this.Environment.ReleaseDatabase(this);
-                        _shouldDispose = false;
-                    }
-                }
-            }
+            this.Environment.DatabaseManager.Close(this, releaseHandle);
+            _shouldDispose = false;
         }
 
         /// <summary>
