@@ -18,6 +18,7 @@ namespace LightningDB
         internal IntPtr _handle;
 
         private readonly TransactionManager _subTransactionsManager;
+        private readonly CursorManager _cursorManager;
 
         /// <summary>
         /// Created new instance of LightningTransaction
@@ -37,9 +38,12 @@ namespace LightningDB
 
             _handle = handle;
             _subTransactionsManager = new TransactionManager(environment, this);
+            _cursorManager = new CursorManager(this);
         }
 
         internal TransactionManager SubTransactionsManager { get { return _subTransactionsManager; } }
+
+        internal CursorManager CursorManager { get { return _cursorManager; } }
 
         /// <summary>
         /// Current transaction state.
@@ -96,7 +100,7 @@ namespace LightningDB
         /// <param name="db">A database.</param>
         public LightningCursor CreateCursor(LightningDatabase db)
         {
-            return new LightningCursor(db, this);
+            return CursorManager.OpenCursor(db);
         }
 
         private bool TryGetInternal(UInt32 dbi, byte[] key, out Func<byte[]> valueFactory)
@@ -259,6 +263,32 @@ namespace LightningDB
             manager.WasDiscarded(this);
         }
 
+        private void Discard(Action body)
+        {
+            try
+            {
+                _subTransactionsManager.AbortAll();
+            }
+            finally
+            {
+                try
+                {
+                    CursorManager.CloseAll();
+                }
+                finally
+                {
+                    try
+                    {
+                        body.Invoke();
+                    }
+                    finally
+                    {
+                        NotifyDiscarded();
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Commit all the operations of a transaction into the database.
         /// All cursors opened within the transaction will be closed by this call. 
@@ -266,11 +296,7 @@ namespace LightningDB
         /// </summary>
         public void Commit()
         {
-            try
-            {
-                _subTransactionsManager.AbortAll();
-            }
-            finally
+            Discard(() =>
             {
                 try
                 {
@@ -285,7 +311,7 @@ namespace LightningDB
                     this.Abort();
                     throw;
                 }
-            }
+            });
         }
 
         /// <summary>
@@ -295,22 +321,11 @@ namespace LightningDB
         /// </summary>
         public void Abort()
         {
-            try
+            Discard(() =>
             {
-                _subTransactionsManager.AbortAll();
-            }
-            finally
-            {
-                try
-                {
-                    this.State = LightningTransactionState.Aborted;
-                    NativeMethods.Library.mdb_txn_abort(_handle);
-                }
-                finally
-                {
-                    NotifyDiscarded();
-                }
-            }
+                this.State = LightningTransactionState.Aborted;
+                NativeMethods.Library.mdb_txn_abort(_handle);
+            });
         }
 
         /// <summary>

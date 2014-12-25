@@ -9,7 +9,7 @@ namespace LightningDB
     /// </summary>
     public class LightningCursor : IDisposable
     {
-        private readonly IntPtr _handle;
+        internal readonly IntPtr _handle;
         private bool _shouldDispose;
 
         /// <summary>
@@ -17,7 +17,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="db">Database</param>
         /// <param name="txn">Transaction</param>
-        internal LightningCursor(LightningDatabase db, LightningTransaction txn)
+        internal LightningCursor(LightningDatabase db, LightningTransaction txn, IntPtr handle)
         {
             if (db == null)
                 throw new ArgumentNullException("db");
@@ -25,38 +25,12 @@ namespace LightningDB
             if (txn == null)
                 throw new ArgumentNullException("txn");
 
-            IntPtr handle = default(IntPtr);
-            NativeMethods.Execute(lib => lib.mdb_cursor_open(txn._handle, db._handle, out handle));
-
             _handle = handle;
 
             this.Database = db;
             this.Transaction = txn;
 
             _shouldDispose = true;
-
-            throw new NotImplementedException("Implement cursor manager");
-            /*if (txn.IsReadOnly)
-                this.Environment.Closing += EnvironmentOrTransactionClosing;
-            else
-                this.Transaction.Closing += EnvironmentOrTransactionClosing;*/
-        }
-
-        private void EnvironmentOrTransactionClosing(object sender, EventArgs e)
-        {
-            try
-            {
-                this.Close();
-            }
-            catch { }
-        }
-
-        private void DetachClosingHandler()
-        {
-            /*if (this.Transaction.IsReadOnly)
-                this.Environment.Closing -= EnvironmentOrTransactionClosing;
-            else
-                this.Transaction.Closing -= EnvironmentOrTransactionClosing;*/
         }
 
         /// <summary>
@@ -349,14 +323,7 @@ namespace LightningDB
         /// </summary>
         public void Close()
         {
-            try
-            {
-                NativeMethods.Library.mdb_cursor_close(_handle);
-            }
-            finally
-            {
-                this.DetachClosingHandler();
-            }
+            Transaction.CursorManager.CloseCursor(this);
         }
 
         /// <summary>

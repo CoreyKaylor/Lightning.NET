@@ -11,7 +11,7 @@ namespace LightningDB
     /// <summary>
     /// LMDB Environment.
     /// </summary>
-    public class LightningEnvironment : IClosingEventSource, IDisposable
+    public class LightningEnvironment : IDisposable
     {
         private readonly UnixAccessMode _accessMode;
         private readonly EnvironmentOpenFlags _openFlags;
@@ -65,11 +65,6 @@ namespace LightningDB
             var defaultConverters = new DefaultConverters();
             defaultConverters.RegisterDefault(this);
         }
-
-        /// <summary>
-        /// Triggered when the environment is going to close.
-        /// </summary>
-        public event EventHandler<LightningClosingEventArgs> Closing;
 
         /// <summary>
         /// Whether the environment is opened.
@@ -189,8 +184,6 @@ namespace LightningDB
             if (!this.IsOpened)
                 return;
 
-            this.OnClosing();
-
             _transactionManager.AbortAll();
             _databaseManager.CloseAll();
 
@@ -199,15 +192,6 @@ namespace LightningDB
             this.IsOpened = false;
 
             _shouldDispose = false;
-        }
-
-        /// <summary>
-        /// Called when the environment is going to close.
-        /// </summary>
-        protected virtual void OnClosing()
-        {
-            if (this.Closing != null)
-                this.Closing(this, new LightningClosingEventArgs(true));
         }
 
         /// <summary>

@@ -99,7 +99,6 @@
     <Compile Include="CursorDeleteOption.cs" />
     <Compile Include="CursorOperation.cs" />
     <Compile Include="DatabaseOpenFlags.cs" />
-    <Compile Include="IClosingEventSource.cs" />
     <Compile Include="LightningClosingEventArgs.cs" />
     <Compile Include="LightningCursor.cs" />
     <Compile Include="LightningDatabase.cs" />
