@@ -68,6 +68,9 @@ namespace LightningDB.Native
         private static extern IntPtr mdb_strerror(int err);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_stat(IntPtr txn, uint dbi, out MDBStat stat);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_copy(IntPtr env, string path);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
@@ -207,6 +210,11 @@ namespace LightningDB.Native
             return Native32BitLibraryFacade.mdb_strerror(err);
         }
 
+        int INativeLibraryFacade.mdb_stat(IntPtr txn, uint dbi, out MDBStat stat)
+        {
+        return Native32BitLibraryFacade.mdb_stat(txn, dbi, out stat);
+        }
+
         int INativeLibraryFacade.mdb_env_copy(IntPtr env, string path)
         {
             return Native32BitLibraryFacade.mdb_env_copy(env, path);
@@ -327,6 +335,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr mdb_strerror(int err);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_stat(IntPtr txn, uint dbi, out MDBStat stat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_copy(IntPtr env, string path);
@@ -456,6 +467,11 @@ namespace LightningDB.Native
             return Native64BitLibraryFacade.mdb_strerror(err);
         }
 
+        int INativeLibraryFacade.mdb_stat(IntPtr txn, uint dbi, out MDBStat stat)
+        {
+        return Native64BitLibraryFacade.mdb_stat(txn, dbi, out stat);
+        }
+
         int INativeLibraryFacade.mdb_env_copy(IntPtr env, string path)
         {
             return Native64BitLibraryFacade.mdb_env_copy(env, path);
@@ -576,6 +592,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr mdb_strerror(int err);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_stat(IntPtr txn, uint dbi, out MDBStat stat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_copy(IntPtr env, string path);
@@ -715,6 +734,11 @@ namespace LightningDB.Native
         IntPtr INativeLibraryFacade.mdb_strerror(int err)
         {
             return FallbackLibraryFacade.mdb_strerror(err);
+        }
+
+        int INativeLibraryFacade.mdb_stat(IntPtr txn, uint dbi, out MDBStat stat)
+        {
+        return FallbackLibraryFacade.mdb_stat(txn, dbi, out stat);
         }
 
         int INativeLibraryFacade.mdb_env_copy(IntPtr env, string path)

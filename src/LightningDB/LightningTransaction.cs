@@ -328,6 +328,14 @@ namespace LightningDB
             });
         }
 
+        public long GetEntriesCount(LightningDatabase db)
+        {
+            var stat = new MDBStat();
+            NativeMethods.Execute(lib => lib.mdb_stat(_handle, db._handle, out stat));
+
+            return stat.ms_entries.ToInt64();
+        }
+
         /// <summary>
         /// Environment in which the transaction was opened.
         /// </summary>

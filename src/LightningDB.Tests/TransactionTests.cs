@@ -169,5 +169,23 @@ namespace LightningDB.Tests
             //assert
             Assert.AreEqual(false, db.IsOpened);
         }
+
+        [Test]
+        public void CanCountEntries()
+        {
+            //arrange
+            _txn = _env.BeginTransaction();
+            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+
+            const int entriesCount = 10;
+            for (var i = 0; i < entriesCount; i++)
+                _txn.Put(db, i.ToString(), i.ToString());
+
+            //act
+            var count = _txn.GetEntriesCount(db);
+
+            //assert;
+            Assert.AreEqual(entriesCount, count);
+        }
     }
 }

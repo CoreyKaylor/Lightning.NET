@@ -109,6 +109,7 @@
     <Compile Include="LightningTransaction.cs" />
     <Compile Include="LightningVersionInfo.cs" />
     <Compile Include="Native\MarshalValueStructure.cs" />
+    <Compile Include="Native\MDBStat.cs" />
     <Compile Include="Native\Native.cs" />
     <Compile Include="Native\NativeLibraryFacades.cs">
       <AutoGen>True</AutoGen>

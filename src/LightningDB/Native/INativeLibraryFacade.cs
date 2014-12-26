@@ -285,6 +285,18 @@ namespace LightningDB.Native
         IntPtr mdb_strerror(int err); //OK
 
         /// <summary>
+        /// Retrieve statistics for a database.
+        /// </summary>
+        /// <param name="txn">A transaction handle returned by mdb_txn_begin()</param>
+        /// <param name="dbi">A database handle returned by mdb_dbi_open()</param>
+        /// <param name="stat">The address of an MDB_stat structure where the statistics will be copied</param>
+        /// <returns>
+        /// A non-zero error value on failure and 0 on success. Some possible errors are:
+        /// EINVAL - an invalid parameter was specified.
+        /// </returns>
+        int mdb_stat(IntPtr txn, uint dbi, out MDBStat stat);
+
+        /// <summary>
         /// Copy an MDB environment to the specified path.
         /// This function may be used to make a backup of an existing environment.
         /// </summary>
