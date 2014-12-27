@@ -304,6 +304,14 @@ namespace LightningDB.Native
         /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
         /// <returns>A non-zero error value on failure and 0 on success.</returns>
         int mdb_env_copy(IntPtr env, string path); //OK
+        
+        /// <summary>
+        /// Return information about the LMDB environment.
+        /// </summary>
+        /// <param name="env">An environment handle returned by mdb_env_create()</param>
+        /// <param name="stat">The address of an MDB_envinfo structure where the information will be copied</param>
+        /// <returns></returns>
+        int mdb_env_info (IntPtr env, out MDBEnvInfo stat);
 
         /// <summary>
         /// Flush the data buffers to disk. 
