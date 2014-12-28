@@ -66,6 +66,16 @@ namespace LightningDB
             defaultConverters.RegisterDefault(this);
         }
 
+        private MDBStat GetStat()
+        {
+            EnsureOpened();
+
+            var stat = new MDBStat();
+            NativeMethods.Execute(lib => lib.mdb_env_stat(_handle, out stat));
+
+            return stat;
+        }
+
         /// <summary>
         /// Whether the environment is opened.
         /// </summary>
@@ -89,8 +99,8 @@ namespace LightningDB
             get { return _mapSize; }
             set
             {
-                if (this.IsOpened)
-                    throw new InvalidOperationException("Can't change MapSize of opened environment");
+               // if (this.IsOpened)
+               //     throw new InvalidOperationException("Can't change MapSize of opened environment");
 
                 if (value == _mapSize) 
                     return;
@@ -98,6 +108,22 @@ namespace LightningDB
                 NativeMethods.Execute(lib => lib.mdb_env_set_mapsize(_handle, value));
 
                 _mapSize = value;
+            }
+        }
+
+        public uint PageSize { get { return GetStat().ms_psize; } }
+
+        public long UsedSize
+        {
+            get
+            {
+                var stat = GetStat();
+                var totalPages = 
+                    stat.ms_branch_pages.ToInt64() + 
+                    stat.ms_leaf_pages.ToInt64() + 
+                    stat.ms_overflow_pages.ToInt64();
+
+                return stat.ms_psize * totalPages;
             }
         }
 
@@ -144,6 +170,8 @@ namespace LightningDB
                 _maxDbs = value;
             }
         }
+
+        public long EntriesCount { get { return GetStat().ms_entries.ToInt64(); } }
 
         /// <summary>
         /// Directory path to store database files.

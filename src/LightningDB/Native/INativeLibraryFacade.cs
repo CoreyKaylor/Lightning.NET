@@ -314,6 +314,14 @@ namespace LightningDB.Native
         int mdb_env_info (IntPtr env, out MDBEnvInfo stat);
 
         /// <summary>
+        /// Return statistics about the LMDB environment.
+        /// </summary>
+        /// <param name="env">An environment handle returned by mdb_env_create()</param>
+        /// <param name="stat">The address of an MDB_stat structure where the statistics will be copied</param>
+        /// <returns></returns>
+        int mdb_env_stat(IntPtr env, out MDBStat stat);
+
+        /// <summary>
         /// Flush the data buffers to disk. 
         /// Data is always written to disk when mdb_txn_commit() is called, but the operating system may keep it buffered. 
         /// MDB always flushes the OS buffers upon commit as well, unless the environment was opened with MDB_NOSYNC or in part MDB_NOMETASYNC.

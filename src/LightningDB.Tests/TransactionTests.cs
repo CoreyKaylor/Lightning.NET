@@ -171,7 +171,7 @@ namespace LightningDB.Tests
         }
 
         [Test]
-        public void CanCountEntries()
+        public void CanCountTransactionEntries()
         {
             //arrange
             _txn = _env.BeginTransaction();

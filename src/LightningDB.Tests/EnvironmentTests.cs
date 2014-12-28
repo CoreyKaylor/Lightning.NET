@@ -117,5 +117,56 @@ namespace LightningDB.Tests
             //act-assert
             _env.Open();
         }
+
+        [Test]
+        public void CanCountEnvironmentEntries()
+        {
+            const int entriesCount = 10;
+
+            //arrange
+            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env.Open();
+
+            using (var txn = _env.BeginTransaction())
+            using (var db = txn.OpenDatabase(null, DatabaseOpenFlags.None))
+            {
+                for (var i = 0; i < entriesCount; i++)
+                    txn.Put(db, i.ToString(), i.ToString());
+
+                txn.Commit();
+            }
+
+            //act
+            var count = _env.EntriesCount;
+
+            //assert;
+            Assert.AreEqual(entriesCount, count);
+        }
+
+        [Test]
+        public void CanGetUsedSize()
+        {
+            const int entriesCount = 1;
+
+            //arrange
+            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env.Open();
+
+            using (var txn = _env.BeginTransaction())
+            using (var db = txn.OpenDatabase(null, DatabaseOpenFlags.None))
+            {
+                for (int i = 0; i < entriesCount; i++)
+                    txn.Put(db, i, i);
+
+                txn.Commit();
+            }
+
+            //act
+            var size = _env.UsedSize;
+
+            //act-assert;
+            Assert.AreEqual(_env.PageSize, size);
+        }
+
     }
 }

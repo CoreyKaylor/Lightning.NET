@@ -77,6 +77,9 @@ namespace LightningDB.Native
         private static extern int mdb_env_info (IntPtr env, out MDBEnvInfo stat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_env_stat(IntPtr env, out MDBStat stat);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_sync(IntPtr env, bool force);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
@@ -228,6 +231,11 @@ namespace LightningDB.Native
             return Native32BitLibraryFacade.mdb_env_info(env, out stat);
         }
 
+        int INativeLibraryFacade.mdb_env_stat (IntPtr env, out MDBStat stat)
+        {
+            return Native32BitLibraryFacade.mdb_env_stat(env, out stat);
+        }
+
         int INativeLibraryFacade.mdb_env_sync(IntPtr env, bool force)
         {
             return Native32BitLibraryFacade.mdb_env_sync(env, force);
@@ -352,6 +360,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_info (IntPtr env, out MDBEnvInfo stat);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_env_stat(IntPtr env, out MDBStat stat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_sync(IntPtr env, bool force);
@@ -493,6 +504,11 @@ namespace LightningDB.Native
             return Native64BitLibraryFacade.mdb_env_info(env, out stat);
         }
 
+        int INativeLibraryFacade.mdb_env_stat (IntPtr env, out MDBStat stat)
+        {
+            return Native64BitLibraryFacade.mdb_env_stat(env, out stat);
+        }
+
         int INativeLibraryFacade.mdb_env_sync(IntPtr env, bool force)
         {
             return Native64BitLibraryFacade.mdb_env_sync(env, force);
@@ -617,6 +633,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_info (IntPtr env, out MDBEnvInfo stat);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_env_stat(IntPtr env, out MDBStat stat);
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_env_sync(IntPtr env, bool force);
@@ -768,6 +787,11 @@ namespace LightningDB.Native
         int INativeLibraryFacade.mdb_env_info (IntPtr env, out MDBEnvInfo stat)
         {
             return FallbackLibraryFacade.mdb_env_info(env, out stat);
+        }
+
+        int INativeLibraryFacade.mdb_env_stat (IntPtr env, out MDBStat stat)
+        {
+            return FallbackLibraryFacade.mdb_env_stat(env, out stat);
         }
 
         int INativeLibraryFacade.mdb_env_sync(IntPtr env, bool force)
