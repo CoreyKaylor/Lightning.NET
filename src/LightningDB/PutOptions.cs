@@ -43,7 +43,11 @@ namespace LightningDB
         /// <summary>
         /// Duplicate data is being appended, don't split full pages.
         /// </summary>
-        AppendDuplicateData = 0x40000
+        AppendDuplicateData = 0x40000,
 
+        /// <summary>
+        /// MDB_MULTIPLE. Store multiple data items in one call. Only for MDB_DUPFIXED.
+        /// </summary>
+        StoreMultiple = 0x80000
     }
 }
