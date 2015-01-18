@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,9 +10,8 @@ namespace LightningDB.Factories
     class CursorManager
     {
         private readonly LightningTransaction _transaction;
-
-        private readonly HashSet<IntPtr> _cursors;
-
+        private readonly ConcurrentDictionary<IntPtr, bool> _cursors;
+        
         public CursorManager(LightningTransaction transaction)
         {
             if (transaction == null)
@@ -19,7 +19,7 @@ namespace LightningDB.Factories
 
             _transaction = transaction;
 
-            _cursors = new HashSet<IntPtr>();
+            _cursors = new ConcurrentDictionary<IntPtr, bool>();
         }
 
         private IntPtr CreateCursorHandle(uint dbHandle)
@@ -38,7 +38,7 @@ namespace LightningDB.Factories
         public LightningCursor OpenCursor(LightningDatabase db)
         {
             var handle = CreateCursorHandle(db._handle);
-            _cursors.Add(handle);
+            _cursors.TryAdd(handle, true);
 
             return new LightningCursor(db, _transaction, handle);
         }
@@ -51,14 +51,15 @@ namespace LightningDB.Factories
             }
             finally
             {
-                _cursors.Remove(cursor._handle);
+                bool value;
+                _cursors.TryRemove(cursor._handle, out value);
             }
         }
 
         public void CloseAll()
         {
-            foreach (var handle in _cursors)
-                CloseCursor(handle);
+            foreach (var p in _cursors)
+                CloseCursor(p.Key);
 
             _cursors.Clear();
         }

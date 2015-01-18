@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace LightningDB.Factories
         private readonly LightningTransaction _parentTransaction;
         private readonly IntPtr _parentHandle;
 
-        private readonly HashSet<LightningTransaction> _transactions;
+        private readonly ConcurrentDictionary<LightningTransaction, bool> _transactions;
 
         public TransactionManager(LightningEnvironment environment, LightningTransaction parentTransaction)
         {
@@ -26,7 +27,7 @@ namespace LightningDB.Factories
                 ? parentTransaction._handle
                 : IntPtr.Zero;
 
-            _transactions = new HashSet<LightningTransaction>();
+            _transactions = new ConcurrentDictionary<LightningTransaction, bool>();
         }
 
         private void EnsureEnvironmentOpened()
@@ -44,23 +45,24 @@ namespace LightningDB.Factories
 
             var tran = new LightningTransaction(_environment, handle, _parentTransaction, beginFlags);
 
-            _transactions.Add(tran);
+            _transactions.TryAdd(tran, true);
 
             return tran;
         }
 
         public void WasDiscarded(LightningTransaction tn)
         {
-            _transactions.Remove(tn);
+            bool value;
+            _transactions.TryRemove(tn, out value);
         }
 
         private static void AbortAll(TransactionManager manager)
         {
 
-            foreach (var tn in manager._transactions.ToList())
+            foreach (var p in manager._transactions.ToList())
             {
-                AbortAll(tn.SubTransactionsManager);
-                tn.Abort();
+                AbortAll(p.Key.SubTransactionsManager);
+                p.Key.Abort();
             }
         }
 
