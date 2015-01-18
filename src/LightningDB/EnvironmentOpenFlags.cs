@@ -70,6 +70,27 @@ namespace LightningDB
         /// Calling mdb_env_sync() ensures on-disk database integrity until next commit. 
         /// This flag may be changed at any time using mdb_env_set_flags().
         /// </summary>
-        MapAsync = 0x100000
+        MapAsync = 0x100000,
+
+        /// <summary>
+        /// MDB_NOTLS. tie reader locktable slots to MDB_txn objects instead of to threads
+        /// </summary>
+        NoThreadLocalStorage = 0x200000,
+
+        /// <summary>
+        /// MDB_NOLOCK. don't do any locking, caller must manage their own locks
+        /// </summary>
+        NoLock = 0x400000,
+
+        /// <summary>
+        /// MDB_NORDAHEAD. don't do readahead (no effect on Windows)
+        /// </summary>
+        NoReadAhead = 0x800000,
+
+        /// <summary>
+        /// MDB_NOMEMINIT. don't initialize malloc'd memory before writing to datafile
+        /// </summary>
+        NoMemoryInitialization = 0x1000000
+
     }
 }
