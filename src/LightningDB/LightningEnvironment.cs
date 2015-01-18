@@ -289,11 +289,16 @@ namespace LightningDB
         /// This function may be used to make a backup of an existing environment.
         /// </summary>
         /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
-        public void CopyTo(string path)
+        /// <param name="compact">Omit empty pages when copying.</param>
+        public void CopyTo(string path, bool compact = false)
         {
             this.EnsureOpened();
 
-            NativeMethods.Execute(lib => lib.mdb_env_copy(_handle, path));
+            var flags = compact 
+                ? EnvironmentCopyFlags.Compact 
+                : EnvironmentCopyFlags.None;
+            
+            NativeMethods.Execute(lib => lib.mdb_env_copy2(_handle, path, flags));
         }
 
         //TODO: tests

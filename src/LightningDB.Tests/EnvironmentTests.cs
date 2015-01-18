@@ -90,15 +90,16 @@ namespace LightningDB.Tests
             Assert.AreEqual(false, _env.IsOpened);
         }
 
-        [Test]
-        public void EnvironmentShouldBeCopied()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void EnvironmentShouldBeCopied(bool compact)
         {
             //arrange
             _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
             _env.Open(); 
 
             //act
-            _env.CopyTo(_pathCopy);
+            _env.CopyTo(_pathCopy, compact);
 
             //assert
             if (Directory.GetFiles(_pathCopy).Length == 0)

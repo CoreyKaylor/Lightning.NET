@@ -303,7 +303,18 @@ namespace LightningDB.Native
         /// <param name="env">An environment handle returned by mdb_env_create(). It must have already been opened successfully.</param>
         /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
         /// <returns>A non-zero error value on failure and 0 on success.</returns>
-        int mdb_env_copy(IntPtr env, string path); //OK
+        int mdb_env_copy(IntPtr env, string path);
+
+        /// <summary>
+        /// Copy an LMDB environment to the specified path, with options.
+        /// This function may be used to make a backup of an existing environment. No lockfile is created, since it gets recreated at need.
+        /// This call can trigger significant file size growth if run in parallel with write transactions, because it employs a read-only transaction.
+        /// </summary>
+        /// <param name="env">An environment handle returned by mdb_env_create(). It must have already been opened successfully.</param>
+        /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
+        /// <param name="copyFlags">Special options for this operation. This parameter must be set to 0 or by bitwise OR'ing together one or more of the values described here.</param>
+        /// <returns>A non-zero error value on failure and 0 on success.</returns>
+        int mdb_env_copy2(IntPtr env, string path, EnvironmentCopyFlags copyFlags);
         
         /// <summary>
         /// Return information about the LMDB environment.

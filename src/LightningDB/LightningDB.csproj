@@ -74,6 +74,7 @@
     <Compile Include="Collections\CursorEnumerator.cs" />
     <Compile Include="CursorGetByOperation.cs" />
     <Compile Include="CursorPutOptions.cs" />
+    <Compile Include="EnvironmentCopyFlags.cs" />
     <Compile Include="Factories\CursorManager.cs" />
     <Compile Include="Factories\DatabaseHandleCacheEntry.cs" />
     <Compile Include="Factories\DatabaseManager.cs" />
