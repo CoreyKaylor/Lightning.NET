@@ -152,6 +152,8 @@ namespace LightningDB.Tests
             _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
             _env.Open();
 
+            var initialUsedSize = _env.UsedSize;
+
             using (var txn = _env.BeginTransaction())
             using (var db = txn.OpenDatabase(null, DatabaseOpenFlags.None))
             {
@@ -162,10 +164,10 @@ namespace LightningDB.Tests
             }
 
             //act
-            var size = _env.UsedSize;
+            var sizeDelta = _env.UsedSize - initialUsedSize;
 
             //act-assert;
-            Assert.AreEqual(_env.PageSize, size);
+            Assert.AreEqual(_env.PageSize, sizeDelta);
         }
 
     }
