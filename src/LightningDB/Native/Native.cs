@@ -109,6 +109,16 @@ namespace LightningDB.Native
 
         #region Helpers
 
+        public static ValueStructure ValueStructureFromPtr(IntPtr ptr)
+        {
+            return (ValueStructure)Marshal.PtrToStructure(ptr, typeof(ValueStructure));
+        }
+
+        public static byte[] ValueByteArrayFromPtr(IntPtr ptr, int resultCode = 0)
+        {
+            return ValueStructureFromPtr(ptr).ToByteArray(resultCode);
+        }
+
         public static int Execute(Func<INativeLibraryFacade, int> action)
         {
             return ExecuteHelper(action, err => true);

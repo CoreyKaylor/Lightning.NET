@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using LightningDB.Factories;
 using LightningDB.Native;
@@ -69,16 +70,46 @@ namespace LightningDB
             return this.BeginTransaction(DefaultTransactionBeginFlags);
         }
 
+        private static CompareFunction CreateComparisonFunction(
+            LightningDatabase db, Func<LightningDatabase, byte[], byte[], int> compare)
+        {
+            return (IntPtr left, IntPtr right) =>
+                compare.Invoke(db, NativeMethods.ValueByteArrayFromPtr(left), NativeMethods.ValueByteArrayFromPtr(right));
+        }
+
+        internal CompareFunction SetCompareFunction(LightningDatabase db, Func<LightningDatabase, byte[], byte[], int> compare)
+        {
+            var compareFunction = CreateComparisonFunction(db, compare);
+            
+            NativeMethods.Execute(lib =>
+                lib.mdb_set_compare(_handle, db._handle, compareFunction));
+
+            return compareFunction;
+        }
+
         /// <summary>
         /// Opens a database in context of this transaction.
         /// </summary>
         /// <param name="name">Database name (optional). If null then the default name is used.</param>
         /// <param name="flags">Database open options (optionsl).</param>
         /// <param name="encoding">Database keys encoding.</param>
+        /// <param name="compare">Key comparison function</param>
         /// <returns>Created database wrapper.</returns>
-        public LightningDatabase OpenDatabase(string name = null, DatabaseOpenFlags? flags = null, Encoding encoding = null)
+        public LightningDatabase OpenDatabase(
+            string name = null, 
+            DatabaseOpenFlags? flags = null, 
+            Encoding encoding = null,
+            Func<LightningDatabase, byte[], byte[], int> compare = null)
         {
-            return this.Environment.OpenDatabase(name, this, flags, encoding);
+            var db = this.Environment.OpenDatabase(name, this, flags, encoding);
+
+            if (compare != null)
+            {
+                var comparer = SetCompareFunction(db, compare);
+                SubTransactionsManager.StoreComparer(comparer);
+            }
+
+            return db;
         }
 
         /// <summary>

@@ -114,6 +114,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
 
         #endregion
 
@@ -298,6 +301,11 @@ namespace LightningDB.Native
         {
             return Native32BitLibraryFacade.mdb_cursor_del(cursor, flags);
         }
+
+        int INativeLibraryFacade.mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp)
+        {
+            return Native32BitLibraryFacade.mdb_set_compare(txn, dbi, cmp);
+        }
 	}
 	
 	class Native64BitLibraryFacade : INativeLibraryFacade
@@ -407,6 +415,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
 
         #endregion
 
@@ -579,6 +590,11 @@ namespace LightningDB.Native
         {
             return Native64BitLibraryFacade.mdb_cursor_del(cursor, flags);
         }
+
+        int INativeLibraryFacade.mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp)
+        {
+            return Native64BitLibraryFacade.mdb_set_compare(txn, dbi, cmp);
+        }
 	}
 	
 	class FallbackLibraryFacade : INativeLibraryFacade
@@ -688,6 +704,9 @@ namespace LightningDB.Native
 
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
+        
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
 
         #endregion
 
@@ -871,6 +890,11 @@ namespace LightningDB.Native
         int INativeLibraryFacade.mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
         {
             return FallbackLibraryFacade.mdb_cursor_del(cursor, flags);
+        }
+
+        int INativeLibraryFacade.mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp)
+        {
+            return FallbackLibraryFacade.mdb_set_compare(txn, dbi, cmp);
         }
 	}
 	

@@ -527,6 +527,21 @@ namespace LightningDB.Native
         ///     EACCES - an attempt was made to modify a read-only database.
         ///     EINVAL - an invalid parameter was specified.
         /// </returns>
-        int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags); //OK
+        int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
+
+        /// <summary>
+        /// Set a custom key comparison function for a database.
+        /// The comparison function is called whenever it is necessary to compare a key specified by the application with a key currently stored in the database. If no comparison function is specified, and no special key flags were specified with mdb_dbi_open(), the keys are compared lexically, with shorter keys collating before longer keys.
+        /// Warning:
+        /// This function must be called before any data access functions are used, otherwise data corruption may occur. The same comparison function must be used by every program accessing the database, every time the database is used.
+        /// </summary>
+        /// <param name="txn">A transaction handle returned by mdb_txn_begin()</param>
+        /// <param name="dbi">A database handle returned by mdb_dbi_open()</param>
+        /// <param name="cmp">A MDB_cmp_func function</param>
+        /// <returns>
+        /// A non-zero error value on failure and 0 on success. Some possible errors are:
+        ///EINVAL - an invalid parameter was specified.
+        /// </returns>
+        int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
     }
 }

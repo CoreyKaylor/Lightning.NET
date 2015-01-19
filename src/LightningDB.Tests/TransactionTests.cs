@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.IO;
 using NUnit.Framework;
 
@@ -186,6 +188,35 @@ namespace LightningDB.Tests
 
             //assert;
             Assert.AreEqual(entriesCount, count);
+        }
+
+        [Test]
+        public void TransactionShouldSupportCustomComparer()
+        {
+            //arrange
+            Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
+
+            _txn = _env.BeginTransaction();
+            var db = _txn.OpenDatabase<int>(
+                comparer: comparison);
+
+            var keysUnsorted = new int[] { 2, 10, 5 };
+            var keysSorted = keysUnsorted.ToArray();
+            Array.Sort(keysSorted, new Comparison<int>(comparison));
+
+            //act
+            for (var i = 0; i < keysUnsorted.Length; i++)
+                _txn.Put(keysUnsorted[i], i);
+
+            //assert
+            using (var c = _txn.CreateCursor(db))
+            {
+                int order = 0;
+
+                KeyValuePair<int, int> pair;
+                while (c.MoveNext(out pair))
+                    Assert.AreEqual(keysSorted[order++], pair.Key);
+            }
         }
     }
 }

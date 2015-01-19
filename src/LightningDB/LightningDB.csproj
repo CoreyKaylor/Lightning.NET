@@ -86,6 +86,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>LightningCursorMoveExtensions.tt</DependentUpon>
     </Compile>
+    <Compile Include="LightningDatabaseExtensions.cs" />
+    <Compile Include="Native\CompareFunction.cs" />
     <Compile Include="Native\INativeLibraryFacade.cs" />
     <Compile Include="LightningConfig.cs" />
     <Compile Include="LightningTransactionExtensions.cs" />
