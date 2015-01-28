@@ -5,7 +5,6 @@ namespace LightningDB
     /// <summary>
     /// Special options for cursor put operation.
     /// </summary>
-    [Flags]
     public enum CursorPutOptions
     {
         /// <summary>
@@ -48,7 +47,11 @@ namespace LightningDB
         /// <summary>
         /// Duplicate data is being appended, don't split full pages.
         /// </summary>
-        AppendDuplicateData = 0x40000
+        AppendDuplicateData = 0x40000,
 
+        /// <summary>
+        /// Store multiple data items in one call. Only for MDB_DUPFIXED.
+        /// </summary>
+        MultipleData = 0x80000
     }
 }

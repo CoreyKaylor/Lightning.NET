@@ -273,6 +273,26 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Store by cursor.
+        /// This function stores key/data pairs into the database. 
+        /// If the function fails for any reason, the state of the cursor will be unchanged. 
+        /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
+        /// </summary>
+        /// <param name="key">The key operated on.</param>
+        /// <param name="values">The data items operated on.</param>
+        public void PutMultiple(byte[] key, byte[][] values)
+        {
+            using (var keyMarshalStruct = new MarshalValueStructure(key))
+            using (var valueMarshalStruct = new MarshalMultipleValueStructure(values))
+            {
+                var keyStruct = keyMarshalStruct.ValueStructure;
+                var valueStruct = valueMarshalStruct.ValueStructures;
+
+                NativeMethods.Execute(lib => lib.mdb_cursor_put(_handle, ref keyStruct, valueStruct, CursorPutOptions.MultipleData));
+            }
+        }
+
         //TODO: tests
         /// <summary>
         /// Delete current key/data pair.

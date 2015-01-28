@@ -487,6 +487,32 @@ namespace LightningDB.Native
         /// </returns>
         int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
+        /// <summary>
+        /// Store by cursor.
+        /// This function stores key/data pairs into the database. 
+        /// If the function fails for any reason, the state of the cursor will be unchanged. 
+        /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
+        /// </summary>
+        /// <param name="cursor">A cursor handle returned by mdb_cursor_open()</param>
+        /// <param name="key">The key operated on.</param>
+        /// <param name="data">The data operated on.</param>
+        /// <param name="flags">
+        /// Options for this operation. This parameter must be set to 0 or one of the values described here.
+        ///     MDB_CURRENT - overwrite the data of the key/data pair to which the cursor refers with the specified data item. The key parameter is ignored.
+        ///     MDB_NODUPDATA - enter the new key/data pair only if it does not already appear in the database. This flag may only be specified if the database was opened with MDB_DUPSORT. The function will return MDB_KEYEXIST if the key/data pair already appears in the database.
+        ///     MDB_NOOVERWRITE - enter the new key/data pair only if the key does not already appear in the database. The function will return MDB_KEYEXIST if the key already appears in the database, even if the database supports duplicates (MDB_DUPSORT).
+        ///     MDB_RESERVE - reserve space for data of the given size, but don't copy the given data. Instead, return a pointer to the reserved space, which the caller can fill in later. This saves an extra memcpy if the data is being generated later.
+        ///     MDB_APPEND - append the given key/data pair to the end of the database. No key comparisons are performed. This option allows fast bulk loading when keys are already known to be in the correct order. Loading unsorted keys with this flag will cause data corruption.
+        ///     MDB_APPENDDUP - as above, but for sorted dup data.
+        /// </param>
+        /// <returns>
+        /// A non-zero error value on failure and 0 on success. Some possible errors are:
+        ///     MDB_MAP_FULL - the database is full, see mdb_env_set_mapsize().
+        ///     MDB_TXN_FULL - the transaction has too many dirty pages.
+        ///     EACCES - an attempt was made to modify a read-only database.
+        ///     EINVAL - an invalid parameter was specified.
+        /// </returns>
+        int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags);
 
         /// <summary>
         /// Store by cursor.
@@ -513,7 +539,7 @@ namespace LightningDB.Native
         ///     EACCES - an attempt was made to modify a read-only database.
         ///     EINVAL - an invalid parameter was specified.
         /// </returns>
-        int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorPutOptions flags); //OK
+        int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ValueStructure[] data, CursorPutOptions flags);
 
         /// <summary>
         /// Delete current key/data pair.

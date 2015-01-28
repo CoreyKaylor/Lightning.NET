@@ -8,6 +8,6 @@ namespace LightningDB.Native
     {
         public IntPtr size;
 
-        public IntPtr data; 
+        public IntPtr data;
     }
 }

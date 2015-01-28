@@ -47,6 +47,22 @@ namespace LightningDB
             cur.Put(keyBytes, valueBytes, options);
         }
 
+        /// <summary>
+        /// Store by cursor.
+        /// This function stores key/data pairs into the database. 
+        /// If the function fails for any reason, the state of the cursor will be unchanged. 
+        /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
+        /// </summary>
+        /// <param name="cur">A cursor.</param>
+        /// <param name="key">The key operated on.</param>
+        /// <param name="values">The data operated on.</param>
+        public static void PutMultiple<TKey, TValue>(this LightningCursor cur, TKey key, TValue[] values)
+        {
+            var keyBytes = cur.ToBytes(key);
+            var valueBytes = values.Select(v => cur.ToBytes(v)).ToArray();
+            cur.PutMultiple(keyBytes, valueBytes);
+        }
+
         internal static byte[] ToBytes<T>(this LightningCursor cur, T instance)
         {
             return cur.Database.ToBytes(instance);
