@@ -1,12 +1,10 @@
 ﻿<#@ template debug="false" hostspecific="false" language="C#" #>
 <#@ output extension=".cs" #>
 <#
-	var cursorMethods = new []
+	var cursorPairMethods = new []
 	{
         "MoveToFirst",
-        "MoveToFirstDuplicate",
-        "MoveToLast",
-        "MoveToLastDuplicate",
+        "MoveToLast",        
         "GetCurrent",
         "MoveNext",
         "MoveNextDuplicate",
@@ -15,6 +13,12 @@
         "MovePrevDuplicate",
         "MovePrevNoDuplicate"
 	};
+    
+    var cursorValueMethods = new []
+    {
+        "MoveToFirstDuplicate",
+        "MoveToLastDuplicate"
+    };
 #>
 using System;
 using System.Collections.Generic;
@@ -28,6 +32,11 @@ namespace LightningDB
         private static CursorGetByOperation CursorMoveBy(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover)
         {
             return new CursorGetByOperation(cur, mover.Invoke());
+        }
+
+        private static GetByOperation CursorMoveValueBy(LightningCursor cur, Func<byte[]> mover)
+        {
+            return new GetByOperation(cur.Database, mover.Invoke());
         }
 
         private static bool CursorMove<TKey, TValue>(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover, out KeyValuePair<TKey, TValue> pair)
@@ -45,8 +54,24 @@ namespace LightningDB
                 return true;
             }
         }
+
+        private static bool CursorMoveValue<TValue>(LightningCursor cur, Func<byte[]> mover, out TValue value)
+        {
+            var op = CursorMoveValueBy(cur, mover);
+
+            if (op == null)
+            {
+                value = default(TValue);
+                return false;
+            }
+            else
+            {
+                value = op.Value< TValue>();
+                return true;
+            }
+        }
         <#
-            foreach(var name in cursorMethods)
+            foreach(var name in cursorPairMethods)
             {
         #>
 
@@ -62,5 +87,23 @@ namespace LightningDB
         <#
             }
         #>
+        <#
+            foreach(var name in cursorValueMethods)
+            {
+        #>
+
+        public static GetByOperation <#= name #>By(this LightningCursor cur)
+        {
+            return CursorMoveValueBy(cur, cur.<#= name #>);
+        }
+
+        public static bool <#= name #><TValue>(this LightningCursor cur, out TValue value)
+        {
+            return CursorMoveValue<TValue>(cur, cur.<#= name #>, out value);
+        }
+        <#
+            }
+        #>
+    
     }
 }

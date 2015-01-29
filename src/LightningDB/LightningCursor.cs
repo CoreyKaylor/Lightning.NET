@@ -116,9 +116,9 @@ namespace LightningDB
         /// Position at first data item of current key. Only for MDB_DUPSORT
         /// </summary>
         /// <returns>First data item of current key. Only for MDB_DUPSORT</returns>
-        public KeyValuePair<byte[], byte[]>? MoveToFirstDuplicate()
+        public byte[] MoveToFirstDuplicate()
         {
-            return this.Get(CursorOperation.FirstDuplicate);
+            return this.GetValue(CursorOperation.FirstDuplicate);
         }
 
         /// <summary>
@@ -134,9 +134,9 @@ namespace LightningDB
         /// Position at last data item of current key. Only for MDB_DUPSORT
         /// </summary>
         /// <returns>Last data item of current key</returns>
-        public KeyValuePair<byte[], byte[]>? MoveToLastDuplicate()
+        public byte[] MoveToLastDuplicate()
         {
-            return this.Get(CursorOperation.LastDuplicate);
+            return this.GetValue(CursorOperation.LastDuplicate);
         }
 
         /// <summary>
@@ -242,6 +242,18 @@ namespace LightningDB
             return res == NativeMethods.MDB_NOTFOUND
                 ? (KeyValuePair<byte[], byte[]>?) null
                 : new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
+        }
+
+        private byte[] GetValue(CursorOperation operation)
+        {
+            var keyStruct = new ValueStructure();
+            var valueStruct = new ValueStructure();
+
+            var res = NativeMethods.Read(lib => lib.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
+
+            return res == NativeMethods.MDB_NOTFOUND
+                ? null
+                : valueStruct.ToByteArray(res);
         }
 
         /// <summary>
