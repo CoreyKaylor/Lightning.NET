@@ -234,7 +234,7 @@ namespace LightningDB.Tests
         public void ShouldPutMultiple()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.DuplicatesSort);
+            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.DuplicatesFixed);
 
             var values = new[] { 1, 2, 3, 4, 5 };
             using (var cur = _txn.CreateCursor(_db))
@@ -252,6 +252,40 @@ namespace LightningDB.Tests
             //assert
             for (var i = 0; i < values.Length; i++)
                 Assert.AreEqual(values[i], pairs[i].Value);
+        }
+
+        [Test]
+        public void CursorShouldPutDupValues()
+        {
+
+            var db2 = _txn.OpenDatabase("dup",
+                DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesSort
+                | DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.IntegerDuplicates);
+
+            using (var cur = _txn.CreateCursor(db2))
+            {
+                var keys = Enumerable.Range(1, 50000).ToArray();
+                foreach (var k in keys)
+                {
+                    cur.Put(Encoding.UTF8.GetBytes("key"), k, CursorPutOptions.None);
+                }
+                // overwrite
+                foreach (var k in keys)
+                {
+                    cur.Put(Encoding.UTF8.GetBytes("key"), k, CursorPutOptions.None);
+                }
+
+                var kvp = cur.MoveToFirst();
+                kvp = cur.MoveNextDuplicate();
+                kvp = cur.MoveNextDuplicate();
+                kvp = cur.MoveToFirstDuplicate(); // cancel the moves above and start from the beginning
+                foreach (var k in keys)
+                {
+                    //var kvp = cur.GetCurrent();
+                    Assert.AreEqual(k, BitConverter.ToInt32(kvp.Value.Value, 0));
+                    kvp = cur.MoveNextDuplicate();
+                }
+            }
         }
     }
 }

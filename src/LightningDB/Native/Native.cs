@@ -105,6 +105,16 @@ namespace LightningDB.Native
         /// </summary>
         public const int MDB_NOTFOUND = -30798;
 
+        /// <summary>
+        /// Duplicate keys may be used in the database. (Or, from another perspective, keys may have multiple data items, stored in sorted order.) By default keys must be unique and may have only a single data item.
+        /// </summary>
+        public const int MDB_DUPSORT = 0x04;
+
+        /// <summary>
+        /// This flag may only be used in combination with MDB_DUPSORT. This option tells the library that the data items for this database are all the same size, which allows further optimizations in storage and retrieval. When all data items are the same size, the MDB_GET_MULTIPLE and MDB_NEXT_MULTIPLE cursor operations may be used to retrieve multiple items at once.
+        /// </summary>
+        public const int MDB_DUPFIXED = 0x10;
+
         #endregion Constants
 
         #region Helpers
