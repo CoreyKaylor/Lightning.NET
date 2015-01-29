@@ -21,11 +21,6 @@ namespace LightningDB
         NoDuplicateData = 0x20,
 
         /// <summary>
-        /// use sorted duplicates
-        /// </summary>
-        DuplicateSort = 0x04,
-
-        /// <summary>
         /// For put: Don't write if the key already exists.
         /// </summary>
         NoOverwrite = 0x10,
@@ -43,11 +38,6 @@ namespace LightningDB
         /// <summary>
         /// Duplicate data is being appended, don't split full pages.
         /// </summary>
-        AppendDuplicateData = 0x40000,
-
-        /// <summary>
-        /// MDB_MULTIPLE. Store multiple data items in one call. Only for MDB_DUPFIXED.
-        /// </summary>
-        StoreMultiple = 0x80000
+        AppendDuplicateData = 0x40000
     }
 }

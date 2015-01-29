@@ -25,11 +25,6 @@ namespace LightningDB
         NoDuplicateData = 0x20,
 
         /// <summary>
-        /// use sorted duplicates
-        /// </summary>
-        DuplicateSort = 0x04,
-
-        /// <summary>
         /// For put: Don't write if the key already exists.
         /// </summary>
         NoOverwrite = 0x10,
