@@ -121,6 +121,9 @@ namespace LightningDB.Native
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
 
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
+
         #endregion
 
         int INativeLibraryFacade.mdb_env_create(out IntPtr env)
@@ -314,6 +317,11 @@ namespace LightningDB.Native
         {
             return Native32BitLibraryFacade.mdb_set_compare(txn, dbi, cmp);
         }
+
+        int INativeLibraryFacade.mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp)
+        {
+            return Native32BitLibraryFacade.mdb_set_dupsort(txn, dbi, cmp);
+        }
 	}
 	
 	class Native64BitLibraryFacade : INativeLibraryFacade
@@ -429,6 +437,9 @@ namespace LightningDB.Native
         
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
 
         #endregion
 
@@ -611,6 +622,11 @@ namespace LightningDB.Native
         {
             return Native64BitLibraryFacade.mdb_set_compare(txn, dbi, cmp);
         }
+
+        int INativeLibraryFacade.mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp)
+        {
+            return Native64BitLibraryFacade.mdb_set_dupsort(txn, dbi, cmp);
+        }
 	}
 	
 	class FallbackLibraryFacade : INativeLibraryFacade
@@ -726,6 +742,9 @@ namespace LightningDB.Native
         
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
         private static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
+
+        [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
 
         #endregion
 
@@ -919,6 +938,11 @@ namespace LightningDB.Native
         int INativeLibraryFacade.mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp)
         {
             return FallbackLibraryFacade.mdb_set_compare(txn, dbi, cmp);
+        }
+
+        int INativeLibraryFacade.mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp)
+        {
+            return FallbackLibraryFacade.mdb_set_dupsort(txn, dbi, cmp);
         }
 	}
 	

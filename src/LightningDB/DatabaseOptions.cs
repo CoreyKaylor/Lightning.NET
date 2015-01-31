@@ -18,6 +18,8 @@ namespace LightningDB
 
         public Func<CompareFunctionBuilder, LightningCompareDelegate> Compare { get; set; }
 
+        public Func<CompareFunctionBuilder, LightningCompareDelegate> DuplicatesSort { get; set; }
+
         public Encoding Encoding { get; set; }
 
         public DatabaseOpenFlags Flags { get; set; }
@@ -31,28 +33,44 @@ namespace LightningDB
                 compare.Invoke(db, NativeMethods.ValueByteArrayFromPtr(left), NativeMethods.ValueByteArrayFromPtr(right));
         }
 
-        private static CompareFunction SetNativeCompareFunction(
-            LightningTransaction tran, LightningDatabase db, LightningCompareDelegate compare)
+        private static void SetNativeCompareFunction(
+            LightningTransaction tran, 
+            LightningDatabase db,
+            Func<CompareFunctionBuilder, LightningCompareDelegate> delegateFactory,
+            Func<INativeLibraryFacade, CompareFunction, int> setter)
         {
-            var compareFunction = CreateNativeCompareFunction(db, compare);
+            if (delegateFactory == null)
+                return;
 
-            NativeMethods.Execute(lib =>
-                lib.mdb_set_compare(tran._handle, db._handle, compareFunction));
+            var comparer = delegateFactory.Invoke(new CompareFunctionBuilder());
+            if (comparer == null)
+                return;
 
-            return compareFunction;
+            var compareFunction = CreateNativeCompareFunction(db, comparer);
+
+            NativeMethods.Execute(lib => setter.Invoke(lib, compareFunction));
+            tran.SubTransactionsManager.StoreComparer(comparer);
         }
 
         internal void SetComparer(LightningTransaction tran, LightningDatabase db)
         {
-            if (Compare == null)
+            SetNativeCompareFunction(
+                tran,
+                db,
+                Compare,
+                (lib, func) => lib.mdb_set_compare(tran._handle, db._handle, func));
+        }
+
+        internal void SetDuplicatesSort(LightningTransaction tran, LightningDatabase db)
+        {
+            if (!db.OpenFlags.HasFlag(DatabaseOpenFlags.DuplicatesSort))
                 return;
 
-            var comparer = Compare.Invoke(new CompareFunctionBuilder());
-            if (comparer == null)
-                return;
-
-            var nativeComparer = SetNativeCompareFunction(tran, db, comparer);
-            tran.SubTransactionsManager.StoreComparer(comparer);
+            SetNativeCompareFunction(
+                tran,
+                db,
+                DuplicatesSort,
+                (lib, func) => lib.mdb_set_dupsort(tran._handle, db._handle, func));
         }
     }
 }

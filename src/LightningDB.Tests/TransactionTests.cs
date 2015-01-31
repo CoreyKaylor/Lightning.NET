@@ -218,5 +218,38 @@ namespace LightningDB.Tests
                     Assert.AreEqual(keysSorted[order++], pair.Key);
             }
         }
+
+        [Test]
+        public void TransactionShouldSupportCustomDupSorter()
+        {
+            //arrange
+            Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
+
+            _txn = _env.BeginTransaction();
+            var db = _txn.OpenDatabase(
+                options: new DatabaseOptions 
+                { 
+                    Flags = DatabaseOpenFlags.DuplicatesFixed,
+                    DuplicatesSort = b => b.FromFunc(comparison) 
+                });
+
+            var valuesUnsorted = new int[] { 2, 10, 5, 0 };
+            var valuesSorted = valuesUnsorted.ToArray();
+            Array.Sort(valuesSorted, new Comparison<int>(comparison));
+
+            //act
+            using (var c = _txn.CreateCursor(db))
+                c.PutMultiple(123, valuesUnsorted);
+
+            //assert
+            using (var c = _txn.CreateCursor(db))
+            {
+                int order = 0;
+
+                KeyValuePair<int, int> pair;
+                while (c.MoveNextDuplicate(out pair))
+                    Assert.AreEqual(valuesSorted[order++], pair.Value);
+            }
+        }
     }
 }

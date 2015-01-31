@@ -83,6 +83,7 @@ namespace LightningDB
             var db = this.Environment.OpenDatabase(name, this, options.Flags, options.Encoding);
 
             options.SetComparer(this, db);
+            options.SetDuplicatesSort(this, db);
 
             return db;
         }

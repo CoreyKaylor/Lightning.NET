@@ -569,5 +569,20 @@ namespace LightningDB.Native
         ///EINVAL - an invalid parameter was specified.
         /// </returns>
         int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
+
+        /// <summary>
+        /// Set a custom data comparison function for a MDB_DUPSORT database.
+        /// This comparison function is called whenever it is necessary to compare a data item specified by the application with a data item currently stored in the database. This function only takes effect if the database was opened with the MDB_DUPSORT flag. If no comparison function is specified, and no special key flags were specified with mdb_dbi_open(), the data items are compared lexically, with shorter items collating before longer items.
+        /// Warning:
+        /// This function must be called before any data access functions are used, otherwise data corruption may occur. The same comparison function must be used by every program accessing the database, every time the database is used.
+        /// </summary>
+        /// <param name="txn">A transaction handle returned by mdb_txn_begin()</param>
+        /// <param name="dbi">A database handle returned by mdb_dbi_open()</param>
+        /// <param name="cmp">A MDB_cmp_func function</param>
+        /// <returns>
+        /// A non-zero error value on failure and 0 on success. Some possible errors are:
+        /// EINVAL - an invalid parameter was specified.
+        /// </returns>
+        int mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
     }
 }
