@@ -129,7 +129,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase(null, DatabaseOpenFlags.None))
+            using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None }))
             {
                 for (var i = 0; i < entriesCount; i++)
                     txn.Put(db, i.ToString(), i.ToString());
@@ -156,7 +156,7 @@ namespace LightningDB.Tests
             var initialUsedSize = _env.UsedSize;
 
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase(null, DatabaseOpenFlags.None))
+            using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None }))
             {
                 for (int i = 0; i < entriesCount; i++)
                     txn.Put(db, i, i);

@@ -72,8 +72,11 @@
     <Compile Include="Collections\CursorGenericEnumerable.cs" />
     <Compile Include="Collections\CursorEnumerable.cs" />
     <Compile Include="Collections\CursorEnumerator.cs" />
+    <Compile Include="LightningCompareDelegate.cs" />
+    <Compile Include="CompareFunctionBuilder.cs" />
     <Compile Include="CursorGetByOperation.cs" />
     <Compile Include="CursorPutOptions.cs" />
+    <Compile Include="DatabaseOptions.cs" />
     <Compile Include="EnvironmentCopyFlags.cs" />
     <Compile Include="Factories\CursorManager.cs" />
     <Compile Include="Factories\DatabaseHandleCacheEntry.cs" />
@@ -86,7 +89,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>LightningCursorMoveExtensions.tt</DependentUpon>
     </Compile>
-    <Compile Include="LightningDatabaseExtensions.cs" />
     <Compile Include="Native\CompareFunction.cs" />
     <Compile Include="Native\MarshalMultipleValueStructure.cs" />
     <Compile Include="Native\INativeLibraryFacade.cs" />

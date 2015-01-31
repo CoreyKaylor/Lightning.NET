@@ -39,21 +39,19 @@ namespace LightningDB.Factories
             return name;
         }
 
-        private DatabaseHandleCacheEntry OpenDatabaseHandle(string name, LightningTransaction tran, DatabaseOpenFlags? flags)
+        private DatabaseHandleCacheEntry OpenDatabaseHandle(string name, LightningTransaction tran, DatabaseOpenFlags flags)
         {
             name = FromInternalDatabaseName(name);
 
             var handle = default(UInt32);
-            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags.Value, out handle));
+            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags, out handle));
 
-            return new DatabaseHandleCacheEntry(handle, flags.Value);
+            return new DatabaseHandleCacheEntry(handle, flags);
         }               
 
-        public LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags? flags, Encoding encoding)
+        public LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags flags, Encoding encoding)
         {
             var internalName = ToInternalDatabaseName(name);
-            if (!flags.HasValue)
-                flags = LightningConfig.Database.DefaultOpenFlags;
 
             var cacheEntry = _openedDatabases.AddOrUpdate(
                 internalName,
@@ -65,15 +63,13 @@ namespace LightningDB.Factories
                 },
                 (key, entry) =>
                 {
-                    if (entry.OpenFlags != flags.Value)
+                    if (entry.OpenFlags != flags)
                         entry = OpenDatabaseHandle(name, tran, flags);
 
                     return entry;
                 });
 
             _databasesForReuse.Add(cacheEntry.Handle);
-
-            encoding = encoding ?? LightningConfig.Database.DefaultEncoding;
 
             return new LightningDatabase(internalName, tran, cacheEntry, encoding);
         }

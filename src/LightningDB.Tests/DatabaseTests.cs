@@ -46,7 +46,7 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            _txn.OpenDatabase(dbName, DatabaseOpenFlags.Create);
+            _txn.OpenDatabase(dbName, new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
 
             //assert
         }
@@ -59,7 +59,7 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+            var db = _txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None });
 
             //assert
             Assert.AreEqual(true, db.IsOpened);
@@ -70,7 +70,7 @@ namespace LightningDB.Tests
         {
             _env.Open();
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+            var db = _txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             //arrange
 
             //act
@@ -89,7 +89,7 @@ namespace LightningDB.Tests
             LightningDatabase db;
             using (var committed = _env.BeginTransaction())
             {
-                db = committed.OpenDatabase(null, DatabaseOpenFlags.None);
+                db = committed.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None });
                 committed.Commit();
             }
             

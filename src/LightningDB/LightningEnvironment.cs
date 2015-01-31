@@ -279,7 +279,7 @@ namespace LightningDB
         }
 
         //TODO: Upgrade db flags?
-        internal LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags? flags, Encoding encoding)
+        internal LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags flags, Encoding encoding)
         {
             return _databaseManager.OpenDatabase(name, tran, flags, encoding);
         }

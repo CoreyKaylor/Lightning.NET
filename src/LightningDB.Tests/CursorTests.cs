@@ -65,7 +65,7 @@ namespace LightningDB.Tests
         public void CursorShouldBeCreated()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             
             //act
 
@@ -77,7 +77,7 @@ namespace LightningDB.Tests
         public void CursorShouldPutValues()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             
             //act
 
@@ -89,7 +89,7 @@ namespace LightningDB.Tests
         public void CursorShouldMoveToLast()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             this.PopulateCursorValues();
 
             //assert
@@ -110,7 +110,7 @@ namespace LightningDB.Tests
         public void CursorShouldMoveToFirst()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             this.PopulateCursorValues();
 
             //assert
@@ -131,7 +131,7 @@ namespace LightningDB.Tests
         public void ShouldIterateThroughCursor()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             this.PopulateCursorValues();
                         
             using (var cur = _txn.CreateCursor(_db))
@@ -162,7 +162,7 @@ namespace LightningDB.Tests
         public void ShouldIterateThroughCursorByExtensions()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             this.PopulateCursorValues();
 
             using (var cur = _txn.CreateCursor(_db))
@@ -187,7 +187,7 @@ namespace LightningDB.Tests
         public void CursorShouldDeleteElements()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             this.PopulateCursorValues();
 
             using (var cur = _txn.CreateCursor(_db))
@@ -215,7 +215,7 @@ namespace LightningDB.Tests
         public void ShouldIterateThroughCursorByEnumerator()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.None);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             this.PopulateCursorValues();
 
             var i = 0;
@@ -234,7 +234,7 @@ namespace LightningDB.Tests
         public void ShouldPutMultiple()
         {
             //arrange
-            _db = _txn.OpenDatabase(flags: DatabaseOpenFlags.DuplicatesFixed);
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed });
 
             var values = new[] { 1, 2, 3, 4, 5 };
             using (var cur = _txn.CreateCursor(_db))

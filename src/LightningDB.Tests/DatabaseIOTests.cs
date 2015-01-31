@@ -157,7 +157,7 @@ namespace LightningDB.Tests
         [TestCase("test")]
         public void CanCommitTransactionToNamedDatabase(string dbName)
         {
-            using (var db = _txn.OpenDatabase(dbName, DatabaseOpenFlags.Create))
+            using (var db = _txn.OpenDatabase(dbName, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
             {
                 _txn.Put(db, "key1", "value");
 

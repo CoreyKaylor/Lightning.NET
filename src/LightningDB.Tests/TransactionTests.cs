@@ -162,7 +162,7 @@ namespace LightningDB.Tests
         public void DefaultDatabaseShouldBeDropped()
         {
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+            var db = _txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None });
             //arrange
 
             //act
@@ -177,7 +177,7 @@ namespace LightningDB.Tests
         {
             //arrange
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase(null, DatabaseOpenFlags.None);
+            var db = _txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None });
 
             const int entriesCount = 10;
             for (var i = 0; i < entriesCount; i++)
@@ -197,8 +197,8 @@ namespace LightningDB.Tests
             Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
 
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase<int>(
-                comparer: comparison);
+            var db = _txn.OpenDatabase(
+                options: new DatabaseOptions { Compare = b => b.FromFunc(comparison) });
 
             var keysUnsorted = new int[] { 2, 10, 5 };
             var keysSorted = keysUnsorted.ToArray();
