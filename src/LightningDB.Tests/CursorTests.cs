@@ -277,5 +277,26 @@ namespace LightningDB.Tests
             Assert.IsTrue(result);
             CollectionAssert.AreEqual(values, resultArray);
         }
+
+        [Test]
+        public void ShouldMoveNextMultiple()
+        {
+            //arrange
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed });
+            const string key = "TestKey";
+
+            var values = new[] { 1, 2, 3, 4, 5 };
+            using (var cur = _txn.CreateCursor(_db))
+                cur.PutMultiple(key, values);
+
+            bool result;
+            KeyValuePair<string, int[]> resultPair;
+            using (var cur = _txn.CreateCursor(_db))
+                result = cur.MoveNextMultiple(out resultPair);
+
+            Assert.IsTrue(result);
+            Assert.AreEqual(key, resultPair.Key);
+            CollectionAssert.AreEqual(values, resultPair.Value);
+        }
     }
 }

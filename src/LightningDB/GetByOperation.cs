@@ -21,6 +21,8 @@ namespace LightningDB
             _rawValue = rawValue;
         }
 
+        public bool HasValue { get { return _rawValue != null; } }
+
         /// <summary>
         /// Convert value from bytes to a specified type..
         /// </summary>
@@ -28,6 +30,9 @@ namespace LightningDB
         /// <returns>Converted value.</returns>
         public TValue Value<TValue>()
         {
+            if (!HasValue)
+                throw new InvalidOperationException("Value doen't exist");
+
             return _db.FromBytes<TValue>(_rawValue);
         }
     }

@@ -192,13 +192,9 @@ namespace LightningDB
         /// </summary>
         /// <remarks>Not sure what it should do and if the wrapper is correct</remarks>
         /// <returns>All duplicate data items at the next cursor position</returns>
-        public byte[] MoveNextMultiple()
+        public KeyValuePair<byte[], byte[]>? MoveNextMultiple()
         {
-            var result =  this.Get(CursorOperation.NextMultiple);
-            if (!result.HasValue)
-                return null;
-
-            return result.Value.Value;
+            return this.Get(CursorOperation.NextMultiple);
         }
 
         /// <summary>

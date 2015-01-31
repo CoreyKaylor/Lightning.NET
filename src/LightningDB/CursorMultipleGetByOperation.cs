@@ -5,25 +5,25 @@ namespace LightningDB
     /// <summary>
     /// Converter class for pairs obtained via cursor
     /// </summary>
-    public class CursorGetByOperation
+    public class CursorMultipleGetByOperation
     {
         private readonly LightningCursor _cur;
-        private readonly KeyValuePair<GetByOperation, GetByOperation>? _pair;
+        private readonly KeyValuePair<GetByOperation, MultipleGetByOperation>? _pair;
 
         /// <summary>
         /// Creates new instance of CursorGetByOperation.
         /// </summary>
         /// <param name="cur">Cursor.</param>
         /// <param name="pair">Key-value byte arrays pair</param>
-        public CursorGetByOperation(LightningCursor cur, KeyValuePair<byte[], byte[]>? pair)
+        public CursorMultipleGetByOperation(LightningCursor cur, KeyValuePair<byte[], byte[]>? pair)
         {
             _cur = cur;
 
             if (pair.HasValue)
             {
-                _pair = new KeyValuePair<GetByOperation, GetByOperation>(
+                _pair = new KeyValuePair<GetByOperation, MultipleGetByOperation>(
                     new GetByOperation(cur.Database, pair.Value.Key),
-                    new GetByOperation(cur.Database, pair.Value.Value));
+                    new MultipleGetByOperation(cur.Database, pair.Value.Value));
             }
         }
 
@@ -55,11 +55,11 @@ namespace LightningDB
         /// </summary>
         /// <typeparam name="TValue">Type to convert value to.</typeparam>
         /// <returns>Converted value.</returns>
-        public TValue Value<TValue>()
+        public TValue[] Values<TValue>()
         {
             this.EnsurePairExists();
 
-            return _pair.Value.Value.Value<TValue>();
+            return _pair.Value.Value.Values<TValue>();
         }
 
         /// <summary>
@@ -68,9 +68,9 @@ namespace LightningDB
         /// <typeparam name="TKey">Key type.</typeparam>
         /// <typeparam name="TValue">Value type.</typeparam>
         /// <returns>Pair of converted key and value.</returns>
-        public KeyValuePair<TKey, TValue> Pair<TKey, TValue>()
+        public KeyValuePair<TKey, TValue[]> Pair<TKey, TValue>()
         {
-            return new KeyValuePair<TKey, TValue>(this.Key<TKey>(), this.Value<TValue>());
+            return new KeyValuePair<TKey, TValue[]>(this.Key<TKey>(), this.Values<TValue>());
         }
     }
 }

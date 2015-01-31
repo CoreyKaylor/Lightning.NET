@@ -67,17 +67,13 @@ namespace LightningDB
 
         public static MultipleGetByOperation GetMultipleBy<TValue>(this LightningCursor cur)
         {
-            var bytes = cur.GetMultiple();
-            if (bytes == null)
-                return null;
-
-            return new MultipleGetByOperation(cur.Database, bytes);
+            return new MultipleGetByOperation(cur.Database, cur.GetMultiple());
         }
 
         public static bool GetMultiple<TValue>(this LightningCursor cur, out TValue[] values)
         {
             var op = cur.GetMultipleBy<TValue>();
-            if (op == null)
+            if (!op.HasValue)
             {
                 values = null;
                 return false;
@@ -86,6 +82,26 @@ namespace LightningDB
             values = op.Values<TValue>();
 
             return true;
+        }
+
+        public static CursorMultipleGetByOperation MoveNextMultipleBy(this LightningCursor cur)
+        {
+            return new CursorMultipleGetByOperation(cur, cur.MoveNextMultiple());
+        }
+
+        public static bool MoveNextMultiple<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue[]> pair)
+        {
+            var op = cur.MoveNextMultipleBy();
+            if (!op.PairExists)
+            {
+                pair = default(KeyValuePair<TKey, TValue[]>);
+                return false;
+            }
+            else
+            {
+                pair = op.Pair<TKey, TValue>();
+                return true;
+            }
         }
 
         internal static byte[] ToBytes<T>(this LightningCursor cur, T instance)
@@ -105,11 +121,7 @@ namespace LightningDB
 
         internal static GetByOperation CursorMoveValueBy(this LightningCursor cur, Func<byte[]> mover)
         {
-            var value = mover.Invoke();
-            if (value == null)
-                return null;
-
-            return new GetByOperation(cur.Database, value);
+            return new GetByOperation(cur.Database, mover.Invoke());
         }
 
         internal static bool CursorMove<TKey, TValue>(this LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover, out KeyValuePair<TKey, TValue> pair)

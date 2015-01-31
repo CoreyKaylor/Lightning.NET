@@ -22,6 +22,8 @@ namespace LightningDB
             _rawValue = rawValue;
         }
 
+        public bool HasValue { get { return _rawValue != null; } }
+
         /// <summary>
         /// Convert values from bytes to a specified type..
         /// </summary>
@@ -29,6 +31,9 @@ namespace LightningDB
         /// <returns>Converted value.</returns>
         public TValue[] Values<TValue>()
         {
+            if (!HasValue)
+                throw new InvalidOperationException("Value doen't exist");
+
             var itemSize = Marshal.SizeOf(typeof(TValue));
             if (_rawValue.Length % itemSize != 0)
                 throw new InvalidOperationException("Returned " + _rawValue.Length + " bytes when expected N*" + itemSize + " bytes");
