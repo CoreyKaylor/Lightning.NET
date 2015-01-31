@@ -29,47 +29,6 @@ namespace LightningDB
 {
     public static class LightningCursorMoveExtensions
     {
-        private static CursorGetByOperation CursorMoveBy(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover)
-        {
-            return new CursorGetByOperation(cur, mover.Invoke());
-        }
-
-        private static GetByOperation CursorMoveValueBy(LightningCursor cur, Func<byte[]> mover)
-        {
-            return new GetByOperation(cur.Database, mover.Invoke());
-        }
-
-        private static bool CursorMove<TKey, TValue>(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover, out KeyValuePair<TKey, TValue> pair)
-        {
-            var op = CursorMoveBy(cur, mover);
-
-            if (!op.PairExists)
-            {
-                pair = default(KeyValuePair<TKey, TValue>);
-                return false;
-            }
-            else
-            {
-                pair = op.Pair<TKey, TValue>();
-                return true;
-            }
-        }
-
-        private static bool CursorMoveValue<TValue>(LightningCursor cur, Func<byte[]> mover, out TValue value)
-        {
-            var op = CursorMoveValueBy(cur, mover);
-
-            if (op == null)
-            {
-                value = default(TValue);
-                return false;
-            }
-            else
-            {
-                value = op.Value< TValue>();
-                return true;
-            }
-        }
         <#
             foreach(var name in cursorPairMethods)
             {
@@ -77,12 +36,12 @@ namespace LightningDB
 
         public static CursorGetByOperation <#= name #>By(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.<#= name #>);
+            return cur.CursorMoveBy(cur.<#= name #>);
         }
 
         public static bool <#= name #><TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.<#= name #>, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.<#= name #>, out pair);
         }
         <#
             }
@@ -94,12 +53,12 @@ namespace LightningDB
 
         public static GetByOperation <#= name #>By(this LightningCursor cur)
         {
-            return CursorMoveValueBy(cur, cur.<#= name #>);
+            return cur.CursorMoveValueBy(cur.<#= name #>);
         }
 
         public static bool <#= name #><TValue>(this LightningCursor cur, out TValue value)
         {
-            return CursorMoveValue<TValue>(cur, cur.<#= name #>, out value);
+            return cur.CursorMoveValue<TValue>(cur.<#= name #>, out value);
         }
         <#
             }

@@ -72,6 +72,7 @@
     <Compile Include="Collections\CursorGenericEnumerable.cs" />
     <Compile Include="Collections\CursorEnumerable.cs" />
     <Compile Include="Collections\CursorEnumerator.cs" />
+    <Compile Include="MultipleGetByOperation.cs" />
     <Compile Include="LightningCompareDelegate.cs" />
     <Compile Include="CompareFunctionBuilder.cs" />
     <Compile Include="CursorGetByOperation.cs" />

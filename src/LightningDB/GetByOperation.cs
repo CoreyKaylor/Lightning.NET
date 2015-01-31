@@ -30,5 +30,5 @@ namespace LightningDB
         {
             return _db.FromBytes<TValue>(_rawValue);
         }
-    }    
+    }
 }

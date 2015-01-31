@@ -7,156 +7,115 @@ namespace LightningDB
 {
     public static class LightningCursorMoveExtensions
     {
-        private static CursorGetByOperation CursorMoveBy(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover)
-        {
-            return new CursorGetByOperation(cur, mover.Invoke());
-        }
-
-        private static GetByOperation CursorMoveValueBy(LightningCursor cur, Func<byte[]> mover)
-        {
-            return new GetByOperation(cur.Database, mover.Invoke());
-        }
-
-        private static bool CursorMove<TKey, TValue>(LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover, out KeyValuePair<TKey, TValue> pair)
-        {
-            var op = CursorMoveBy(cur, mover);
-
-            if (!op.PairExists)
-            {
-                pair = default(KeyValuePair<TKey, TValue>);
-                return false;
-            }
-            else
-            {
-                pair = op.Pair<TKey, TValue>();
-                return true;
-            }
-        }
-
-        private static bool CursorMoveValue<TValue>(LightningCursor cur, Func<byte[]> mover, out TValue value)
-        {
-            var op = CursorMoveValueBy(cur, mover);
-
-            if (op == null)
-            {
-                value = default(TValue);
-                return false;
-            }
-            else
-            {
-                value = op.Value< TValue>();
-                return true;
-            }
-        }
         
         public static CursorGetByOperation MoveToFirstBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MoveToFirst);
+            return cur.CursorMoveBy(cur.MoveToFirst);
         }
 
         public static bool MoveToFirst<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MoveToFirst, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MoveToFirst, out pair);
         }
         
         public static CursorGetByOperation MoveToLastBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MoveToLast);
+            return cur.CursorMoveBy(cur.MoveToLast);
         }
 
         public static bool MoveToLast<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MoveToLast, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MoveToLast, out pair);
         }
         
         public static CursorGetByOperation GetCurrentBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.GetCurrent);
+            return cur.CursorMoveBy(cur.GetCurrent);
         }
 
         public static bool GetCurrent<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.GetCurrent, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.GetCurrent, out pair);
         }
         
         public static CursorGetByOperation MoveNextBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MoveNext);
+            return cur.CursorMoveBy(cur.MoveNext);
         }
 
         public static bool MoveNext<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MoveNext, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MoveNext, out pair);
         }
         
         public static CursorGetByOperation MoveNextDuplicateBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MoveNextDuplicate);
+            return cur.CursorMoveBy(cur.MoveNextDuplicate);
         }
 
         public static bool MoveNextDuplicate<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MoveNextDuplicate, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MoveNextDuplicate, out pair);
         }
         
         public static CursorGetByOperation MoveNextNoDuplicateBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MoveNextNoDuplicate);
+            return cur.CursorMoveBy(cur.MoveNextNoDuplicate);
         }
 
         public static bool MoveNextNoDuplicate<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MoveNextNoDuplicate, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MoveNextNoDuplicate, out pair);
         }
         
         public static CursorGetByOperation MovePrevBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MovePrev);
+            return cur.CursorMoveBy(cur.MovePrev);
         }
 
         public static bool MovePrev<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MovePrev, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MovePrev, out pair);
         }
         
         public static CursorGetByOperation MovePrevDuplicateBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MovePrevDuplicate);
+            return cur.CursorMoveBy(cur.MovePrevDuplicate);
         }
 
         public static bool MovePrevDuplicate<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MovePrevDuplicate, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MovePrevDuplicate, out pair);
         }
         
         public static CursorGetByOperation MovePrevNoDuplicateBy(this LightningCursor cur)
         {
-            return CursorMoveBy(cur, cur.MovePrevNoDuplicate);
+            return cur.CursorMoveBy(cur.MovePrevNoDuplicate);
         }
 
         public static bool MovePrevNoDuplicate<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue> pair)
         {
-            return CursorMove<TKey, TValue>(cur, cur.MovePrevNoDuplicate, out pair);
+            return cur.CursorMove<TKey, TValue>(cur.MovePrevNoDuplicate, out pair);
         }
                 
         public static GetByOperation MoveToFirstDuplicateBy(this LightningCursor cur)
         {
-            return CursorMoveValueBy(cur, cur.MoveToFirstDuplicate);
+            return cur.CursorMoveValueBy(cur.MoveToFirstDuplicate);
         }
 
         public static bool MoveToFirstDuplicate<TValue>(this LightningCursor cur, out TValue value)
         {
-            return CursorMoveValue<TValue>(cur, cur.MoveToFirstDuplicate, out value);
+            return cur.CursorMoveValue<TValue>(cur.MoveToFirstDuplicate, out value);
         }
         
         public static GetByOperation MoveToLastDuplicateBy(this LightningCursor cur)
         {
-            return CursorMoveValueBy(cur, cur.MoveToLastDuplicate);
+            return cur.CursorMoveValueBy(cur.MoveToLastDuplicate);
         }
 
         public static bool MoveToLastDuplicate<TValue>(this LightningCursor cur, out TValue value)
         {
-            return CursorMoveValue<TValue>(cur, cur.MoveToLastDuplicate, out value);
+            return cur.CursorMoveValue<TValue>(cur.MoveToLastDuplicate, out value);
         }
             
     }

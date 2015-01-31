@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace LightningDB
@@ -63,6 +65,29 @@ namespace LightningDB
             cur.PutMultiple(keyBytes, valueBytes);
         }
 
+        public static MultipleGetByOperation GetMultipleBy<TValue>(this LightningCursor cur)
+        {
+            var bytes = cur.GetMultiple();
+            if (bytes == null)
+                return null;
+
+            return new MultipleGetByOperation(cur.Database, bytes);
+        }
+
+        public static bool GetMultiple<TValue>(this LightningCursor cur, out TValue[] values)
+        {
+            var op = cur.GetMultipleBy<TValue>();
+            if (op == null)
+            {
+                values = null;
+                return false;
+            }
+
+            values = op.Values<TValue>();
+
+            return true;
+        }
+
         internal static byte[] ToBytes<T>(this LightningCursor cur, T instance)
         {
             return cur.Database.ToBytes(instance);
@@ -71,6 +96,52 @@ namespace LightningDB
         internal static T FromBytes<T>(this LightningCursor cur, byte[] bytes)
         {
             return cur.Database.FromBytes<T>(bytes);
+        }
+
+        internal static CursorGetByOperation CursorMoveBy(this LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover)
+        {
+            return new CursorGetByOperation(cur, mover.Invoke());
+        }
+
+        internal static GetByOperation CursorMoveValueBy(this LightningCursor cur, Func<byte[]> mover)
+        {
+            var value = mover.Invoke();
+            if (value == null)
+                return null;
+
+            return new GetByOperation(cur.Database, value);
+        }
+
+        internal static bool CursorMove<TKey, TValue>(this LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover, out KeyValuePair<TKey, TValue> pair)
+        {
+            var op = CursorMoveBy(cur, mover);
+
+            if (!op.PairExists)
+            {
+                pair = default(KeyValuePair<TKey, TValue>);
+                return false;
+            }
+            else
+            {
+                pair = op.Pair<TKey, TValue>();
+                return true;
+            }
+        }
+
+        internal static bool CursorMoveValue<TValue>(this LightningCursor cur, Func<byte[]> mover, out TValue value)
+        {
+            var op = CursorMoveValueBy(cur, mover);
+
+            if (op == null)
+            {
+                value = default(TValue);
+                return false;
+            }
+            else
+            {
+                value = op.Value<TValue>();
+                return true;
+            }
         }
     }
 }

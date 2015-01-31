@@ -155,11 +155,7 @@ namespace LightningDB
         /// <returns>All the duplicate data items at the current cursor position.</returns>
         public byte[] GetMultiple()
         {
-            var result = this.Get(CursorOperation.GetMultiple);
-            if (!result.HasValue)
-                return null;
-
-            return result.Value.Value;
+            return this.GetValue(CursorOperation.GetMultiple);
         }
 
         /// <summary>
