@@ -15,9 +15,30 @@ namespace LightningDB.Native
 
         static NativeMethods()
         {
-            _libraryFacade = Environment.Is64BitProcess
-                ? new Native64BitLibraryFacade()
-                : (INativeLibraryFacade) new Native32BitLibraryFacade();
+
+			switch (Environment.OSVersion.Platform) {
+			case PlatformID.Unix:
+			
+				_libraryFacade = Environment.Is64BitProcess
+					? new LinuxNative64BitLibraryFacade ()
+					// TODO: add a build of liblmdb32.
+					: (INativeLibraryFacade)new FallbackLibraryFacade ();
+				break;
+
+			case PlatformID.Win32NT:
+			case PlatformID.WinCE:
+			case PlatformID.Win32S:
+			case PlatformID.Win32Windows:
+
+				_libraryFacade = Environment.Is64BitProcess
+					? new Native64BitLibraryFacade ()
+					: (INativeLibraryFacade)new Native32BitLibraryFacade ();
+				break;
+
+			default:
+				_libraryFacade = (INativeLibraryFacade)new FallbackLibraryFacade ();
+				break;
+			}
 
             Exception archSpecificException;
             _libraryVersion = GetVersionInfo(_libraryFacade, out archSpecificException);

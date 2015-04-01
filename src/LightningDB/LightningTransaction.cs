@@ -25,6 +25,7 @@ namespace LightningDB
         /// Created new instance of LightningTransaction
         /// </summary>
         /// <param name="environment">Environment.</param>
+		/// <param name="handle">reference to native handle</param>
         /// <param name="parent">Parent transaction or null.</param>
         /// <param name="flags">Transaction open options.</param>
         internal LightningTransaction(LightningEnvironment environment, IntPtr handle, LightningTransaction parent, TransactionBeginFlags flags)
