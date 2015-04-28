@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Text;
 using LightningDB.Factories;
 using LightningDB.Native;
 
@@ -82,8 +80,8 @@ namespace LightningDB
 
             var db = this.Environment.OpenDatabase(name, this, options.Flags, options.Encoding);
 
-            options.SetComparer(this, db);
-            options.SetDuplicatesSort(this, db);
+            db.SetComparer(this, options.Compare);
+            db.SetDuplicatesSort(this, options.DuplicatesSort);
 
             return db;
         }
