@@ -20,6 +20,12 @@ namespace LightningDB
         private readonly string _name;
         private bool _shouldDispose;
 
+        // ReSharper disable once NotAccessedField.Local, reference required to prevent delegate being GC'd
+        private CompareFunction _compareFunc;
+
+        // ReSharper disable once NotAccessedField.Local, reference required to prevent delegate being GC'd
+        private CompareFunction _duplicatesSortFunc;
+
         /// <summary>
         /// Creates a LightningDatabase instance.
         /// </summary>
@@ -73,6 +79,54 @@ namespace LightningDB
         /// Flags with which the database was opened.
         /// </summary>
         public DatabaseOpenFlags OpenFlags { get; private set; }
+
+
+        private CompareFunction CreateNativeCompareFunction(LightningCompareDelegate compare)
+        {
+            return (IntPtr left, IntPtr right) =>
+                compare.Invoke(this, NativeMethods.ValueByteArrayFromPtr(left), NativeMethods.ValueByteArrayFromPtr(right));
+        }
+
+        private CompareFunction SetNativeCompareFunction(
+            LightningTransaction tran,
+            Func<CompareFunctionBuilder, LightningCompareDelegate> delegateFactory,
+            Func<INativeLibraryFacade, CompareFunction, int> setter)
+        {
+            if (delegateFactory == null)
+                return null;
+
+            var comparer = delegateFactory.Invoke(new CompareFunctionBuilder());
+            if (comparer == null)
+                return null;
+
+            var compareFunction = CreateNativeCompareFunction(comparer);
+
+            NativeMethods.Execute(lib => setter.Invoke(lib, compareFunction));
+            tran.SubTransactionsManager.StoreComparer(comparer);
+
+            return compareFunction;
+        }
+
+        internal void SetComparer(LightningTransaction tran, Func<CompareFunctionBuilder, LightningCompareDelegate> compareFunc)
+        {
+            // keep a reference to the delegate to prevent it being garbage collected
+            _compareFunc = SetNativeCompareFunction(
+                               tran,
+                               compareFunc,
+                               (lib, func) => lib.mdb_set_compare(tran._handle, this._handle, func));
+        }
+
+        internal void SetDuplicatesSort(LightningTransaction tran, Func<CompareFunctionBuilder, LightningCompareDelegate> compareFunc)
+        {
+            if (!this.OpenFlags.HasFlag(DatabaseOpenFlags.DuplicatesSort))
+                return;
+            
+            // keep a reference to the delegate to prevent it being garbage collected
+            _duplicatesSortFunc = SetNativeCompareFunction(
+                                      tran,
+                                      compareFunc,
+                                      (lib, func) => lib.mdb_set_dupsort(tran._handle, this._handle, func));
+        }
 
         /// <summary>
         /// Clode the database.
