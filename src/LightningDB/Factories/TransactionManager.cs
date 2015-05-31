@@ -16,7 +16,7 @@ namespace LightningDB.Factories
         private readonly ConcurrentDictionary<LightningTransaction, bool> _transactions;
 
         //prevent delegated from being collected by GC by storing them in collection
-        private readonly ConcurrentDictionary<LightningCompareDelegate, bool> _comparatorsStore;
+        private readonly ConcurrentDictionary<CompareFunction, bool> _comparatorsStore;
 
         public TransactionManager(LightningEnvironment environment, LightningTransaction parentTransaction)
         {
@@ -31,7 +31,7 @@ namespace LightningDB.Factories
                 : IntPtr.Zero;
 
             _transactions = new ConcurrentDictionary<LightningTransaction, bool>();
-            _comparatorsStore = new ConcurrentDictionary<LightningCompareDelegate, bool>();
+            _comparatorsStore = new ConcurrentDictionary<CompareFunction, bool>();
         }
 
         private void EnsureEnvironmentOpened()
@@ -75,9 +75,9 @@ namespace LightningDB.Factories
             AbortAll(this);
         }
 
-        public void StoreComparer(LightningCompareDelegate comparer)
+        public void StoreCompareFunction(CompareFunction compareFunction)
         {
-            _comparatorsStore.TryAdd(comparer, true);
+            _comparatorsStore.TryAdd(compareFunction, true);
         }
     }
 }
