@@ -1,47 +1,30 @@
 ﻿using System;
 using System.IO;
-using NUnit.Framework;
+using Xunit;
 
 namespace LightningDB.Tests
 {
-    [TestFixture]
-    public class EnvironmentTests
+    [Collection("SharedFileSystem")]
+    public class EnvironmentTests : IDisposable
     {
         private string _path,  _pathCopy;
         private LightningEnvironment _env;
 
-        public EnvironmentTests()
+        public EnvironmentTests(SharedFileSystem fileSystem)
         {
-            var location = typeof(EnvironmentTests).Assembly.Location;
-            var dir = Path.GetDirectoryName(location);
-
-            _path = Path.Combine(dir, "TestDb" + Guid.NewGuid().ToString());
-            _pathCopy = _path + "Copy";
+            _path = fileSystem.CreateNewDirectoryForTest();
+            _pathCopy = fileSystem.CreateNewDirectoryForTest();
         }
 
-        [SetUp]
-        public void Init()
-        {
-            Directory.CreateDirectory(_path);
-            Directory.CreateDirectory(_pathCopy);
-        }
-
-        [TearDown]
-        public void Cleanup()
+        public void Dispose()
         {
             if (_env != null && _env.IsOpened)
                 _env.Close();
 
             _env = null;
-
-            if (Directory.Exists(_path))
-                Directory.Delete(_path, true);
-
-            if (Directory.Exists(_pathCopy))
-                Directory.Delete(_pathCopy, true);
         }
 
-        [Test]
+        [Fact]
         public void EnvironmentShouldBeCreatedIfWithoutFlags()
         {
             //arrange
@@ -52,7 +35,7 @@ namespace LightningDB.Tests
             //assert
         }
 
-        [Test]
+        [Fact]
         public void EnvironmentShouldBeCreatedIfReadOnly()
         {
             //arrange
@@ -63,7 +46,7 @@ namespace LightningDB.Tests
             //assert
         }
 
-        [Test]
+        [Fact]
         public void EnvironmentShouldBeOpened()
         {
             //arrange
@@ -73,10 +56,10 @@ namespace LightningDB.Tests
             _env.Open();
 
             //assert
-            Assert.AreEqual(true, _env.IsOpened);
+            Assert.Equal(true, _env.IsOpened);
         }
 
-        [Test]
+        [Fact]
         public void EnvironmentShouldBeClosed()
         {
             //arrange
@@ -87,11 +70,12 @@ namespace LightningDB.Tests
             _env.Close();
 
             //assert
-            Assert.AreEqual(false, _env.IsOpened);
+            Assert.Equal(false, _env.IsOpened);
         }
 
-        [TestCase(true)]
-        [TestCase(false)]
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
         public void EnvironmentShouldBeCopied(bool compact)
         {
             //arrange
@@ -103,10 +87,10 @@ namespace LightningDB.Tests
 
             //assert
             if (Directory.GetFiles(_pathCopy).Length == 0)
-                Assert.Fail("Copied files doesn't exist");
+                Assert.True(false, "Copied files doesn't exist");
         }
 
-        [Test]
+        [Fact]
         public void CanOpenEnvironmentMoreThan50Mb()
         {
             //arrange
@@ -119,7 +103,7 @@ namespace LightningDB.Tests
             _env.Open();
         }
 
-        [Test]
+        [Fact]
         public void CanCountEnvironmentEntries()
         {
             const int entriesCount = 10;
@@ -141,10 +125,10 @@ namespace LightningDB.Tests
             var count = _env.EntriesCount;
 
             //assert;
-            Assert.AreEqual(entriesCount, count);
+            Assert.Equal(entriesCount, count);
         }
 
-        [Test]
+        [Fact]
         public void CanGetUsedSize()
         {
             const int entriesCount = 1;
@@ -168,7 +152,7 @@ namespace LightningDB.Tests
             var sizeDelta = _env.UsedSize - initialUsedSize;
 
             //act-assert;
-            Assert.AreEqual(_env.PageSize, sizeDelta);
+            Assert.Equal(_env.PageSize, sizeDelta);
         }
 
     }

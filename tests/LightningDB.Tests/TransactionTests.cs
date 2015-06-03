@@ -1,44 +1,29 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.IO;
-using NUnit.Framework;
+using Xunit;
 
 namespace LightningDB.Tests
 {
-    [TestFixture]
-    public class TransactionTests
+    [Collection("SharedFileSystem")]
+    public class TransactionTests : IDisposable
     {
-        private string _path;
         private LightningEnvironment _env;
         private LightningTransaction _txn;
 
-        public TransactionTests()
+        public TransactionTests(SharedFileSystem fileSystem)
         {
-            var location = typeof(EnvironmentTests).Assembly.Location;
-            _path = Path.Combine(
-                Path.GetDirectoryName(location), 
-                "TestDb" + Guid.NewGuid().ToString());
-        }
-
-        [SetUp]
-        public void Init()
-        {
-            Directory.CreateDirectory(_path);
-
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            var path = fileSystem.CreateNewDirectoryForTest();
+            _env = new LightningEnvironment(path);
             _env.Open();
         }
 
-        [TearDown]
-        public void Cleanup()
+        public void Dispose()
         {
             _env.Close();
-
-            Directory.Delete(_path, true);
         }
 
-        [Test]
+        [Fact]
         public void TransactionShouldBeCreated()
         {
             //arrange
@@ -47,10 +32,10 @@ namespace LightningDB.Tests
             _txn = _env.BeginTransaction();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Active, _txn.State);
+            Assert.Equal(LightningTransactionState.Active, _txn.State);
         }
 
-        [Test]
+        [Fact]
         public void TransactionShouldBeAbortedIfEnvironmentCloses()
         {
             //arrange
@@ -60,10 +45,10 @@ namespace LightningDB.Tests
             _env.Close();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Aborted, _txn.State);
+            Assert.Equal(LightningTransactionState.Aborted, _txn.State);
         }
 
-        [Test]
+        [Fact]
         public void TransactionShouldChangeStateOnCommit()
         {
             //arrange
@@ -73,10 +58,10 @@ namespace LightningDB.Tests
             _txn.Commit();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Commited, _txn.State);
+            Assert.Equal(LightningTransactionState.Commited, _txn.State);
         }
 
-        [Test]
+        [Fact]
         public void ChildTransactionShouldBeCreated()
         {
             //arrange
@@ -86,10 +71,10 @@ namespace LightningDB.Tests
             var subTxn = _txn.BeginTransaction();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Active, subTxn.State);
+            Assert.Equal(LightningTransactionState.Active, subTxn.State);
         }
 
-        [Test]
+        [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsAborted()
         {
             //arrange
@@ -100,10 +85,10 @@ namespace LightningDB.Tests
             _txn.Abort();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Aborted, child.State);
+            Assert.Equal(LightningTransactionState.Aborted, child.State);
         }
 
-        [Test]
+        [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsCommited()
         {
             //arrange
@@ -114,10 +99,10 @@ namespace LightningDB.Tests
             _txn.Commit();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Aborted, child.State);
+            Assert.Equal(LightningTransactionState.Aborted, child.State);
         }
 
-        [Test]
+        [Fact]
         public void ChildTransactionShouldBeAbortedIfEnvironmentIsClosed()
         {
             //arrange
@@ -128,10 +113,10 @@ namespace LightningDB.Tests
             _env.Close();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Aborted, child.State);
+            Assert.Equal(LightningTransactionState.Aborted, child.State);
         }
 
-        [Test]
+        [Fact]
         public void ReadOnlyTransactionShouldChangeStateOnReset()
         {
             //arrange
@@ -141,10 +126,10 @@ namespace LightningDB.Tests
             _txn.Reset();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Reseted, _txn.State);
+            Assert.Equal(LightningTransactionState.Reseted, _txn.State);
         }
 
-        [Test]
+        [Fact]
         public void ReadOnlyTransactionShouldChangeStateOnRenew()
         {
             //arrange
@@ -155,10 +140,10 @@ namespace LightningDB.Tests
             _txn.Renew();
 
             //assert
-            Assert.AreEqual(LightningTransactionState.Active, _txn.State);
+            Assert.Equal(LightningTransactionState.Active, _txn.State);
         }
 
-        [Test]
+        [Fact]
         public void DefaultDatabaseShouldBeDropped()
         {
             _txn = _env.BeginTransaction();
@@ -169,10 +154,10 @@ namespace LightningDB.Tests
             _txn.DropDatabase(db, true);
 
             //assert
-            Assert.AreEqual(false, db.IsOpened);
+            Assert.Equal(false, db.IsOpened);
         }
 
-        [Test]
+        [Fact]
         public void CanCountTransactionEntries()
         {
             //arrange
@@ -187,10 +172,10 @@ namespace LightningDB.Tests
             var count = _txn.GetEntriesCount(db);
 
             //assert;
-            Assert.AreEqual(entriesCount, count);
+            Assert.Equal(entriesCount, count);
         }
 
-        [Test]
+        [Fact]
         public void TransactionShouldSupportCustomComparer()
         {
             //arrange
@@ -215,11 +200,11 @@ namespace LightningDB.Tests
 
                 KeyValuePair<int, int> pair;
                 while (c.MoveNext(out pair))
-                    Assert.AreEqual(keysSorted[order++], pair.Key);
+                    Assert.Equal(keysSorted[order++], pair.Key);
             }
         }
 
-        [Test]
+        [Fact]
         public void TransactionShouldSupportCustomDupSorter()
         {
             //arrange
@@ -248,7 +233,7 @@ namespace LightningDB.Tests
 
                 KeyValuePair<int, int> pair;
                 while (c.MoveNextDuplicate(out pair))
-                    Assert.AreEqual(valuesSorted[order++], pair.Value);
+                    Assert.Equal(valuesSorted[order++], pair.Value);
             }
         }
     }

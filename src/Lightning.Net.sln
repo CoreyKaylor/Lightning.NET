@@ -1,39 +1,33 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightningDB", "LightningDB\LightningDB.csproj", "{4A034D32-98A2-4A6D-9569-D26B5C151AE0}"
+# Visual Studio 14
+VisualStudioVersion = 14.0.22823.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3992FBBE-4BD8-4E28-9ED7-32421AFBF08B}"
+	ProjectSection(SolutionItems) = preProject
+		..\global.json = ..\global.json
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LightningDB.Tests", "LightningDB.Tests\LightningDB.Tests.csproj", "{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "LightningDB", "LightningDB\LightningDB.xproj", "{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "LightningDB.Tests", "..\tests\LightningDB.Tests\LightningDB.Tests.xproj", "{3A8F29FB-1110-4755-9700-4EB064BB463E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x86.ActiveCfg = Debug|x86
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Debug|x86.Build.0 = Debug|x86
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x86.ActiveCfg = Release|x86
-		{4A034D32-98A2-4A6D-9569-D26B5C151AE0}.Release|x86.Build.0 = Release|x86
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x86.ActiveCfg = Debug|x86
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Debug|x86.Build.0 = Debug|x86
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x86.ActiveCfg = Release|x86
-		{0AC99249-D4E2-4512-9F62-7F1D636B8BA5}.Release|x86.Build.0 = Release|x86
+		{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = LightningDB\LightningDB.csproj
 	EndGlobalSection
 EndGlobal

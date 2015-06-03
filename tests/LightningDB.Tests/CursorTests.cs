@@ -1,48 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
-using NUnit.Framework;
+using Xunit;
 
 namespace LightningDB.Tests
 {
-    [TestFixture]
-    public class CursorTests
+    [Collection("SharedFileSystem")]
+    public class CursorTests : IDisposable
     {
-        private string _path;
         private LightningEnvironment _env;
         private LightningTransaction _txn;
         private LightningDatabase _db;
 
-        public CursorTests()
+        public CursorTests(SharedFileSystem fileSystem)
         {
-            var location = typeof(EnvironmentTests).Assembly.Location;
-            _path = Path.Combine(
-                Path.GetDirectoryName(location), 
-                "TestDb" + Guid.NewGuid().ToString());
-        }
+            var path = fileSystem.CreateNewDirectoryForTest();
+            
 
-        [SetUp]
-        public void Init()
-        {
-            Directory.CreateDirectory(_path);
-
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(path);
             _env.MaxDatabases = 10;
             _env.Open();
 
             _txn = _env.BeginTransaction();            
         }
 
-        [TearDown]
-        public void Cleanup()
+        public void Dispose()
         {
             _txn.Commit();
             _env.Close();
-
-            if (Directory.Exists(_path))
-                Directory.Delete(_path, true);
         }
 
         private void PopulateCursorValues()
@@ -61,7 +47,7 @@ namespace LightningDB.Tests
             }
         }
 
-        [Test]
+        [Fact]
         public void CursorShouldBeCreated()
         {
             //arrange
@@ -73,7 +59,7 @@ namespace LightningDB.Tests
             _txn.CreateCursor(_db);
         }
 
-        [Test]
+        [Fact]
         public void CursorShouldPutValues()
         {
             //arrange
@@ -85,7 +71,7 @@ namespace LightningDB.Tests
             this.PopulateCursorValues();
         }
 
-        [Test]
+        [Fact]
         public void CursorShouldMoveToLast()
         {
             //arrange
@@ -101,12 +87,12 @@ namespace LightningDB.Tests
                 var lastKey = Encoding.UTF8.GetString(last.Key);
                 var lastValue = Encoding.UTF8.GetString(last.Value);
 
-                Assert.AreEqual("key5", lastKey);
-                Assert.AreEqual("key5", lastValue);
+                Assert.Equal("key5", lastKey);
+                Assert.Equal("key5", lastValue);
             }
         }
 
-        [Test]
+        [Fact]
         public void CursorShouldMoveToFirst()
         {
             //arrange
@@ -122,12 +108,12 @@ namespace LightningDB.Tests
                 var lastKey = Encoding.UTF8.GetString(last.Key);
                 var lastValue = Encoding.UTF8.GetString(last.Value);
 
-                Assert.AreEqual("key1", lastKey);
-                Assert.AreEqual("key1", lastValue);
+                Assert.Equal("key1", lastKey);
+                Assert.Equal("key1", lastValue);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldIterateThroughCursor()
         {
             //arrange
@@ -152,13 +138,13 @@ namespace LightningDB.Tests
 
                     //assert
 
-                    Assert.AreEqual(name, key);
-                    Assert.AreEqual(name, value);
+                    Assert.Equal(name, key);
+                    Assert.Equal(name, value);
                 }                
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldIterateThroughCursorByExtensions()
         {
             //arrange
@@ -177,13 +163,13 @@ namespace LightningDB.Tests
 
                     //assert
 
-                    Assert.AreEqual(name, pair.Key);
-                    Assert.AreEqual(name, pair.Value);
+                    Assert.Equal(name, pair.Key);
+                    Assert.Equal(name, pair.Value);
                 }
             }
         }
 
-        [Test]
+        [Fact]
         public void CursorShouldDeleteElements()
         {
             //arrange
@@ -205,13 +191,13 @@ namespace LightningDB.Tests
                 {
                     var key = current.Key<string>();
 
-                    Assert.AreNotEqual("key1", key);
-                    Assert.AreNotEqual("key2", key);
+                    Assert.NotEqual("key1", key);
+                    Assert.NotEqual("key2", key);
                 }
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldIterateThroughCursorByEnumerator()
         {
             //arrange
@@ -225,12 +211,12 @@ namespace LightningDB.Tests
 
                 //assert
 
-                Assert.AreEqual(name, pair.Key);
-                Assert.AreEqual(name, pair.Value);
+                Assert.Equal(name, pair.Key);
+                Assert.Equal(name, pair.Value);
             }
         }
 
-        [Test]
+        [Fact]
         public void ShouldPutMultiple()
         {
             //arrange
@@ -251,10 +237,10 @@ namespace LightningDB.Tests
 
             //assert
             for (var i = 0; i < values.Length; i++)
-                Assert.AreEqual(values[i], pairs[i].Value);
+                Assert.Equal(values[i], pairs[i].Value);
         }
 
-        [Test]
+        [Fact]
         public void ShouldGetMultiple()
         {
             //arrange
@@ -274,11 +260,11 @@ namespace LightningDB.Tests
                 result = cur.GetMultiple(out resultArray);
             }
 
-            Assert.IsTrue(result);
-            CollectionAssert.AreEqual(values, resultArray);
+            Assert.True(result);
+            Assert.Equal(values, resultArray);
         }
 
-        [Test]
+        [Fact]
         public void ShouldMoveNextMultiple()
         {
             //arrange
@@ -294,9 +280,9 @@ namespace LightningDB.Tests
             using (var cur = _txn.CreateCursor(_db))
                 result = cur.MoveNextMultiple(out resultPair);
 
-            Assert.IsTrue(result);
-            Assert.AreEqual(key, resultPair.Key);
-            CollectionAssert.AreEqual(values, resultPair.Value);
+            Assert.True(result);
+            Assert.Equal(key, resultPair.Key);
+            Assert.Equal(values, resultPair.Value);
         }
     }
 }
