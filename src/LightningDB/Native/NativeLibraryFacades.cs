@@ -6,8 +6,8 @@ using System.Text;
 
 namespace LightningDB.Native
 {
-	
-	class Native32BitLibraryFacade : INativeLibraryFacade
+#if !DNXCORE50 || !DNX451
+    class Native32BitLibraryFacade : INativeLibraryFacade
     {
         public const string LibraryName = "lmdb32";
 
@@ -771,7 +771,7 @@ namespace LightningDB.Native
         int INativeLibraryFacade.mdb_env_set_mapsize(IntPtr env, long size)
         {		
 			IntPtr sizeValue;
-			if (!Environment.Is64BitProcess && size > Int32.MaxValue)
+			if (/*!Environment.Is64BitProcess && */ size > Int32.MaxValue)
 			{
 				if (LightningConfig.Environment.AutoReduceMapSizeIn32BitProcess)
 					sizeValue = new IntPtr(Int32.MaxValue);
@@ -945,5 +945,5 @@ namespace LightningDB.Native
             return FallbackLibraryFacade.mdb_set_dupsort(txn, dbi, cmp);
         }
 	}
-	
+#endif	
 }

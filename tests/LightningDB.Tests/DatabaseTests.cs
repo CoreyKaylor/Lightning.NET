@@ -1,42 +1,26 @@
 ﻿using System;
-using System.IO;
-using NUnit.Framework;
+using Xunit;
 
 namespace LightningDB.Tests
 {
-    [TestFixture]
-    public class DatabaseTests
+    [Collection("SharedFileSystem")]
+    public class DatabaseTests : IDisposable
     {
-        private string _path;
         private LightningEnvironment _env;
         private LightningTransaction _txn;
 
-        public DatabaseTests()
+        public DatabaseTests(SharedFileSystem fileSystem)
         {
-            var location = typeof(EnvironmentTests).Assembly.Location;
-            _path = Path.Combine(
-                Path.GetDirectoryName(location), 
-                "TestDb" + Guid.NewGuid().ToString());
+            var path = fileSystem.CreateNewDirectoryForTest();
+            _env = new LightningEnvironment(path);
         }
 
-        [SetUp]
-        public void Init()
-        {
-            Directory.CreateDirectory(_path);
-
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
-        }
-
-        [TearDown]
-        public void Cleanup()
+        public void Dispose()
         {
             _env.Close();
-
-            if (Directory.Exists(_path))
-                Directory.Delete(_path, true);
         }
         
-        [Test]
+        [Fact]
         public void DatabaseShouldBeCreated()
         {
             var dbName = "test";
@@ -51,7 +35,7 @@ namespace LightningDB.Tests
             //assert
         }
 
-        [Test]
+        [Fact]
         public void DefaultDatabaseShouldBeOpened()
         {
             _env.Open();
@@ -62,10 +46,10 @@ namespace LightningDB.Tests
             var db = _txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None });
 
             //assert
-            Assert.AreEqual(true, db.IsOpened);
+            Assert.Equal(true, db.IsOpened);
         }
 
-        [Test]
+        [Fact]
         public void DefaultDatabaseShouldBeClosed()
         {
             _env.Open();
@@ -77,10 +61,10 @@ namespace LightningDB.Tests
             db.Close();
 
             //assert
-            Assert.AreEqual(false, db.IsOpened);
+            Assert.Equal(false, db.IsOpened);
         }
 
-        [Test]
+        [Fact]
         public void DatabaseFromCommitedTransactionShouldBeAccessable()
         {
             //arrange

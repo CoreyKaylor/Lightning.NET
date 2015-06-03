@@ -1,13 +1,15 @@
 obj
 bin
 .idea/
+.vs/
 artifacts/
 results/
 logs/
+testrun/
 packages
 Gemfile.lock
 CommonAssemblyInfo.cs
-*.csproj.user
+*.*proj.user
 _ReSharper.*
 *.[Rr]e[Ss]harper.user
 *.DotSettings*
