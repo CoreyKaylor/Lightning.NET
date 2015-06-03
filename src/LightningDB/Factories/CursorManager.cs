@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using LightningDB.Native;
+using static LightningDB.Native.NativeMethods;
 
 namespace LightningDB.Factories
 {
@@ -24,15 +21,15 @@ namespace LightningDB.Factories
 
         private IntPtr CreateCursorHandle(uint dbHandle)
         {
-            var handle = default(IntPtr);
-            NativeMethods.Execute(lib => lib.mdb_cursor_open(_transaction._handle, dbHandle, out handle));
+            IntPtr handle;
+            mdb_cursor_open(_transaction._handle, dbHandle, out handle);
 
             return handle;
         }
 
         private void CloseCursor(IntPtr cursorHandle)
         {
-            NativeMethods.Library.mdb_cursor_close(cursorHandle);
+            mdb_cursor_close(cursorHandle);
         }
 
         public LightningCursor OpenCursor(LightningDatabase db)

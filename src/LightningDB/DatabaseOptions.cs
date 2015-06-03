@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using LightningDB.Native;
+using static LightningDB.Native.NativeMethods;
 
 namespace LightningDB
 {
@@ -30,7 +29,7 @@ namespace LightningDB
             LightningDatabase db, LightningCompareDelegate compare)
         {
             return (IntPtr left, IntPtr right) =>
-                compare.Invoke(db, NativeMethods.ValueByteArrayFromPtr(left), NativeMethods.ValueByteArrayFromPtr(right));
+                compare(db, ValueByteArrayFromPtr(left), ValueByteArrayFromPtr(right));
         }
 
         private static void SetNativeCompareFunction(
@@ -48,7 +47,7 @@ namespace LightningDB
 
             var compareFunction = CreateNativeCompareFunction(db, comparer);
 
-            NativeMethods.Execute(lib => setter.Invoke(lib, compareFunction));
+            setter(Library, compareFunction);
             tran.SubTransactionsManager.StoreCompareFunction(compareFunction);
         }
 

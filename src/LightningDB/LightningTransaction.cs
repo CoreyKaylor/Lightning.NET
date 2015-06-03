@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Text;
 using LightningDB.Factories;
 using LightningDB.Native;
+using static LightningDB.Native.NativeMethods;
 
 namespace LightningDB
 {
@@ -95,7 +94,7 @@ namespace LightningDB
         /// <param name="delete">Database is deleted permanently if true, or just closed if false.</param>
         public void DropDatabase(LightningDatabase db, bool delete)
         {
-            NativeMethods.Execute(lib => lib.mdb_drop(_handle, db._handle, delete));
+            mdb_drop(_handle, db._handle, delete);
 
             db.Close(false);
         }
@@ -116,12 +115,12 @@ namespace LightningDB
             
             using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
-                var valueStruct = default(ValueStructure);
+                ValueStructure valueStruct;
                 var keyStructure = keyMarshalStruct.ValueStructure;
 
-                var res = NativeMethods.Read(lib => lib.mdb_get(_handle, dbi, ref keyStructure, out valueStruct));
+                var res = mdb_get(_handle, dbi, ref keyStructure, out valueStruct);
 
-                var exists = res != NativeMethods.MDB_NOTFOUND;
+                var exists = res != MDB_NOTFOUND;
                 if (exists)
                     valueFactory = () => valueStruct.ToByteArray(res);
 
@@ -198,7 +197,7 @@ namespace LightningDB
                 var keyStruct = keyStructureMarshal.ValueStructure;
                 var valueStruct = valueStructureMarshal.ValueStructure;
 
-                NativeMethods.Execute(lib => lib.mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options));
+                mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options);
             }
         }
 
@@ -226,11 +225,11 @@ namespace LightningDB
                     using (var valueMarshalStruct = new MarshalValueStructure(value))
                     {
                         var valueStructure = valueMarshalStruct.ValueStructure;
-                        NativeMethods.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure));
+                        mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure);
                         return;
                     }
                 }
-                NativeMethods.Execute(lib => lib.mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero));
+                mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero);
             }
         }
 
@@ -242,7 +241,7 @@ namespace LightningDB
             if (!this.IsReadOnly)
                 throw new InvalidOperationException("Can't reset non-readonly transaction");
 
-            NativeMethods.Library.mdb_txn_reset(_handle);
+            mdb_txn_reset(_handle);
             this.State = LightningTransactionState.Reseted;
         }
 
@@ -257,7 +256,7 @@ namespace LightningDB
             if (this.State != LightningTransactionState.Reseted)
                 throw new InvalidOperationException("Transaction should be reseted first");
 
-            NativeMethods.Library.mdb_txn_renew(_handle);
+            mdb_txn_renew(_handle);
             this.State = LightningTransactionState.Active;
         }
 
@@ -307,7 +306,7 @@ namespace LightningDB
             {
                 try
                 {
-                    NativeMethods.Execute(lib => lib.mdb_txn_commit(_handle));
+                    mdb_txn_commit(_handle);
 
                     this.State = LightningTransactionState.Commited;
 
@@ -331,14 +330,14 @@ namespace LightningDB
             Discard(() =>
             {
                 this.State = LightningTransactionState.Aborted;
-                NativeMethods.Library.mdb_txn_abort(_handle);
+                mdb_txn_abort(_handle);
             });
         }
 
         public long GetEntriesCount(LightningDatabase db)
         {
-            var stat = new MDBStat();
-            NativeMethods.Execute(lib => lib.mdb_stat(_handle, db._handle, out stat));
+            MDBStat stat;
+            mdb_stat(_handle, db._handle, out stat);
 
             return stat.ms_entries.ToInt64();
         }

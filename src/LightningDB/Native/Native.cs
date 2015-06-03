@@ -139,30 +139,6 @@ namespace LightningDB.Native
             return ValueStructureFromPtr(ptr).ToByteArray(resultCode);
         }
 
-        public static int Execute(Func<INativeLibraryFacade, int> action)
-        {
-            return ExecuteHelper(action, err => true);
-        }
-
-        public static int Read(Func<INativeLibraryFacade, int> action)
-        {
-            return ExecuteHelper(action, err => err != MDB_NOTFOUND);
-        }
-
-        public static bool TryRead(Func<INativeLibraryFacade, int> action)
-        {
-            return Read(action) != MDB_NOTFOUND;
-        }
-
-        private static int ExecuteHelper(Func<INativeLibraryFacade, int> action, Func<int, bool> shouldThrow)
-        {
-            var res = action.Invoke(_libraryFacade);
-            if (res != 0 && shouldThrow(res))
-                throw new LightningException(string.Empty);
-            
-            return res;
-        }
-
         static int check(int statusCode)
         {
             if (statusCode != 0)

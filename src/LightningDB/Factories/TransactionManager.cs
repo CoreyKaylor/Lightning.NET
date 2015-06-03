@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using LightningDB.Native;
+using static LightningDB.Native.NativeMethods;
 
 namespace LightningDB.Factories
 {
@@ -45,7 +44,7 @@ namespace LightningDB.Factories
             EnsureEnvironmentOpened();
 
             IntPtr handle = default(IntPtr);
-            NativeMethods.Execute(lib => lib.mdb_txn_begin(_environment._handle, _parentHandle, beginFlags, out handle));
+            mdb_txn_begin(_environment._handle, _parentHandle, beginFlags, out handle);
 
             var tran = new LightningTransaction(_environment, handle, _parentTransaction, beginFlags);
 
