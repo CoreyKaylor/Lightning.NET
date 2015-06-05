@@ -1,0 +1,3 @@
+test: off
+build_script:
+  - build.cmd
