@@ -1,6 +1,16 @@
 @echo off
 
 pushd %~dp0
+
+SETLOCAL
+SET CACHED_NUGET=%LocalAppData%\NuGet\NuGet.exe
+
+IF EXIST %CACHED_NUGET% goto checkdnx
+echo Downloading latest version of NuGet.exe...
+IF NOT EXIST %LocalAppData%\NuGet md %LocalAppData%\NuGet
+@powershell -NoProfile -ExecutionPolicy unrestricted -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest 'https://www.nuget.org/nuget.exe' -OutFile '%CACHED_NUGET%'"
+
+:checkdnx
 set "DNX_NUGET_API_URL=https://www.nuget.org/api/v2"
 setlocal EnableDelayedExpansion 
 where dnvm
@@ -22,7 +32,11 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 cd tests\LightningDB.Tests
 call dnx . test
 if %errorlevel% neq 0 exit /b %errorlevel%
-cd ..\..
-call dnu publish src\LightningDB --no-source --out artifacts\build\LightningDB --runtime dnx-clr-win-x86.1.0.0-beta4
+cd ..\..\src\LightningDB
+call dnu build
+cd ..\..\
+md artifacts
+
+call %CACHED_NUGET% pack packaging/nuget/lightningdb.nuspec -OutputDirectory artifacts -Symbols
 
 popd
