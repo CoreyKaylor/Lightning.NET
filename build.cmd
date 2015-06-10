@@ -37,6 +37,9 @@ call dnu build
 cd ..\..\
 md artifacts
 
-call %CACHED_NUGET% pack packaging/nuget/lightningdb.nuspec -OutputDirectory artifacts -Symbols
+if "%LIGHTNING_NUGET_VERSION%"=="" set /p LIGHTNING_NUGET_VERSION=<VERSION.txt
+
+echo Packing LightningDb Nuget Version %LIGHTNING_NUGET_VERSION%
+call %CACHED_NUGET% pack packaging/nuget/lightningdb.nuspec -Version %LIGHTNING_NUGET_VERSION% -OutputDirectory artifacts -Symbols
 
 popd
