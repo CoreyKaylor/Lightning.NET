@@ -1,3 +1,22 @@
+version: LQ-{branch}-{build}
+
 test: off
+
+install:
+  - ps: $env:LIGHTNING_VERSION = Get-Content .\VERSION.txt -Raw
+  #Change "." to "+" when NuGet.exe 3.0 comes out for semver 2.0 compliance 
+  - ps: $env:LIGHTNING_NUGET_VERSION = $env:LIGHTNING_VERSION + "." + $env:APPVEYOR_BUILD_NUMBER
+
 build_script:
   - cmd: build.cmd
+  
+artifacts:
+  - path: artifacts\*.nupkg
+
+deploy:
+  - provider: NuGet
+    server: https://www.myget.org/F/lightning-net/api/v2
+    api_key:
+      secure: up5/TlcwTcVz+7wVHGnQ1q9iJOdkk4UNehGWaxQ8TqQ21iNqJr8j8m36bTBXMAaO
+    skip_symbols: false
+    artifact: /.*\.nupkg/
