@@ -1,4 +1,4 @@
-version: LQ-{branch}-{build}
+version: LDB-{branch}-{build}
 
 test: off
 
@@ -15,7 +15,7 @@ artifacts:
 
 deploy:
   - provider: NuGet
-    server: https://www.myget.org/F/lightning-net/api/v2
+    server: https://www.myget.org/F/lightning-net
     api_key:
       secure: up5/TlcwTcVz+7wVHGnQ1q9iJOdkk4UNehGWaxQ8TqQ21iNqJr8j8m36bTBXMAaO
     skip_symbols: false
