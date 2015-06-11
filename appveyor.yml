@@ -18,5 +18,5 @@ deploy:
     server: https://www.myget.org/F/lightning-net
     api_key:
       secure: up5/TlcwTcVz+7wVHGnQ1q9iJOdkk4UNehGWaxQ8TqQ21iNqJr8j8m36bTBXMAaO
-    skip_symbols: false
+    skip_symbols: true
     artifact: /.*\.nupkg/
