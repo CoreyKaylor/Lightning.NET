@@ -9,11 +9,12 @@ namespace LightningDB.Native
         private byte[][] _values;
 
         private ValueStructure[] _structures;
+        private IntPtr _original;
 
         public MarshalMultipleValueStructure(byte[][] values)
         {
             if (values == null)
-                throw new ArgumentNullException("values");
+                throw new ArgumentNullException(nameof(values));
 
             _shouldDispose = false;
             _values = values;
@@ -54,7 +55,7 @@ namespace LightningDB.Native
                         new ValueStructure 
                         { 
                             size = new IntPtr(size), 
-                            data = Marshal.AllocHGlobal(totalLength) 
+                            data = _original = Marshal.AllocHGlobal(totalLength) 
                         },
                         new ValueStructure 
                         { 
@@ -96,7 +97,7 @@ namespace LightningDB.Native
 
             try
             {
-                Marshal.FreeHGlobal(_structures[0].data);
+                Marshal.FreeHGlobal(_original);
             }
             catch { }
         }
