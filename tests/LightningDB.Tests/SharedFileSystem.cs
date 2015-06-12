@@ -22,8 +22,8 @@ namespace LightningDB.Tests
             var lightningDir = Path.GetDirectoryName(_libraryManager.GetLibraryInformation("LightningDB").Path);
             var libraryLoader = new DnxLibraryLoader();
             libraryLoader.Load(lightningDir);
-            //may be problematic on Linux, switch to Directory.Parent if necessary
-            _testTempDir = Path.Combine(_testProjectDir, "..\\..\\testrun");
+            _testTempDir = Path.Combine(Directory.GetParent(_testProjectDir).Parent.FullName, "testrun");
+            Console.WriteLine(_testTempDir);
         }
 
         public void Dispose()

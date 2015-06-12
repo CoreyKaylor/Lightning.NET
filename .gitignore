@@ -6,6 +6,7 @@ artifacts/
 results/
 logs/
 testrun/
+buildlog
 packages
 Gemfile.lock
 CommonAssemblyInfo.cs
