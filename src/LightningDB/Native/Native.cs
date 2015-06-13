@@ -322,7 +322,7 @@ namespace LightningDB.Native
             return check(_libraryFacade.mdb_cursor_put(cursor, ref key, ref data, flags));
         }
 
-        public static int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ValueStructure[] data, CursorPutOptions flags)
+        public static int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure[] data, CursorPutOptions flags)
         {
             return check(_libraryFacade.mdb_cursor_put(cursor, ref key, data, flags));
         }
