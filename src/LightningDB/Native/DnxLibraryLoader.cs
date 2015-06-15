@@ -1,8 +1,10 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
-#if DNXCORE50 || DNX451
     public class DnxLibraryLoader
     {
         public DnxLibraryLoader()
@@ -20,8 +22,39 @@ namespace LightningDB.Native
         public void Load(string path)
         {
             PlatformApis.Apply(this);
-            NativeMethods.LoadLibrary(this, path);
+            if (IsDarwin)
+            {
+                path = Path.Combine(path, "Binaries", "liblmdb.dylib");
+            }
+            else if (IsWindows)
+            {
+                path = Path.Combine(path, "Binaries", IntPtr.Size == 4 ? "lmdb32.dll" : "lmdb64.dll");
+            }
+            else
+            {
+                path = "lmdb.so";
+            }
+            var module = LoadLibrary(path);
+            if (module == IntPtr.Zero)
+                throw new DllNotFoundException(path);
+
+            var type = typeof(LmdbMethods);
+            BindDelegates(type, module);
+            type = typeof(LmdbMethods.Overloads);
+            BindDelegates(type, module);
+        }
+
+        private void BindDelegates(Type type, IntPtr module)
+        {
+            foreach (var field in type.GetTypeInfo().DeclaredFields)
+            {
+                var procAddress = GetProcAddress(module, field.Name);
+                if (procAddress == IntPtr.Zero)
+                    continue;
+
+                var value = Marshal.GetDelegateForFunctionPointer(procAddress, field.FieldType);
+                field.SetValue(this, value);
+            }
         }
     }
-#endif
 }

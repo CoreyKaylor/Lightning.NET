@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using static LightningDB.Native.NativeMethods;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB.Factories
 {

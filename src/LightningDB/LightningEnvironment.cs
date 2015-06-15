@@ -3,7 +3,7 @@ using System.Text;
 using LightningDB.Converters;
 using LightningDB.Factories;
 using LightningDB.Native;
-using static LightningDB.Native.NativeMethods;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -83,7 +83,10 @@ namespace LightningDB
         /// <summary>
         /// Current lmdb version.
         /// </summary>
-        public LightningVersionInfo Version => LibraryVersion;
+        public LightningVersionInfo Version
+        {
+            get { throw new NotImplementedException(); }
+        }
 
         /// Set the size of the memory map to use for this environment.
         /// The size should be a multiple of the OS page size. 

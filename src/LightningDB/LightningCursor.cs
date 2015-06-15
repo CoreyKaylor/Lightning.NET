@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using LightningDB.Native;
-using static LightningDB.Native.NativeMethods;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -294,7 +294,7 @@ namespace LightningDB
                 var keyStruct = keyMarshalStruct.ValueStructure;
                 var valueStruct = valueMarshalStruct.ValueStructures;
 
-                mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, CursorPutOptions.MultipleData);
+                mdb_cursor_put(_handle, ref keyStruct, valueStruct, CursorPutOptions.MultipleData);
             }
         }
 

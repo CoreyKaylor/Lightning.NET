@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using LightningDB.Native;
-using static LightningDB.Native.NativeMethods;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB.Factories
 {
