@@ -408,7 +408,7 @@ namespace LightningDB
 
         internal static byte[] ToByteArray(this ValueStructure valueStructure, int resultCode)
         {
-            if (resultCode == NativeMethods.MDB_NOTFOUND)
+            if (resultCode == Lmdb.MDB_NOTFOUND)
                 return null;
 
             var buffer = new byte[valueStructure.size.ToInt32()];

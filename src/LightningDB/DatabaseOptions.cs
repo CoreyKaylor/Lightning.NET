@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using LightningDB.Native;
-using static LightningDB.Native.NativeMethods;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -36,7 +36,7 @@ namespace LightningDB
             LightningTransaction tran, 
             LightningDatabase db,
             Func<CompareFunctionBuilder, LightningCompareDelegate> delegateFactory,
-            Func<INativeLibraryFacade, CompareFunction, int> setter)
+            Func<CompareFunction, int> setter)
         {
             if (delegateFactory == null)
                 return;
@@ -47,7 +47,7 @@ namespace LightningDB
 
             var compareFunction = CreateNativeCompareFunction(db, comparer);
 
-            setter(Library, compareFunction);
+            setter(compareFunction);
             tran.SubTransactionsManager.StoreCompareFunction(compareFunction);
         }
 
@@ -57,7 +57,7 @@ namespace LightningDB
                 tran,
                 db,
                 Compare,
-                (lib, func) => lib.mdb_set_compare(tran._handle, db._handle, func));
+                func => mdb_set_compare(tran._handle, db._handle, func));
         }
 
         internal void SetDuplicatesSort(LightningTransaction tran, LightningDatabase db)
@@ -69,7 +69,7 @@ namespace LightningDB
                 tran,
                 db,
                 DuplicatesSort,
-                (lib, func) => lib.mdb_set_dupsort(tran._handle, db._handle, func));
+                func => mdb_set_dupsort(tran._handle, db._handle, func));
         }
     }
 }

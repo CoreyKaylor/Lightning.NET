@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using LightningDB.Native;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -9,13 +9,10 @@ namespace LightningDB
     /// </summary>
     public class LightningVersionInfo
     {
-        internal static LightningVersionInfo Create(INativeLibraryFacade library)
+        internal static LightningVersionInfo Create()
         {
-            if (library == null)
-                throw new ArgumentNullException("library");
-
             IntPtr minor, major, patch;
-            var version = library.mdb_version(out major, out minor, out patch);
+            var version = mdb_version(out major, out minor, out patch);
 
             return new LightningVersionInfo
             {

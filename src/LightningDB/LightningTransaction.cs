@@ -1,7 +1,7 @@
 ﻿using System;
 using LightningDB.Factories;
 using LightningDB.Native;
-using static LightningDB.Native.NativeMethods;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -229,7 +229,7 @@ namespace LightningDB
                         return;
                     }
                 }
-                mdb_del(_handle, db._handle, ref keyStructure, IntPtr.Zero);
+                mdb_del(_handle, db._handle, ref keyStructure);
             }
         }
 

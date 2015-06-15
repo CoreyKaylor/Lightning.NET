@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace LightningDB.Native
 {
-#if DNXCORE50 || DNX451
     internal static class PlatformApis
     {
         public static bool IsWindows()
@@ -11,7 +11,7 @@ namespace LightningDB.Native
 #if DNXCORE50
             // Until Environment.OSVersion.Platform is exposed on .NET Core, we
             // try to call uname and if that fails we assume we are on Windows.
-            return GetUname() == string.Empty;
+            return true;
 #else
             var p = (int)Environment.OSVersion.Platform;
             return (p != 4) && (p != 6) && (p != 128);
@@ -19,31 +19,26 @@ namespace LightningDB.Native
         }
 
         [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-        static unsafe string GetUname()
-        {
-            var buffer = new byte[8192];
-            try
-            {
-                fixed (byte* buf = buffer)
-                {
-                    if (uname((IntPtr)buf) == 0)
-                    {
-                        return Marshal.PtrToStringAnsi((IntPtr)buf);
-                    }
-                }
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-        }
+        static extern int uname(StringBuilder buf);
 
         public static bool IsDarwin()
         {
-            return string.Equals(GetUname(), "Darwin", StringComparison.Ordinal);
+            var buffer = new StringBuilder(8192);
+            try
+            {
+                if (uname(buffer) == 0)
+                {
+                    return string.Equals(
+                        buffer.ToString(),
+                        "Darwin",
+                        StringComparison.Ordinal);
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            return false;
         }
 
         public static void Apply(DnxLibraryLoader instance)
@@ -117,5 +112,4 @@ namespace LightningDB.Native
             }
         }
     }
-#endif
 }
