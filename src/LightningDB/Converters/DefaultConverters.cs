@@ -16,19 +16,19 @@ namespace LightningDB.Converters
             var store = environment.ConverterStore;
 
             store.AddConvertToBytes<Guid>((db, x) => x.ToByteArray());
-            store.AddConvertToBytes<Double>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Single>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Boolean>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Int16>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Int32>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Int64>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<UInt16>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<UInt32>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<UInt64>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Char>((db, x) => BitConverter.GetBytes(x));
-            store.AddConvertToBytes<Byte>((db, x) => new [] { x });
-            store.AddConvertToBytes<SByte>((db, x) => new[] { (byte) x });
-            store.AddConvertToBytes<String>((db, x) => db.Encoding.GetBytes(x));
+            store.AddConvertToBytes<double>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<float>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<bool>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<short>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<int>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<long>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<ushort>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<uint>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<ulong>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<char>((db, x) => BitConverter.GetBytes(x));
+            store.AddConvertToBytes<byte>((db, x) => new [] { x });
+            store.AddConvertToBytes<sbyte>((db, x) => new[] { (byte) x });
+            store.AddConvertToBytes<string>((db, x) => db.Encoding.GetBytes(x));
             store.AddConvertToBytes<byte[]>((db, x) => x);
             
             ConvertFromBytesWithCorrectSize(store, (db, x) => new Guid(x), 16);
@@ -43,7 +43,7 @@ namespace LightningDB.Converters
             ConvertFromBytesWithCorrectSize(store, (db, x) => BitConverter.ToUInt64(x, 0));
             ConvertFromBytesWithCorrectSize(store, (db, x) => BitConverter.ToChar(x, 0));
             ConvertFromBytesWithCorrectSize(store, (db, x) => x[0]);
-            ConvertFromBytesWithCorrectSize(store, (db, x) => (SByte)x[0]);            
+            ConvertFromBytesWithCorrectSize(store, (db, x) => (sbyte)x[0]);            
             store.AddConvertFromBytes((db, x) => db.Encoding.GetString(x));
             store.AddConvertFromBytes((db, x) => x);
         }

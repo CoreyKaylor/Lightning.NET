@@ -34,7 +34,7 @@ namespace LightningDB
         /// <param name="accessMode">Unix file access privelegies (optional). Only makes sense on unix operationg systems.</param>
         public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags = EnvironmentOpenFlags.None, UnixAccessMode accessMode = UnixAccessMode.Default)
         {
-            if (String.IsNullOrWhiteSpace(directory))
+            if (string.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("Invalid directory name");
 
             _binding = NativeBinding();
@@ -141,7 +141,7 @@ namespace LightningDB
                 if (this.IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
-                mdb_env_set_maxreaders(_handle, (UInt32)value);
+                mdb_env_set_maxreaders(_handle, (uint)value);
             }
         }
 
@@ -162,7 +162,7 @@ namespace LightningDB
                 if (value == _maxDbs) 
                     return;
 
-                mdb_env_set_maxdbs(_handle, (UInt32)value);
+                mdb_env_set_maxdbs(_handle, (uint)value);
 
                 _maxDbs = value;
             }
