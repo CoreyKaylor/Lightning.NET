@@ -67,16 +67,6 @@ namespace LightningDB.Native
 
 #region Helpers
 
-        public static ValueStructure ValueStructureFromPtr(IntPtr ptr)
-        {
-            return (ValueStructure)Marshal.PtrToStructure(ptr, typeof(ValueStructure));
-        }
-
-        public static byte[] ValueByteArrayFromPtr(IntPtr ptr, int resultCode = 0)
-        {
-            return ValueStructureFromPtr(ptr).ToByteArray(resultCode);
-        }
-
         static int check(int statusCode)
         {
             if (statusCode != 0)

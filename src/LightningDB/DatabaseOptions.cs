@@ -28,8 +28,8 @@ namespace LightningDB
         private static CompareFunction CreateNativeCompareFunction(
             LightningDatabase db, LightningCompareDelegate compare)
         {
-            return (IntPtr left, IntPtr right) =>
-                compare(db, ValueByteArrayFromPtr(left), ValueByteArrayFromPtr(right));
+            return (ref ValueStructure left, ref ValueStructure right) =>
+                compare(db, left.ToByteArray(0), right.ToByteArray(0));
         }
 
         private static void SetNativeCompareFunction(
