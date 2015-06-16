@@ -83,10 +83,7 @@ namespace LightningDB
         /// <summary>
         /// Current lmdb version.
         /// </summary>
-        public LightningVersionInfo Version
-        {
-            get { throw new NotImplementedException(); }
-        }
+        public LightningVersionInfo Version => LightningVersionInfo.Get();
 
         /// Set the size of the memory map to use for this environment.
         /// The size should be a multiple of the OS page size. 
