@@ -109,7 +109,7 @@ namespace LightningDB
             return CursorManager.OpenCursor(db);
         }
 
-        private bool TryGetInternal(UInt32 dbi, byte[] key, out Func<byte[]> valueFactory)
+        private bool TryGetInternal(uint dbi, byte[] key, out Func<byte[]> valueFactory)
         {
             valueFactory = null;
             

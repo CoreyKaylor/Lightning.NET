@@ -15,7 +15,7 @@ namespace LightningDB
         /// </summary>
         public const string DefaultDatabaseName = "master";
 
-        internal readonly UInt32 _handle;
+        internal readonly uint _handle;
         
         private readonly string _name;
         private bool _shouldDispose;

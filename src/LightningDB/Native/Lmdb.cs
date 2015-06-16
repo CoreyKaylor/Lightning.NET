@@ -180,12 +180,12 @@ namespace LightningDB.Native
         public static int mdb_env_set_mapsize(IntPtr env, long size)
         {
             IntPtr sizeValue;
-            if (size > Int32.MaxValue)
+            if (size > int.MaxValue)
             {
                 if (LightningConfig.Environment.AutoReduceMapSizeIn32BitProcess)
-                    sizeValue = new IntPtr(Int32.MaxValue);
+                    sizeValue = new IntPtr(int.MaxValue);
                 else
-                    throw new InvalidOperationException("Can't set MapSize larger than Int32.MaxValue in 32-bit process");
+                    throw new InvalidOperationException("Can't set MapSize larger than int.MaxValue in 32-bit process");
             }
             else
             {

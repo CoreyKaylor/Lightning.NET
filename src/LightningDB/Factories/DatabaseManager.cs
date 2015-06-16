@@ -11,7 +11,7 @@ namespace LightningDB.Factories
     {
         private readonly IntPtr _environmentHandle;
 
-        private readonly Object _syncObject;
+        private readonly object _syncObject;
         
         private readonly ConcurrentDictionary<string, DatabaseHandleCacheEntry> _openedDatabases;
         private readonly HashSet<uint> _databasesForReuse;
@@ -20,7 +20,7 @@ namespace LightningDB.Factories
         {
             _environmentHandle = environmentHandle;
 
-            _syncObject = new Object();
+            _syncObject = new object();
 
             _openedDatabases = new ConcurrentDictionary<string, DatabaseHandleCacheEntry>();
             _databasesForReuse = new HashSet<uint>();
