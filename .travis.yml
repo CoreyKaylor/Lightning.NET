@@ -2,7 +2,8 @@ language: csharp
 mono:
 - beta
 sudo: false
-install: curl -sSL https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.sh
-  | sh && source ~/.dnx/dnvm/dnvm.sh && dnvm upgrade
+install:
+  - sudo apt-get install make && cd mdb/libraries/liblmdb && make && PATH=$PATH:$PWD && cd ../../../
+  - curl -sSL https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.sh | sh && source ~/.dnx/dnvm/dnvm.sh && dnvm upgrade
 script:
 - ". ./build.sh"
