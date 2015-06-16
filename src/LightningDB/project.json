@@ -35,8 +35,5 @@
         "System.Threading": "4.0.10-beta-*"
       }
     }
-  },
-  "compilationOptions": {
-    "allowUnsafe": true
   }
 }
