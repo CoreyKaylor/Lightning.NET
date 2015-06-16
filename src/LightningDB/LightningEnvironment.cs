@@ -14,6 +14,7 @@ namespace LightningDB
     {
         private readonly UnixAccessMode _accessMode;
         private readonly EnvironmentOpenFlags _openFlags;
+        private readonly IDisposable _binding;
 
         internal IntPtr _handle;
 
@@ -36,12 +37,12 @@ namespace LightningDB
             if (String.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("Invalid directory name");
 
-            IntPtr handle;
-            mdb_env_create(out handle);
+            _binding = NativeBinding();
+
+            mdb_env_create(out _handle);
 
             _shouldDispose = true;
             
-            _handle = handle;
             _accessMode = accessMode;
 
             this.Directory = directory;
@@ -341,6 +342,7 @@ namespace LightningDB
         public void Dispose()
         {
             this.Dispose(_shouldDispose);
+            _binding.Dispose();
             _shouldDispose = false;
         }
     }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using LightningDB.Native;
 using Microsoft.Framework.Runtime;
 using Microsoft.Framework.Runtime.Infrastructure;
 using Xunit;
@@ -19,11 +18,7 @@ namespace LightningDB.Tests
             var services = locator.ServiceProvider;
             _libraryManager = (ILibraryManager) services.GetService(typeof(ILibraryManager));
             _testProjectDir = Path.GetDirectoryName(_libraryManager.GetLibraryInformation("LightningDB.Tests").Path);
-            var lightningDir = Path.GetDirectoryName(_libraryManager.GetLibraryInformation("LightningDB").Path);
-            var libraryLoader = new DnxLibraryLoader();
-            libraryLoader.Load(lightningDir);
             _testTempDir = Path.Combine(Directory.GetParent(_testProjectDir).Parent.FullName, "testrun");
-            Console.WriteLine(_testTempDir);
         }
 
         public void Dispose()

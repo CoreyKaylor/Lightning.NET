@@ -1,12 +1,90 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
     internal static class Lmdb
     {
+        #region Native Binding
+        private static WeakReference<IDisposable> _binder;
 
-#region Constants
+        internal static IDisposable NativeBinding()
+        {
+            if (_binder == null)
+            {
+                var binder = DetermineNativeBinder();
+                _binder = new WeakReference<IDisposable>(binder, false);
+                return binder;
+            }
+            else
+            {
+                IDisposable binder;
+                _binder.TryGetTarget(out binder);
+                if (binder != null)
+                    return binder;
+
+                binder = DetermineNativeBinder();
+                _binder.SetTarget(binder);
+                return binder;
+            }
+        }
+
+        private static IDisposable DetermineNativeBinder()
+        {
+            var path = FindNativeLibPath();
+            if (PlatformApis.IsWindows())
+            {
+                return new WindowsNativeBinder(path);
+            }
+            return new UnixNativeBinder(path);
+        }
+
+#if DNXCORE50 || DNX451
+        private static string FindNativeLibPath()
+        {
+            var locator = Microsoft.Framework.Runtime.Infrastructure.CallContextServiceLocator.Locator;
+            var services = locator.ServiceProvider;
+            var libraryManager = (Microsoft.Framework.Runtime.ILibraryManager)
+                services.GetService(typeof(Microsoft.Framework.Runtime.ILibraryManager));
+            var info = libraryManager.GetLibraryInformation("LightningDB");
+            var path = info.Path;
+            if (info.Type == "Project")
+            {
+                path = Path.GetDirectoryName(path);
+            }
+            path = Path.Combine(path, "content");
+            return FindPlatformSpecificNativeFilePath(path);
+        }
+#else
+
+        private static string FindNativeLibPath()
+        {
+            var path = AppDomain.CurrentDomain.BaseDirectory;
+            return FindPlatformSpecificNativeFilePath(path);
+        }
+#endif
+
+        private static string FindPlatformSpecificNativeFilePath(string dir)
+        {
+            var path = dir;
+            if (PlatformApis.IsDarwin())
+            {
+                path = Path.Combine(path, "liblmdb.dylib");
+            }
+            else if (PlatformApis.IsWindows())
+            {
+                path = Path.Combine(path, IntPtr.Size == 4 ? "lmdb32.dll" : "lmdb64.dll");
+            }
+            else
+            {
+                path = "lmdb.so";
+            }
+            return path;
+        }
+#endregion
+
+        #region Constants
 
         /// <summary>
         /// Txn has too many dirty pages
