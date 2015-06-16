@@ -406,17 +406,6 @@ namespace LightningDB
             return txn.EnumerateDatabase(txn.OpenDatabase());
         }
 
-        internal static byte[] ToByteArray(this ValueStructure valueStructure, int resultCode)
-        {
-            if (resultCode == Lmdb.MDB_NOTFOUND)
-                return null;
-
-            var buffer = new byte[valueStructure.size.ToInt32()];
-            Marshal.Copy(valueStructure.data, buffer, 0, buffer.Length);
-
-            return buffer;
-        }
-
         internal static byte[] ToBytes<T>(this LightningDatabase db, T instance)
         {
             return db.Environment.ConverterStore

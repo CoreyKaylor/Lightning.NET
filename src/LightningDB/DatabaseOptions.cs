@@ -29,7 +29,7 @@ namespace LightningDB
             LightningDatabase db, LightningCompareDelegate compare)
         {
             return (ref ValueStructure left, ref ValueStructure right) =>
-                compare(db, left.ToByteArray(0), right.ToByteArray(0));
+                compare(db, left.GetBytes(), right.GetBytes());
         }
 
         private static void SetNativeCompareFunction(
