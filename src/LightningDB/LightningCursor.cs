@@ -234,7 +234,7 @@ namespace LightningDB
 
             return res == MDB_NOTFOUND
                 ? (KeyValuePair<byte[], byte[]>?) null
-                : new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
+                : new KeyValuePair<byte[], byte[]>(keyStruct.GetBytes(), valueStruct.GetBytes());
         }
 
         private byte[] GetValue(CursorOperation operation)
@@ -246,7 +246,7 @@ namespace LightningDB
 
             return res == MDB_NOTFOUND
                 ? null
-                : valueStruct.ToByteArray(res);
+                : valueStruct.GetBytes();
         }
 
         /// <summary>

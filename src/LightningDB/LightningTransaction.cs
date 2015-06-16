@@ -122,7 +122,7 @@ namespace LightningDB
 
                 var exists = res != MDB_NOTFOUND;
                 if (exists)
-                    valueFactory = () => valueStruct.ToByteArray(res);
+                    valueFactory = () => valueStruct.GetBytes();
 
                 return exists;
             }
