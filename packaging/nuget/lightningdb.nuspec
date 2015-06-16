@@ -15,6 +15,6 @@
   <files>
     <file src="..\..\src\LightningDB\bin\Debug\**\LightningDB.*" target="lib" />
     <file src="tools\net45\*" target="tools\net45" />
-    <file src="..\..\src\LightningDB\Binaries\*lmdb*.*" target="content" /> 
+    <file src="..\..\src\LightningDB\content\*lmdb*.*" target="content" /> 
   </files>
 </package>
