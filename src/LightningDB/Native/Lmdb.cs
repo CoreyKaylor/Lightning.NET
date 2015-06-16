@@ -78,7 +78,7 @@ namespace LightningDB.Native
             }
             else
             {
-                path = "lmdb.so";
+                path = "liblmdb.so";
             }
             return path;
         }
