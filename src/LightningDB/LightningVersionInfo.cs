@@ -9,17 +9,17 @@ namespace LightningDB
     /// </summary>
     public class LightningVersionInfo
     {
-        internal static LightningVersionInfo Create()
+        internal static LightningVersionInfo Get()
         {
-            IntPtr minor, major, patch;
+            int minor, major, patch;
             var version = mdb_version(out major, out minor, out patch);
 
             return new LightningVersionInfo
             {
                 Version = Marshal.PtrToStringAnsi(version),
-                Major = major.ToInt32(),
-                Minor = minor.ToInt32(),
-                Patch = patch.ToInt32()
+                Major = major,
+                Minor = minor,
+                Patch = patch
             };
         }
 

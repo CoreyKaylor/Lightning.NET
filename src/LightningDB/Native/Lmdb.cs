@@ -5,10 +5,6 @@ namespace LightningDB.Native
 {
     internal static class Lmdb
     {
-        private static LightningVersionInfo GetVersionInfo()
-        {
-            return LightningVersionInfo.Create();
-        }
 
 #region Constants
 
@@ -185,7 +181,7 @@ namespace LightningDB.Native
             return check(LmdbMethods.mdb_txn_renew(txn));
         }
 
-        public static IntPtr mdb_version(out IntPtr major, out IntPtr minor, out IntPtr patch)
+        public static IntPtr mdb_version(out int major, out int minor, out int patch)
         {
             return LmdbMethods.mdb_version(out major, out minor, out patch);
         }

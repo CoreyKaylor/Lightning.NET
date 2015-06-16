@@ -67,7 +67,7 @@ namespace LightningDB.Native
         public static mdb_txn_renew_delegate mdb_txn_renew;
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate IntPtr mdb_version_delegate(out IntPtr major, out IntPtr minor, out IntPtr patch);
+        public delegate IntPtr mdb_version_delegate(out int major, out int minor, out int patch);
         public static mdb_version_delegate mdb_version;
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
