@@ -150,7 +150,7 @@ namespace LightningDB.Native
             if (statusCode != 0)
             {
                 var message = mdb_strerror(statusCode);
-                throw new LightningException(message);
+                throw new LightningException(message, statusCode);
             }
             return statusCode;
         }
@@ -211,7 +211,10 @@ namespace LightningDB.Native
 
         public static int mdb_dbi_open(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db)
         {
-            return check(LmdbMethods.mdb_dbi_open(txn, name, flags, out db));
+            var statusCode = LmdbMethods.mdb_dbi_open(txn, name, flags, out db);
+            if(statusCode == MDB_NOTFOUND)
+                throw new LightningException($"Error opening database {name}: {mdb_strerror(statusCode)}", statusCode);
+            return statusCode;
         }
 
         public static void mdb_dbi_close(IntPtr env, uint dbi)
