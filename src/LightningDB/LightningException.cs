@@ -7,8 +7,11 @@ namespace LightningDB
     /// </summary>
     public class LightningException : Exception
     {
-        internal LightningException(string message) : base (message)
+        internal LightningException(string message, int statusCode) : base (message)
         {
+            StatusCode = statusCode;
         }
+
+        public int StatusCode { get; }
     }
 }
