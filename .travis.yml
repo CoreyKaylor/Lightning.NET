@@ -1,9 +1,10 @@
 language: csharp
 mono:
 - beta
-before_install:
-  - sudo apt-get update -q
-  - sudo apt-get install make
+addons:
+  apt:
+    packages:
+      - make
 sudo: false
 install:
   - cd mdb/libraries/liblmdb && make && PATH=$PATH:$PWD && cd ../../../
