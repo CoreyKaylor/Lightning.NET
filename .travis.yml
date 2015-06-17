@@ -5,7 +5,7 @@ addons:
   apt:
     packages:
       - make
-	  - gcc
+      - gcc
 sudo: false
 install:
   - cd mdb/libraries/liblmdb && make && ls && PATH=$PATH:$PWD && cd ../../../
