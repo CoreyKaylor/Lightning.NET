@@ -5,9 +5,10 @@ addons:
   apt:
     packages:
       - make
+	  - gcc
 sudo: false
 install:
-  - cd mdb/libraries/liblmdb && make && PATH=$PATH:$PWD && cd ../../../
+  - cd mdb/libraries/liblmdb && make && ls && PATH=$PATH:$PWD && cd ../../../
   - curl -sSL https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.sh | sh && source ~/.dnx/dnvm/dnvm.sh && dnvm upgrade
 script:
 - ". ./build.sh"
