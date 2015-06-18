@@ -36,6 +36,14 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void CanLoadAndDisposeMultipleEnvironments()
+        {
+            _env = new LightningEnvironment(_path);
+            _env.Dispose();
+            _env = new LightningEnvironment(_path);
+        }
+
+        [Fact]
         public void EnvironmentShouldBeCreatedIfReadOnly()
         {
             //arrange
