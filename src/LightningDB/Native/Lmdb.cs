@@ -7,27 +7,11 @@ namespace LightningDB.Native
     internal static class Lmdb
     {
         #region Native Binding
-        private static WeakReference<IDisposable> _binder;
 
         internal static IDisposable NativeBinding()
         {
-            if (_binder == null)
-            {
-                var binder = DetermineNativeBinder();
-                _binder = new WeakReference<IDisposable>(binder, false);
-                return binder;
-            }
-            else
-            {
-                IDisposable binder;
-                _binder.TryGetTarget(out binder);
-                if (binder != null)
-                    return binder;
-
-                binder = DetermineNativeBinder();
-                _binder.SetTarget(binder);
-                return binder;
-            }
+            var binder = DetermineNativeBinder();
+            return binder;
         }
 
         private static IDisposable DetermineNativeBinder()
