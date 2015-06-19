@@ -30,7 +30,8 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(_path);
+            _env.Open();
 
             //assert
         }
@@ -49,7 +50,11 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.ReadOnly);
+            _env = new LightningEnvironment(_path);
+            _env.Open(); //readonly requires environment to have been created at least once before
+            _env.Close();
+            _env = new LightningEnvironment(_path);
+            _env.Open(EnvironmentOpenFlags.ReadOnly);
 
             //assert
         }
@@ -58,7 +63,7 @@ namespace LightningDB.Tests
         public void EnvironmentShouldBeOpened()
         {
             //arrange
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(_path);
 
             //act
             _env.Open();
@@ -71,7 +76,7 @@ namespace LightningDB.Tests
         public void EnvironmentShouldBeClosed()
         {
             //arrange
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(_path);
             _env.Open();
 
             //act
@@ -87,7 +92,7 @@ namespace LightningDB.Tests
         public void EnvironmentShouldBeCopied(bool compact)
         {
             //arrange
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(_path);
             _env.Open(); 
 
             //act
@@ -102,7 +107,7 @@ namespace LightningDB.Tests
         public void CanOpenEnvironmentMoreThan50Mb()
         {
             //arrange
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None)
+            _env = new LightningEnvironment(_path)
             {
                 MapSize = 55 * 1024 * 1024
             };
@@ -117,7 +122,7 @@ namespace LightningDB.Tests
             const int entriesCount = 10;
 
             //arrange
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(_path);
             _env.Open();
 
             using (var txn = _env.BeginTransaction())
@@ -142,7 +147,7 @@ namespace LightningDB.Tests
             const int entriesCount = 1;
 
             //arrange
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(_path);
             _env.Open();
 
             var initialUsedSize = _env.UsedSize;

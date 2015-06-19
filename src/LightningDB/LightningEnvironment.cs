@@ -12,8 +12,6 @@ namespace LightningDB
     /// </summary>
     public class LightningEnvironment : IDisposable
     {
-        private readonly UnixAccessMode _accessMode;
-        private readonly EnvironmentOpenFlags _openFlags;
         private readonly IDisposable _binding;
 
         internal IntPtr _handle;
@@ -32,7 +30,7 @@ namespace LightningDB
         /// <param name="directory">Directory for storing database files.</param>
         /// <param name="openFlags">Database open options.</param>
         /// <param name="accessMode">Unix file access privelegies (optional). Only makes sense on unix operationg systems.</param>
-        public LightningEnvironment(string directory, EnvironmentOpenFlags openFlags = EnvironmentOpenFlags.None, UnixAccessMode accessMode = UnixAccessMode.Default)
+        public LightningEnvironment(string directory)
         {
             if (string.IsNullOrWhiteSpace(directory))
                 throw new ArgumentException("Invalid directory name");
@@ -43,10 +41,7 @@ namespace LightningDB
 
             _shouldDispose = true;
             
-            _accessMode = accessMode;
-
             this.Directory = directory;
-            _openFlags = openFlags;
 
             if (LightningConfig.Environment.DefaultMapSize != LightningConfig.Environment.LibDefaultMapSize)
                 this.MapSize = LightningConfig.Environment.DefaultMapSize;
@@ -187,13 +182,13 @@ namespace LightningDB
         /// <summary>
         /// Open the environment.
         /// </summary>
-        public void Open()
+        public void Open(EnvironmentOpenFlags openFlags = EnvironmentOpenFlags.None, UnixAccessMode accessMode = UnixAccessMode.Default)
         {
             if (!System.IO.Directory.Exists(this.Directory))
                 System.IO.Directory.CreateDirectory(this.Directory);
 
             if (!this.IsOpened)
-                mdb_env_open(_handle, this.Directory, _openFlags, _accessMode);
+                mdb_env_open(_handle, this.Directory, openFlags, accessMode);
 
             this.IsOpened = true;
         }
