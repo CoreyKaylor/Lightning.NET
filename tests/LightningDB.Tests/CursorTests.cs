@@ -28,7 +28,7 @@ namespace LightningDB.Tests
         public void Dispose()
         {
             _txn.Commit();
-            _env.Close();
+            _env.Dispose();
         }
 
         private void PopulateCursorValues()

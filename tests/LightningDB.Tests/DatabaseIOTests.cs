@@ -27,7 +27,7 @@ namespace LightningDB.Tests
 
         public void Dispose()
         {
-            _env.Close();
+            _env.Dispose();
         }
 
         [Fact]

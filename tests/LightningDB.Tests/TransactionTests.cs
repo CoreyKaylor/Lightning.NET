@@ -20,7 +20,7 @@ namespace LightningDB.Tests
 
         public void Dispose()
         {
-            _env.Close();
+            _env.Dispose();
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace LightningDB.Tests
             _txn = _env.BeginTransaction();
 
             //act
-            _env.Close();
+            _env.Dispose();
 
             //assert
             Assert.Equal(LightningTransactionState.Aborted, _txn.State);
@@ -110,7 +110,7 @@ namespace LightningDB.Tests
             var child = _txn.BeginTransaction();
 
             //act
-            _env.Close();
+            _env.Dispose();
 
             //assert
             Assert.Equal(LightningTransactionState.Aborted, child.State);
