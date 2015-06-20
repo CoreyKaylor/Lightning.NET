@@ -19,7 +19,7 @@ namespace LightningDB.Tests
         public void Dispose()
         {
             if (_env != null && _env.IsOpened)
-                _env.Close();
+                _env.Dispose();
 
             _env = null;
         }
@@ -52,7 +52,7 @@ namespace LightningDB.Tests
             //act
             _env = new LightningEnvironment(_path);
             _env.Open(); //readonly requires environment to have been created at least once before
-            _env.Close();
+            _env.Dispose();
             _env = new LightningEnvironment(_path);
             _env.Open(EnvironmentOpenFlags.ReadOnly);
 
@@ -80,7 +80,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             //act
-            _env.Close();
+            _env.Dispose();
 
             //assert
             Assert.Equal(false, _env.IsOpened);

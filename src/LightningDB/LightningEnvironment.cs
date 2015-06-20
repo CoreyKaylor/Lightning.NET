@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using LightningDB.Converters;
 using LightningDB.Factories;
@@ -16,8 +17,6 @@ namespace LightningDB
 
         internal IntPtr _handle;
 
-        private bool _shouldDispose;
-
         private long _mapSize;
         private int _maxDbs;
 
@@ -27,29 +26,25 @@ namespace LightningDB
         /// <summary>
         /// Creates a new instance of LightningEnvironment.
         /// </summary>
-        /// <param name="directory">Directory for storing database files.</param>
-        /// <param name="openFlags">Database open options.</param>
-        /// <param name="accessMode">Unix file access privelegies (optional). Only makes sense on unix operationg systems.</param>
-        public LightningEnvironment(string directory)
+        /// <param name="path">Directory for storing database files.</param>
+        public LightningEnvironment(string path)
         {
-            if (string.IsNullOrWhiteSpace(directory))
+            if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
 
             _binding = NativeBinding();
 
             mdb_env_create(out _handle);
 
-            _shouldDispose = true;
-            
-            this.Directory = directory;
+            Path = path;
 
             if (LightningConfig.Environment.DefaultMapSize != LightningConfig.Environment.LibDefaultMapSize)
-                this.MapSize = LightningConfig.Environment.DefaultMapSize;
+                MapSize = LightningConfig.Environment.DefaultMapSize;
             else
                 _mapSize = LightningConfig.Environment.LibDefaultMapSize;
 
             if (LightningConfig.Environment.DefaultMaxDatabases != LightningConfig.Environment.LibDefaultMaxDatabases)
-                this.MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
+                MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
             else
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
 
@@ -106,7 +101,7 @@ namespace LightningDB
             }
         }
 
-        public uint PageSize { get { return GetStat().ms_psize; } }
+        public uint PageSize => GetStat().ms_psize;
 
         public long UsedSize
         {
@@ -133,7 +128,7 @@ namespace LightningDB
             }
             set
             {
-                if (this.IsOpened)
+                if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
                 mdb_env_set_maxreaders(_handle, (uint)value);
@@ -151,7 +146,7 @@ namespace LightningDB
             get { return _maxDbs; }
             set
             {
-                if (this.IsOpened)
+                if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxDatabases of opened environment");
 
                 if (value == _maxDbs) 
@@ -163,55 +158,36 @@ namespace LightningDB
             }
         }
 
-        public long EntriesCount { get { return GetStat().ms_entries.ToInt64(); } }
+        public long EntriesCount => GetStat().ms_entries.ToInt64();
 
         /// <summary>
         /// Directory path to store database files.
         /// </summary>
-        public string Directory { get; private set; }
+        public string Path { get; }
 
         /// <summary>
         /// Converters to use when converting database keys and values.
         /// </summary>
         public ConverterStore ConverterStore { get; private set; }
 
-        internal DatabaseManager DatabaseManager { get { return _databaseManager; } }
+        internal DatabaseManager DatabaseManager => _databaseManager;
 
-        internal TransactionManager TransactionManager { get { return _transactionManager; } }
+        internal TransactionManager TransactionManager => _transactionManager;
 
         /// <summary>
         /// Open the environment.
         /// </summary>
         public void Open(EnvironmentOpenFlags openFlags = EnvironmentOpenFlags.None, UnixAccessMode accessMode = UnixAccessMode.Default)
         {
-            if (!System.IO.Directory.Exists(this.Directory))
-                System.IO.Directory.CreateDirectory(this.Directory);
+            if(IsOpened)
+                throw new InvalidOperationException("Environment is already opened.");
 
-            if (!this.IsOpened)
-                mdb_env_open(_handle, this.Directory, openFlags, accessMode);
+            if (!Directory.Exists(Path))
+                Directory.CreateDirectory(Path);
 
-            this.IsOpened = true;
-        }
+            mdb_env_open(_handle, Path, openFlags, accessMode);
 
-        /// <summary>
-        /// Close the environment and release the memory map.
-        /// Only a single thread may call this function. All transactions, databases, and cursors must already be closed before calling this function. 
-        /// Attempts to use any such handles after calling this function will cause a SIGSEGV. 
-        /// The environment handle will be freed and must not be used again after this call.
-        /// </summary>
-        public void Close()
-        {
-            if (!this.IsOpened)
-                return;
-
-            _transactionManager.AbortAll();
-            _databaseManager.CloseAll();
-
-            mdb_env_close(_handle);
-
-            this.IsOpened = false;
-
-            _shouldDispose = false;
+            IsOpened = true;
         }
 
         /// <summary>
@@ -234,10 +210,9 @@ namespace LightningDB
         /// </returns>
         public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
         {
-            if (parent != null)
-                return parent.SubTransactionsManager.Create(beginFlags);
-
-            return _transactionManager.Create(beginFlags);
+            return parent != null ? 
+                parent.SubTransactionsManager.Create(beginFlags) 
+                : _transactionManager.Create(beginFlags);
         }
 
         /// <summary>
@@ -255,7 +230,7 @@ namespace LightningDB
         /// </returns>
         public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
         {
-            return this.BeginTransaction(null, beginFlags);
+            return BeginTransaction(null, beginFlags);
         }
 
         /// <summary>
@@ -270,7 +245,7 @@ namespace LightningDB
         /// </returns>
         public LightningTransaction BeginTransaction()
         {
-            return this.BeginTransaction(null, LightningTransaction.DefaultTransactionBeginFlags);
+            return BeginTransaction(null, LightningTransaction.DefaultTransactionBeginFlags);
         }
 
         //TODO: Upgrade db flags?
@@ -287,7 +262,7 @@ namespace LightningDB
         /// <param name="compact">Omit empty pages when copying.</param>
         public void CopyTo(string path, bool compact = false)
         {
-            this.EnsureOpened();
+            EnsureOpened();
 
             var flags = compact 
                 ? EnvironmentCopyFlags.Compact 
@@ -310,35 +285,49 @@ namespace LightningDB
 
         private void EnsureOpened()
         {
-            if (!this.IsOpened)
+            if (!IsOpened)
                 throw new InvalidOperationException("Environment should be opened");
         }
 
         /// <summary>
-        /// Closes the environment and deallocates all resources associated with it.
+        /// Disposes the environment and deallocates all resources associated with it.
         /// </summary>
-        /// <param name="shouldDispose">True if not disposed yet.</param>
-        protected virtual void Dispose(bool shouldDispose)
+        /// <param name="disposing">True if called from Dispose.</param>
+        protected virtual void Dispose(bool disposing)
         {
-            if (!shouldDispose || IntPtr.Zero.Equals(_handle)) 
+            if (_handle == IntPtr.Zero)
                 return;
-            try
+
+            if (IsOpened)
             {
-                this.Close();
+                _transactionManager.AbortAll();
+                _databaseManager.CloseAll();
+                mdb_env_close(_handle);
+                IsOpened = false;
             }
-            catch
+
+            _binding.Dispose();
+            _handle = IntPtr.Zero;
+            if (disposing)
             {
+                GC.SuppressFinalize(this);
             }
         }
 
         /// <summary>
-        /// Closes the environment and deallocates all resources associated with it.
+        /// Dispose the environment and release the memory map.
+        /// Only a single thread may call this function. All transactions, databases, and cursors must already be closed before calling this function. 
+        /// Attempts to use any such handles after calling this function will cause a SIGSEGV. 
+        /// The environment handle will be freed and must not be used again after this call.
         /// </summary>
         public void Dispose()
         {
-            this.Dispose(_shouldDispose);
-            _binding.Dispose();
-            _shouldDispose = false;
+            Dispose(true);
+        }
+
+        ~LightningEnvironment()
+        {
+            Dispose(false);
         }
     }
 }
