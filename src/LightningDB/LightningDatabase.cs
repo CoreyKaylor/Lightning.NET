@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using LightningDB.Factories;
-using LightningDB.Native;
+using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -15,49 +15,48 @@ namespace LightningDB
         /// </summary>
         public const string DefaultDatabaseName = "master";
 
-        internal readonly uint _handle;
+        internal uint _handle;
         
         private readonly string _name;
-        private bool _shouldDispose;
+        private readonly LightningTransaction _transaction;
 
         /// <summary>
         /// Creates a LightningDatabase instance.
         /// </summary>
         /// <param name="name">Database name.</param>
-        /// <param name="flags">Database open flags/</param>
-        /// <param name="tran">Active transaction.</param>
+        /// <param name="transaction">Active transaction.</param>
+        /// <param name="entry">The handle cache for database entries.</param>
         /// <param name="encoding">Default strings encoding.</param>
-        internal LightningDatabase(string name, LightningTransaction tran, DatabaseHandleCacheEntry entry, Encoding encoding)
+        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseHandleCacheEntry entry, Encoding encoding)
         {
             if (name == null)
-                throw new ArgumentNullException("name");
+                throw new ArgumentNullException(nameof(name));
 
-            if (tran == null)
-                throw new ArgumentNullException("tran");
+            if (transaction == null)
+                throw new ArgumentNullException(nameof(transaction));
 
             if (encoding == null)
-                throw new ArgumentNullException("encoding");
+                throw new ArgumentNullException(nameof(encoding));
 
             _name = name;
+            _transaction = transaction;
             _handle = entry.Handle;
-            _shouldDispose = true;
                         
-            this.Encoding = encoding;
-            this.OpenFlags = entry.OpenFlags;
-            this.Environment = tran.Environment;
+            Encoding = encoding;
+            OpenFlags = entry.OpenFlags;
         }
 
-        internal bool IsReleased { get { return !_shouldDispose; } }
+        internal bool IsReleased => _handle == default(uint);
 
         /// <summary>
         /// Is database opened.
         /// </summary>
-        public bool IsOpened { get { return this.Environment.DatabaseManager.IsOpen(this); } }
+        public bool IsOpened => Environment.DatabaseManager.IsOpen(this);
 
         /// <summary>
         /// Database name.
         /// </summary>
-        public string Name { get { return _name; } }
+        public string Name => _name;
 
         /// <summary>
         /// Default strings encoding.
@@ -67,7 +66,7 @@ namespace LightningDB
         /// <summary>
         /// Environment in which the database was opened.
         /// </summary>
-        public LightningEnvironment Environment { get; private set; }
+        public LightningEnvironment Environment => _transaction.Environment;
 
         /// <summary>
         /// Flags with which the database was opened.
@@ -75,29 +74,32 @@ namespace LightningDB
         public DatabaseOpenFlags OpenFlags { get; private set; }
 
         /// <summary>
-        /// Clode the database.
+        /// Drops the database.
         /// </summary>
-        public void Close()
+        public void Drop(bool truncateDataOnly = false)
         {
-            this.Close(true);
-        }
-
-        internal void Close(bool releaseHandle)
-        {
-            this.Environment.DatabaseManager.Close(this, releaseHandle);
-            _shouldDispose = false;
+            mdb_drop(_transaction._handle, _handle, !truncateDataOnly);
+            if (truncateDataOnly)
+                return;
+            Environment.DatabaseManager.Close(this, false);
+            _handle = default(uint);
         }
 
         /// <summary>
         /// Deallocates resources opeened by the database.
         /// </summary>
-        /// <param name="shouldDispose">true if not disposed yet.</param>
-        protected virtual void Dispose(bool shouldDispose)
+        /// <param name="disposing">true if called from Dispose.</param>
+        protected virtual void Dispose(bool disposing)
         {
-            if (!shouldDispose)
+            if (_handle == default(uint))
                 return;
 
-            this.Close(true);
+            Environment.DatabaseManager.Close(this, true);
+            _handle = default(uint);
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
         }
 
         /// <summary>
@@ -105,8 +107,12 @@ namespace LightningDB
         /// </summary>
         public void Dispose()
         {
-            this.Dispose(_shouldDispose);
-            _shouldDispose = false;
+            Dispose(true);
+        }
+
+        ~LightningDatabase()
+        {
+            Dispose(false);
         }
     }
 }

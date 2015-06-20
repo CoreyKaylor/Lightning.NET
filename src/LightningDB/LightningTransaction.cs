@@ -88,18 +88,6 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Deletes or closes a database.
-        /// </summary>
-        /// <param name="db">Database</param>
-        /// <param name="delete">Database is deleted permanently if true, or just closed if false.</param>
-        public void DropDatabase(LightningDatabase db, bool delete)
-        {
-            mdb_drop(_handle, db._handle, delete);
-
-            db.Close(false);
-        }
-
-        /// <summary>
         /// Create a cursor.
         /// Cursors are associated with a specific transaction and database and may not span threads.
         /// </summary>
