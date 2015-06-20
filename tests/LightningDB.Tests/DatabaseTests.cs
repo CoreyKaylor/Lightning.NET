@@ -58,7 +58,7 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            db.Close();
+            db.Dispose();
 
             //assert
             Assert.Equal(false, db.IsOpened);
@@ -85,7 +85,7 @@ namespace LightningDB.Tests
             }
             finally
             {
-                db.Close();
+                db.Dispose();
             }
 
             //assert

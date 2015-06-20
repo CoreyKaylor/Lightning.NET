@@ -151,7 +151,7 @@ namespace LightningDB.Tests
             //arrange
 
             //act
-            _txn.DropDatabase(db, true);
+            db.Drop();
 
             //assert
             Assert.Equal(false, db.IsOpened);
