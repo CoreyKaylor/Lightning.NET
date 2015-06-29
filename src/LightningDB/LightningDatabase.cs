@@ -9,11 +9,6 @@ namespace LightningDB
     /// </summary>
     public class LightningDatabase : IDisposable
     {
-        /// <summary>
-        /// Database name by default.
-        /// </summary>
-        public const string DefaultDatabaseName = "master";
-
         internal uint _handle;
         private readonly DatabaseOptions _options;
 

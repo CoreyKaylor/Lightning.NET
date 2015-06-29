@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using LightningDB.Collections;
 
-namespace LightningDB
+namespace LightningDB.Converters
 {
     /// <summary>
     /// Extension methods for LightningTransaction objects.

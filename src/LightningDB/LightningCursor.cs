@@ -306,9 +306,42 @@ namespace LightningDB
         /// </summary>
         /// <param name="option">Options for this operation. This parameter must be set to 0 or one of the values described here.
         ///     MDB_NODUPDATA - delete all of the data items for the current key. This flag may only be specified if the database was opened with MDB_DUPSORT.</param>
-        public void Delete(CursorDeleteOption option)
+        private void Delete(CursorDeleteOption option)
         {
             mdb_cursor_del(_handle, option);
+        }
+
+        public CursorMultipleGetByOperation MoveNextMultipleBy()
+        {
+            return new CursorMultipleGetByOperation(this, MoveNextMultiple());
+        }
+
+        internal CursorGetByOperation CursorMoveBy(Func<KeyValuePair<byte[], byte[]>?> mover)
+        {
+            return new CursorGetByOperation(this, mover.Invoke());
+        }
+
+        internal GetByOperation CursorMoveValueBy(Func<byte[]> mover)
+        {
+            return new GetByOperation(Database, mover());
+        }
+
+        /// <summary>
+        /// Delete current key/data pair.
+        /// This function deletes the key/data range for which duplicates are found.
+        /// </summary>
+        public void DeleteDuplicates()
+        {
+            Delete(CursorDeleteOption.NoDuplicateData);
+        }
+
+        /// <summary>
+        /// Delete current key/data pair.
+        /// This function deletes the key/data pair to which the cursor refers.
+        /// </summary>
+        public void Delete()
+        {
+            Delete(CursorDeleteOption.None);
         }
 
         //TODO: tests

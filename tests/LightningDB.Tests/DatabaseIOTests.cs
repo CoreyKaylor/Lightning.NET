@@ -1,5 +1,6 @@
 ﻿using System;
 using Xunit;
+using LightningDB.Converters;
 
 namespace LightningDB.Tests
 {
@@ -18,6 +19,7 @@ namespace LightningDB.Tests
             var path = fileSystem.CreateNewDirectoryForTest();
 
             _env = new LightningEnvironment(path);
+            _env.WithConverters();
             _env.MaxDatabases = 2;
             _env.Open();
 

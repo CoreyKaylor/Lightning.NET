@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Xunit;
+using LightningDB.Converters;
 
 namespace LightningDB.Tests
 {
@@ -120,6 +121,7 @@ namespace LightningDB.Tests
         public void CanCountNumberOfDatabasesThroughEnvironmentEntries()
         {
             _env = new LightningEnvironment(_path);
+            _env.WithConverters();
             _env.MaxDatabases = 5;
             _env.Open();
 
