@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using LightningDB.Factories;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -16,8 +15,7 @@ namespace LightningDB
         public const string DefaultDatabaseName = "master";
 
         internal uint _handle;
-        
-        private readonly string _name;
+
         private readonly LightningTransaction _transaction;
 
         /// <summary>
@@ -25,9 +23,9 @@ namespace LightningDB
         /// </summary>
         /// <param name="name">Database name.</param>
         /// <param name="transaction">Active transaction.</param>
-        /// <param name="entry">The handle cache for database entries.</param>
         /// <param name="encoding">Default strings encoding.</param>
-        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseHandleCacheEntry entry, Encoding encoding)
+        /// <param name="openFlags">The open flag options for the database.</param>
+        internal LightningDatabase(string name, LightningTransaction transaction, Encoding encoding, DatabaseOpenFlags openFlags)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -38,25 +36,27 @@ namespace LightningDB
             if (encoding == null)
                 throw new ArgumentNullException(nameof(encoding));
 
-            _name = name;
+            Name = name;
             _transaction = transaction;
-            _handle = entry.Handle;
+            _transaction.Environment.Disposing += Dispose;
+            mdb_dbi_open(transaction._handle, name, openFlags, out _handle);
+            IsOpened = true;
                         
             Encoding = encoding;
-            OpenFlags = entry.OpenFlags;
+            OpenFlags = openFlags;
         }
 
-        internal bool IsReleased => _handle == default(uint);
+        public bool IsReleased => _handle == default(uint);
 
         /// <summary>
         /// Is database opened.
         /// </summary>
-        public bool IsOpened => Environment.DatabaseManager.IsOpen(this);
+        public bool IsOpened { get; private set; }
 
         /// <summary>
         /// Database name.
         /// </summary>
-        public string Name => _name;
+        public string Name { get; }
 
         /// <summary>
         /// Default strings encoding.
@@ -76,13 +76,19 @@ namespace LightningDB
         /// <summary>
         /// Drops the database.
         /// </summary>
-        public void Drop(bool truncateDataOnly = false)
+        public void Drop()
         {
-            mdb_drop(_transaction._handle, _handle, !truncateDataOnly);
-            if (truncateDataOnly)
-                return;
-            Environment.DatabaseManager.Close(this, false);
+            mdb_drop(_transaction._handle, _handle, true);
+            IsOpened = false;
             _handle = default(uint);
+        }
+
+        /// <summary>
+        /// Truncates all data from the database.
+        /// </summary>
+        public void Truncate()
+        {
+            mdb_drop(_transaction._handle, _handle, false);
         }
 
         /// <summary>
@@ -94,12 +100,15 @@ namespace LightningDB
             if (_handle == default(uint))
                 return;
 
-            Environment.DatabaseManager.Close(this, true);
-            _handle = default(uint);
+            _transaction.Environment.Disposing -= Dispose;
+            IsOpened = false;
             if (disposing)
             {
+                //From finalizer, this will likely throw
+                mdb_dbi_close(_transaction.Environment._handle, _handle);
                 GC.SuppressFinalize(this);
             }
+            _handle = default(uint);
         }
 
         /// <summary>

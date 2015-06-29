@@ -22,7 +22,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             _txn = _env.BeginTransaction();
-            _db = _txn.OpenDatabase();
+            _db = _txn.OpenDatabase("master", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
         }
 
         public void Dispose()
@@ -136,12 +136,10 @@ namespace LightningDB.Tests
             Assert.Equal(value, persistedValue);
         }
 
-        [Theory]
-        [InlineData(null)] 
-        [InlineData("test")]
-        public void CanCommitTransactionToNamedDatabase(string dbName)
+        [Fact]
+        public void CanCommitTransactionToNamedDatabase()
         {
-            using (var db = _txn.OpenDatabase(dbName, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (var db = _txn.OpenDatabase("test", new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
             {
                 _txn.Put(db, "key1", "value");
 
@@ -150,7 +148,7 @@ namespace LightningDB.Tests
 
             using (var txn2 = _env.BeginTransaction())
             {
-                using (var db = txn2.OpenDatabase(dbName))
+                using (var db = txn2.OpenDatabase("test"))
                 {
                     var value = txn2.Get<string, string>(db, "key1");
                     Assert.Equal("value", value);

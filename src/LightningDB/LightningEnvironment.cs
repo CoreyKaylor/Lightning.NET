@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using LightningDB.Converters;
-using LightningDB.Factories;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
@@ -20,8 +18,7 @@ namespace LightningDB
         private long _mapSize;
         private int _maxDbs;
 
-        private readonly DatabaseManager _databaseManager;
-        private readonly TransactionManager _transactionManager;
+        public event Action Disposing;
 
         /// <summary>
         /// Creates a new instance of LightningEnvironment.
@@ -47,9 +44,6 @@ namespace LightningDB
                 MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
             else
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
-
-            _databaseManager = new DatabaseManager(_handle);
-            _transactionManager = new TransactionManager(this, null);
 
             ConverterStore = new ConverterStore();
             var defaultConverters = new DefaultConverters();
@@ -170,10 +164,6 @@ namespace LightningDB
         /// </summary>
         public ConverterStore ConverterStore { get; private set; }
 
-        internal DatabaseManager DatabaseManager => _databaseManager;
-
-        internal TransactionManager TransactionManager => _transactionManager;
-
         /// <summary>
         /// Open the environment.
         /// </summary>
@@ -210,9 +200,7 @@ namespace LightningDB
         /// </returns>
         public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
         {
-            return parent != null ? 
-                parent.SubTransactionsManager.Create(beginFlags) 
-                : _transactionManager.Create(beginFlags);
+            return new LightningTransaction(this, parent, beginFlags);
         }
 
         /// <summary>
@@ -246,12 +234,6 @@ namespace LightningDB
         public LightningTransaction BeginTransaction()
         {
             return BeginTransaction(null, LightningTransaction.DefaultTransactionBeginFlags);
-        }
-
-        //TODO: Upgrade db flags?
-        internal LightningDatabase OpenDatabase(string name, LightningTransaction tran, DatabaseOpenFlags flags, Encoding encoding)
-        {
-            return _databaseManager.OpenDatabase(name, tran, flags, encoding);
         }
 
         /// <summary>
@@ -298,10 +280,11 @@ namespace LightningDB
             if (_handle == IntPtr.Zero)
                 return;
 
+            var copy = Disposing;
+            copy?.Invoke();
+
             if (IsOpened)
             {
-                _transactionManager.AbortAll();
-                _databaseManager.CloseAll();
                 mdb_env_close(_handle);
                 IsOpened = false;
             }
