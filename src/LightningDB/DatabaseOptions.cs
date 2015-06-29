@@ -48,7 +48,8 @@ namespace LightningDB
             var compareFunction = CreateNativeCompareFunction(db, comparer);
 
             setter(compareFunction);
-            tran.SubTransactionsManager.StoreCompareFunction(compareFunction);
+            //TODO revisit compare function
+            //tran.SubTransactionsManager.StoreCompareFunction(compareFunction);
         }
 
         internal void SetComparer(LightningTransaction tran, LightningDatabase db)

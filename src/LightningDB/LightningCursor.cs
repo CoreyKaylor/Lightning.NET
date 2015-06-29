@@ -18,7 +18,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="db">Database</param>
         /// <param name="txn">Transaction</param>
-        internal LightningCursor(LightningDatabase db, LightningTransaction txn, IntPtr handle)
+        internal LightningCursor(LightningDatabase db, LightningTransaction txn)
         {
             if (db == null)
                 throw new ArgumentNullException("db");
@@ -26,10 +26,11 @@ namespace LightningDB
             if (txn == null)
                 throw new ArgumentNullException("txn");
 
-            _handle = handle;
+            mdb_cursor_open(txn._handle, db._handle, out _handle);
 
             this.Database = db;
             this.Transaction = txn;
+            Transaction.Disposing += Dispose;
 
             _shouldDispose = true;
         }
@@ -341,24 +342,22 @@ namespace LightningDB
             mdb_cursor_renew(txn._handle, _handle);
         }
 
-        //TODO: tests
-        /// <summary>
-        /// Close a cursor handle.
-        /// The cursor handle will be freed and must not be used again after this call.
-        /// </summary>
-        public void Close()
-        {
-            Transaction.CursorManager.CloseCursor(this);
-        }
-
         /// <summary>
         /// Closes the cursor and deallocates all resources associated with it.
         /// </summary>
-        /// <param name="shouldDispose">True if not disposed yet.</param>
-        protected virtual void Dispose(bool shouldDispose)
+        /// <param name="disposing">True if called from Dispose.</param>
+        protected virtual void Dispose(bool disposing)
         {
-            if (shouldDispose)
-                this.Close();
+            if (_handle == IntPtr.Zero)
+                return;
+            mdb_cursor_close(_handle);
+
+            Transaction.Disposing -= Dispose;
+
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
         }
 
         /// <summary>
@@ -366,8 +365,12 @@ namespace LightningDB
         /// </summary>
         public void Dispose()
         {
-            this.Dispose(_shouldDispose);
-            _shouldDispose = false;
+            Dispose(true);
+        }
+
+        ~LightningCursor()
+        {
+            Dispose(false);
         }
     }
 }

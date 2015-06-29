@@ -1,5 +1,4 @@
 ﻿using System;
-using LightningDB.Factories;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
@@ -16,9 +15,7 @@ namespace LightningDB
         public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
         internal IntPtr _handle;
-
-        private readonly TransactionManager _subTransactionsManager;
-        private readonly CursorManager _cursorManager;
+        private readonly IntPtr _originalHandle;
 
         /// <summary>
         /// Created new instance of LightningTransaction
@@ -26,24 +23,42 @@ namespace LightningDB
         /// <param name="environment">Environment.</param>
         /// <param name="parent">Parent transaction or null.</param>
         /// <param name="flags">Transaction open options.</param>
-        internal LightningTransaction(LightningEnvironment environment, IntPtr handle, LightningTransaction parent, TransactionBeginFlags flags)
+        internal LightningTransaction(LightningEnvironment environment, LightningTransaction parent, TransactionBeginFlags flags)
         {
             if (environment == null)
-                throw new ArgumentNullException("environment");
+                throw new ArgumentNullException(nameof(environment));
 
-            this.Environment = environment;
-            this.ParentTransaction = parent;
-            this.IsReadOnly = (flags & TransactionBeginFlags.ReadOnly) == TransactionBeginFlags.ReadOnly;
-            this.State = LightningTransactionState.Active;
+            Environment = environment;
+            ParentTransaction = parent;
+            IsReadOnly = (flags & TransactionBeginFlags.ReadOnly) == TransactionBeginFlags.ReadOnly;
+            State = LightningTransactionState.Active;
+            Environment.Disposing += Dispose;
+            if (parent != null)
+            {
+                parent.Disposing += Dispose;
+                parent.StateChanging += OnParentStateChanging;
+            }
 
-            _handle = handle;
-            _subTransactionsManager = new TransactionManager(environment, this);
-            _cursorManager = new CursorManager(this);
+            var parentHandle = parent?._handle ?? IntPtr.Zero;
+            mdb_txn_begin(environment._handle, parentHandle, flags, out _handle);
+            _originalHandle = _handle;
         }
 
-        internal TransactionManager SubTransactionsManager { get { return _subTransactionsManager; } }
+        private void OnParentStateChanging(LightningTransactionState state)
+        {
+            switch (state)
+            {
+                case LightningTransactionState.Aborted:
+                case LightningTransactionState.Commited:
+                    Abort();
+                    break;
+                default:
+                    break;
+            }
+        }
 
-        internal CursorManager CursorManager { get { return _cursorManager; } }
+        public event Action Disposing;
+        private event Action<LightningTransactionState> StateChanging;
 
         /// <summary>
         /// Current transaction state.
@@ -57,7 +72,7 @@ namespace LightningDB
         /// <returns>New child transaction.</returns>
         public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
         {
-            return this.Environment.BeginTransaction(this, beginFlags);
+            return new LightningTransaction(Environment, this, beginFlags);
         }
 
         /// <summary>
@@ -66,7 +81,7 @@ namespace LightningDB
         /// <returns>New child transaction with default options.</returns>
         public LightningTransaction BeginTransaction()
         {
-            return this.BeginTransaction(DefaultTransactionBeginFlags);
+            return BeginTransaction(DefaultTransactionBeginFlags);
         }
 
         /// <summary>
@@ -79,7 +94,7 @@ namespace LightningDB
         {
             options = options ?? new DatabaseOptions();
 
-            var db = this.Environment.OpenDatabase(name, this, options.Flags, options.Encoding);
+            var db = new LightningDatabase(name, this, options.Encoding, options.Flags);
 
             options.SetComparer(this, db);
             options.SetDuplicatesSort(this, db);
@@ -94,13 +109,13 @@ namespace LightningDB
         /// <param name="db">A database.</param>
         public LightningCursor CreateCursor(LightningDatabase db)
         {
-            return CursorManager.OpenCursor(db);
+            return new LightningCursor(db, this);
         }
 
         private bool TryGetInternal(uint dbi, byte[] key, out Func<byte[]> valueFactory)
         {
             valueFactory = null;
-            
+
             using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
                 ValueStructure valueStruct;
@@ -124,8 +139,8 @@ namespace LightningDB
         /// <returns>Requested value's byte array if exists, or null if not.</returns>
         public byte[] Get(LightningDatabase db, byte[] key)
         {
-            byte[] value = null;
-            this.TryGet(db, key, out value);
+            byte[] value;
+            TryGet(db, key, out value);
 
             return value;
         }
@@ -140,10 +155,10 @@ namespace LightningDB
         public bool TryGet(LightningDatabase db, byte[] key, out byte[] value)
         {
             if (db == null)
-                throw new ArgumentNullException("db");
+                throw new ArgumentNullException(nameof(db));
 
             Func<byte[]> factory;
-            var result = this.TryGetInternal(db._handle, key, out factory);
+            var result = TryGetInternal(db._handle, key, out factory);
 
             value = result
                 ? factory.Invoke()
@@ -161,10 +176,10 @@ namespace LightningDB
         public bool ContainsKey(LightningDatabase db, byte[] key)
         {
             if (db == null)
-                throw new ArgumentNullException("db");
+                throw new ArgumentNullException(nameof(db));
 
             Func<byte[]> factory;
-            return this.TryGetInternal(db._handle, key, out factory);
+            return TryGetInternal(db._handle, key, out factory);
         }
 
         /// <summary>
@@ -177,7 +192,7 @@ namespace LightningDB
         public void Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
         {
             if (db == null)
-                throw new ArgumentNullException("db");
+                throw new ArgumentNullException(nameof(db));
 
             using (var keyStructureMarshal = new MarshalValueStructure(key))
             using (var valueStructureMarshal = new MarshalValueStructure(value))
@@ -203,7 +218,7 @@ namespace LightningDB
         public void Delete(LightningDatabase db, byte[] key, byte[] value = null)
         {
             if (db == null)
-                throw new ArgumentNullException("db");
+                throw new ArgumentNullException(nameof(db));
 
             using (var keyMarshalStruct = new MarshalValueStructure(key))
             {
@@ -226,11 +241,11 @@ namespace LightningDB
         /// </summary>
         public void Reset()
         {
-            if (!this.IsReadOnly)
+            if (!IsReadOnly)
                 throw new InvalidOperationException("Can't reset non-readonly transaction");
 
             mdb_txn_reset(_handle);
-            this.State = LightningTransactionState.Reseted;
+            State = LightningTransactionState.Reseted;
         }
 
         /// <summary>
@@ -238,49 +253,14 @@ namespace LightningDB
         /// </summary>
         public void Renew()
         {
-            if (!this.IsReadOnly)
+            if (!IsReadOnly)
                 throw new InvalidOperationException("Can't renew non-readonly transaction");
 
-            if (this.State != LightningTransactionState.Reseted)
+            if (State != LightningTransactionState.Reseted)
                 throw new InvalidOperationException("Transaction should be reseted first");
 
             mdb_txn_renew(_handle);
-            this.State = LightningTransactionState.Active;
-        }
-
-        private void NotifyDiscarded()
-        {
-            var manager = this.ParentTransaction != null
-                ? this.ParentTransaction.SubTransactionsManager
-                : this.Environment.TransactionManager;
-
-            manager.WasDiscarded(this);
-        }
-
-        private void Discard(Action body)
-        {
-            try
-            {
-                _subTransactionsManager.AbortAll();
-            }
-            finally
-            {
-                try
-                {
-                    CursorManager.CloseAll();
-                }
-                finally
-                {
-                    try
-                    {
-                        body.Invoke();
-                    }
-                    finally
-                    {
-                        NotifyDiscarded();
-                    }
-                }
-            }
+            State = LightningTransactionState.Active;
         }
 
         /// <summary>
@@ -290,22 +270,9 @@ namespace LightningDB
         /// </summary>
         public void Commit()
         {
-            Discard(() =>
-            {
-                try
-                {
-                    mdb_txn_commit(_handle);
-
-                    this.State = LightningTransactionState.Commited;
-
-                    NotifyDiscarded();
-                }
-                catch (LightningException)
-                {
-                    this.Abort();
-                    throw;
-                }
-            });
+            State = LightningTransactionState.Commited;
+            StateChanging?.Invoke(State);
+            mdb_txn_commit(_handle);
         }
 
         /// <summary>
@@ -315,11 +282,9 @@ namespace LightningDB
         /// </summary>
         public void Abort()
         {
-            Discard(() =>
-            {
-                this.State = LightningTransactionState.Aborted;
-                mdb_txn_abort(_handle);
-            });
+            State = LightningTransactionState.Aborted;
+            StateChanging?.Invoke(State);
+            mdb_txn_abort(_handle);
         }
 
         public long GetEntriesCount(LightningDatabase db)
@@ -333,45 +298,64 @@ namespace LightningDB
         /// <summary>
         /// Environment in which the transaction was opened.
         /// </summary>
-        public LightningEnvironment Environment { get; private set; }
+        public LightningEnvironment Environment { get; }
 
         /// <summary>
         /// Parent transaction of this transaction.
         /// </summary>
-        public LightningTransaction ParentTransaction { get; private set; }
+        public LightningTransaction ParentTransaction { get; }
 
         /// <summary>
         /// Whether this transaction is read-only.
         /// </summary>
-        public bool IsReadOnly { get; private set; }
+        public bool IsReadOnly { get; }
 
         /// <summary>
         /// Abort this transaction and deallocate all resources associated with it (including databases).
         /// </summary>
-        /// <param name="shouldDispose">True if not disposed yet.</param>
-        protected virtual void Dispose(bool shouldDispose)
+        /// <param name="disposing">True if called from Dispose.</param>
+        protected virtual void Dispose(bool disposing)
         {
-            if (shouldDispose && !IntPtr.Zero.Equals(_handle))
+            if (_handle == IntPtr.Zero)
+                return;
+
+            Environment.Disposing -= Dispose;
+            if (ParentTransaction != null)
             {
-                try
-                {
-                    this.Abort();
-                }
-                catch { }
+                ParentTransaction.Disposing -= Dispose;
+                ParentTransaction.StateChanging -= OnParentStateChanging;
+            }
+
+            var copy = Disposing;
+            copy?.Invoke();
+
+            if (State == LightningTransactionState.Active)
+                Abort();
+
+            _handle = IntPtr.Zero;
+
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
             }
         }
 
         /// <summary>
-        /// Abort this transaction and deallocate all resources associated with it (including databases).
+        /// Dispose this transaction and deallocate all resources associated with it (including databases).
         /// </summary>
         public void Dispose()
         {
-            this.Dispose(this.State != LightningTransactionState.Aborted && this.State != LightningTransactionState.Commited);
+            Dispose(true);
+        }
+
+        ~LightningTransaction()
+        {
+            Dispose(false);
         }
 
         public override int GetHashCode()
         {
-            return _handle.GetHashCode();
+            return _originalHandle.GetHashCode();
         }
 
         public override bool Equals(object obj)
