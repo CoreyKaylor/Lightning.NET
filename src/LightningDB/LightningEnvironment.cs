@@ -44,7 +44,10 @@ namespace LightningDB
                 MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
             else
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
+        }
 
+        public void WithConverters()
+        {
             ConverterStore = new ConverterStore();
             var defaultConverters = new DefaultConverters();
             defaultConverters.RegisterDefault(this);

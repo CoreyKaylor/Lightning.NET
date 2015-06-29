@@ -1,29 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
-namespace LightningDB
+namespace LightningDB.Converters
 {
     /// <summary>
     /// Extensions for LightningCursor
     /// </summary>
     public static class LightningCursorExtensions
     {
-        /// <summary>
-        /// Delete current key/data pair.
-        /// This function deletes the key/data pair to which the cursor refers.
-        /// </summary>
-        /// <param name="cur">A cursor.</param>
-        /// <param name="removeAllDuplicateData">if true, delete all of the data items for the current key. This flag may only be specified if the database was opened with MDB_DUPSORT.</param>
-        public static void Delete(this LightningCursor cur, bool removeAllDuplicateData = true)
-        {
-            cur.Delete(
-                removeAllDuplicateData ? CursorDeleteOption.NoDuplicateData : CursorDeleteOption.None);
-        }
-
         /// <summary>
         /// Store by cursor.
         /// This function stores key/data pairs into the database. 
@@ -84,11 +69,6 @@ namespace LightningDB
             return true;
         }
 
-        public static CursorMultipleGetByOperation MoveNextMultipleBy(this LightningCursor cur)
-        {
-            return new CursorMultipleGetByOperation(cur, cur.MoveNextMultiple());
-        }
-
         public static bool MoveNextMultiple<TKey, TValue>(this LightningCursor cur, out KeyValuePair<TKey, TValue[]> pair)
         {
             var op = cur.MoveNextMultipleBy();
@@ -114,19 +94,11 @@ namespace LightningDB
             return cur.Database.FromBytes<T>(bytes);
         }
 
-        internal static CursorGetByOperation CursorMoveBy(this LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover)
-        {
-            return new CursorGetByOperation(cur, mover.Invoke());
-        }
-
-        internal static GetByOperation CursorMoveValueBy(this LightningCursor cur, Func<byte[]> mover)
-        {
-            return new GetByOperation(cur.Database, mover.Invoke());
-        }
+        
 
         internal static bool CursorMove<TKey, TValue>(this LightningCursor cur, Func<KeyValuePair<byte[], byte[]>?> mover, out KeyValuePair<TKey, TValue> pair)
         {
-            var op = CursorMoveBy(cur, mover);
+            var op = cur.CursorMoveBy(mover);
 
             if (!op.PairExists)
             {
@@ -142,7 +114,7 @@ namespace LightningDB
 
         internal static bool CursorMoveValue<TValue>(this LightningCursor cur, Func<byte[]> mover, out TValue value)
         {
-            var op = CursorMoveValueBy(cur, mover);
+            var op = cur.CursorMoveValueBy(mover);
 
             if (op == null)
             {

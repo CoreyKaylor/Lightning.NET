@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using LightningDB.Converters;
 using LightningDB.Native;
 
 namespace LightningDB

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Xunit;
+using LightningDB.Converters;
 
 namespace LightningDB.Tests
 {
@@ -19,6 +20,7 @@ namespace LightningDB.Tests
             
 
             _env = new LightningEnvironment(path);
+            _env.WithConverters();
             _env.MaxDatabases = 10;
             _env.Open();
 
