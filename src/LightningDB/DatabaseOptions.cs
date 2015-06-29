@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
@@ -7,70 +9,50 @@ namespace LightningDB
 {
     public class DatabaseOptions
     {
+        private IComparer<byte[]> _comparer;
+        private IComparer<byte[]> _duplicatesComparer;
+
         public DatabaseOptions()
         {
-            Flags = LightningConfig.Database.DefaultOpenFlags;
-            Encoding = LightningConfig.Database.DefaultEncoding;
+            Flags = DatabaseOpenFlags.None;
+            Encoding = Encoding.UTF8;
         }
-
-        #region IDatabaseOptions Members
-
-        public Func<CompareFunctionBuilder, LightningCompareDelegate> Compare { get; set; }
-
-        public Func<CompareFunctionBuilder, LightningCompareDelegate> DuplicatesSort { get; set; }
 
         public Encoding Encoding { get; set; }
 
         public DatabaseOpenFlags Flags { get; set; }
 
-        #endregion
 
-        private static CompareFunction CreateNativeCompareFunction(
-            LightningDatabase db, LightningCompareDelegate compare)
+        internal void ConfigureDatabase(LightningTransaction tx, LightningDatabase db)
         {
-            return (ref ValueStructure left, ref ValueStructure right) =>
-                compare(db, left.GetBytes(), right.GetBytes());
+            if (_comparer != null)
+            {
+                mdb_set_compare(tx._handle, db._handle, Compare);
+            }
+            if (_duplicatesComparer != null)
+            {
+                mdb_set_dupsort(tx._handle, db._handle, IsDuplicate);
+            }
         }
 
-        private static void SetNativeCompareFunction(
-            LightningTransaction tran, 
-            LightningDatabase db,
-            Func<CompareFunctionBuilder, LightningCompareDelegate> delegateFactory,
-            Func<CompareFunction, int> setter)
+        private int Compare(ref ValueStructure left, ref ValueStructure right)
         {
-            if (delegateFactory == null)
-                return;
-
-            var comparer = delegateFactory.Invoke(new CompareFunctionBuilder());
-            if (comparer == null)
-                return;
-
-            var compareFunction = CreateNativeCompareFunction(db, comparer);
-
-            setter(compareFunction);
-            //TODO revisit compare function
-            //tran.SubTransactionsManager.StoreCompareFunction(compareFunction);
+            return _comparer.Compare(left.GetBytes(), right.GetBytes());
         }
 
-        internal void SetComparer(LightningTransaction tran, LightningDatabase db)
+        private int IsDuplicate(ref ValueStructure left, ref ValueStructure right)
         {
-            SetNativeCompareFunction(
-                tran,
-                db,
-                Compare,
-                func => mdb_set_compare(tran._handle, db._handle, func));
+            return _duplicatesComparer.Compare(left.GetBytes(), right.GetBytes());
         }
 
-        internal void SetDuplicatesSort(LightningTransaction tran, LightningDatabase db)
+        public void CompareWith(IComparer<byte[]> comparer)
         {
-            if (!db.OpenFlags.HasFlag(DatabaseOpenFlags.DuplicatesSort))
-                return;
+            _comparer = comparer;
+        }
 
-            SetNativeCompareFunction(
-                tran,
-                db,
-                DuplicatesSort,
-                func => mdb_set_dupsort(tran._handle, db._handle, func));
+        public void FindDuplicatesWith(IComparer<byte[]> comparer)
+        {
+            _duplicatesComparer = comparer;
         }
     }
 }

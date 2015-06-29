@@ -158,25 +158,24 @@ namespace LightningDB.Tests
             Assert.Equal(entriesCount, count);
         }
 
-        [Fact(Skip = "Coming back to this a little bit later.")]
+        [Fact]
         public void TransactionShouldSupportCustomComparer()
         {
-            //arrange
             Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
 
             var txn = _env.BeginTransaction();
-            var db = txn.OpenDatabase("master",
-                options: new DatabaseOptions { Compare = b => b.FromFunc(comparison) });
+            var options = new DatabaseOptions {Flags = DatabaseOpenFlags.Create};
+            Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
+            options.CompareWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
+            var db = txn.OpenDatabase("master", options);
 
-            var keysUnsorted = new int[] { 2, 10, 5 };
+            var keysUnsorted = new [] { 2, 10, 5 };
             var keysSorted = keysUnsorted.ToArray();
             Array.Sort(keysSorted, new Comparison<int>(comparison));
 
-            //act
             for (var i = 0; i < keysUnsorted.Length; i++)
-                txn.Put(keysUnsorted[i], i);
+                txn.Put(db, keysUnsorted[i], i);
 
-            //assert
             using (var c = txn.CreateCursor(db))
             {
                 int order = 0;
@@ -187,21 +186,19 @@ namespace LightningDB.Tests
             }
         }
 
-        [Fact(Skip = "Coming back to this a little bit later.")]
+        [Fact]
         public void TransactionShouldSupportCustomDupSorter()
         {
             //arrange
             Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
 
             var txn = _env.BeginTransaction();
-            var db = txn.OpenDatabase("master",
-                options: new DatabaseOptions 
-                { 
-                    Flags = DatabaseOpenFlags.DuplicatesFixed,
-                    DuplicatesSort = b => b.FromFunc(comparison) 
-                });
+            var options = new DatabaseOptions {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
+            Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
+            options.FindDuplicatesWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
+            var db = txn.OpenDatabase("master", options);
 
-            var valuesUnsorted = new int[] { 2, 10, 5, 0 };
+            var valuesUnsorted = new [] { 2, 10, 5, 0 };
             var valuesSorted = valuesUnsorted.ToArray();
             Array.Sort(valuesSorted, new Comparison<int>(comparison));
 

@@ -15,6 +15,7 @@ namespace LightningDB
         public const string DefaultDatabaseName = "master";
 
         internal uint _handle;
+        private readonly DatabaseOptions _options;
 
         private readonly LightningTransaction _transaction;
 
@@ -23,9 +24,8 @@ namespace LightningDB
         /// </summary>
         /// <param name="name">Database name.</param>
         /// <param name="transaction">Active transaction.</param>
-        /// <param name="encoding">Default strings encoding.</param>
-        /// <param name="openFlags">The open flag options for the database.</param>
-        internal LightningDatabase(string name, LightningTransaction transaction, Encoding encoding, DatabaseOpenFlags openFlags)
+        /// <param name="options">Options for the database, like encoding, option flags, and comparison logic.</param>
+        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseOptions options)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -33,17 +33,17 @@ namespace LightningDB
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
-            if (encoding == null)
-                throw new ArgumentNullException(nameof(encoding));
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
 
             Name = name;
+            Environment = transaction.Environment;
             _transaction = transaction;
+            _options = options;
             _transaction.Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction._handle, name, openFlags, out _handle);
+            mdb_dbi_open(transaction._handle, name, _options.Flags, out _handle);
+            _options.ConfigureDatabase(_transaction, this);
             IsOpened = true;
-                        
-            Encoding = encoding;
-            OpenFlags = openFlags;
         }
 
         public bool IsReleased => _handle == default(uint);
@@ -61,12 +61,12 @@ namespace LightningDB
         /// <summary>
         /// Default strings encoding.
         /// </summary>
-        public Encoding Encoding { get; private set; }
+        public Encoding Encoding => _options.Encoding;
 
         /// <summary>
         /// Environment in which the database was opened.
         /// </summary>
-        public LightningEnvironment Environment => _transaction.Environment;
+        public LightningEnvironment Environment { get; }
 
         /// <summary>
         /// Flags with which the database was opened.
