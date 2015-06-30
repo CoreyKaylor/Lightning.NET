@@ -16,7 +16,6 @@ namespace LightningDB.Tests
             var path = fileSystem.CreateNewDirectoryForTest();
             _env = new LightningEnvironment(path);
             _env.WithConverters();
-            _env.MaxDatabases = 5;
             _env.Open();
         }
 
@@ -146,7 +145,7 @@ namespace LightningDB.Tests
         {
             //arrange
             var txn = _env.BeginTransaction();
-            var db = txn.OpenDatabase("master", new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            var db = txn.OpenDatabase();
 
             const int entriesCount = 10;
             for (var i = 0; i < entriesCount; i++)
@@ -168,7 +167,7 @@ namespace LightningDB.Tests
             var options = new DatabaseOptions {Flags = DatabaseOpenFlags.Create};
             Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
             options.CompareWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
-            var db = txn.OpenDatabase("master", options);
+            var db = txn.OpenDatabase(options: options);
 
             var keysUnsorted = new [] { 2, 10, 5 };
             var keysSorted = keysUnsorted.ToArray();
@@ -197,7 +196,7 @@ namespace LightningDB.Tests
             var options = new DatabaseOptions {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
             Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
             options.FindDuplicatesWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
-            var db = txn.OpenDatabase("master", options);
+            var db = txn.OpenDatabase(options: options);
 
             var valuesUnsorted = new [] { 2, 10, 5, 0 };
             var valuesSorted = valuesUnsorted.ToArray();

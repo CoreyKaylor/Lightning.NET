@@ -90,11 +90,8 @@ namespace LightningDB
         /// <param name="name">Database name (optional). If null then the default name is used.</param>
         /// <param name="options">Database open options.</param>
         /// <returns>Created database wrapper.</returns>
-        public LightningDatabase OpenDatabase(string name, DatabaseOptions options = null)
+        public LightningDatabase OpenDatabase(string name = null, DatabaseOptions options = null)
         {
-            if(name == null)
-                throw new ArgumentException(nameof(name));
-
             options = options ?? new DatabaseOptions();
             var db = new LightningDatabase(name, this, options);
             return db;

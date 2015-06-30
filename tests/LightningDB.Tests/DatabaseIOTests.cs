@@ -19,12 +19,12 @@ namespace LightningDB.Tests
             var path = fileSystem.CreateNewDirectoryForTest();
 
             _env = new LightningEnvironment(path);
-            _env.WithConverters();
             _env.MaxDatabases = 2;
+            _env.WithConverters();
             _env.Open();
 
             _txn = _env.BeginTransaction();
-            _db = _txn.OpenDatabase("master", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
+            _db = _txn.OpenDatabase(options: new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
         }
 
         public void Dispose()

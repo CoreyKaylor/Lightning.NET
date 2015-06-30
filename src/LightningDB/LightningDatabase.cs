@@ -22,9 +22,6 @@ namespace LightningDB
         /// <param name="options">Options for the database, like encoding, option flags, and comparison logic.</param>
         internal LightningDatabase(string name, LightningTransaction transaction, DatabaseOptions options)
         {
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
-
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 

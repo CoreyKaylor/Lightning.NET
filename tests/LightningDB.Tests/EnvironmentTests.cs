@@ -145,20 +145,20 @@ namespace LightningDB.Tests
             Assert.Equal(2, _env.EntriesCount);
         }
 
-        [Fact(Skip = "Not sure what the logic really should be here, but guessing it was a false positive, not sure though")]
+        [Fact]
         public void CanGetUsedSize()
         {
             const int entriesCount = 1;
 
             //arrange
             _env = new LightningEnvironment(_path);
-            _env.MaxDatabases = 0;
+            _env.WithConverters();
             _env.Open();
 
             var initialUsedSize = _env.UsedSize;
 
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase("master", new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
             {
                 for (int i = 0; i < entriesCount; i++)
                     txn.Put(db, i, i);
