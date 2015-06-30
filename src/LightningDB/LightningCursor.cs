@@ -57,8 +57,8 @@ namespace LightningDB
         /// <returns>Key-value pair for the specified key</returns>
         public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key)
         {
-            using (var marshalKey = new MarshalValueStructure(key))
-                return this.Get(CursorOperation.Set, marshalKey.ValueStructure);
+            using (var marshal = new MarshalValueStructure(key))
+                return Get(CursorOperation.Set, marshal.Key);
         }
 
         /// <summary>
@@ -69,9 +69,8 @@ namespace LightningDB
         /// <returns>Current key/data pair.</returns>
         public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key, byte[] value)
         {
-            using (var marshalKey = new MarshalValueStructure(key))
-            using (var marshalValue = new MarshalValueStructure(value))
-                return this.Get(CursorOperation.GetBoth, marshalKey.ValueStructure, marshalValue.ValueStructure);
+            using (var marshal = new MarshalValueStructure(key, value))
+                return Get(CursorOperation.GetBoth, marshal.Key, marshal.Value);
         }
 
         /// <summary>
@@ -82,9 +81,8 @@ namespace LightningDB
         /// <returns>Nearest value and corresponding key</returns>
         public KeyValuePair<byte[], byte[]>? MoveToFirstValueAfter(byte[] key, byte[] value)
         {
-            using (var marshalKey = new MarshalValueStructure(key))
-            using (var marshalValue = new MarshalValueStructure(value))
-                return this.Get(CursorOperation.GetBothRange, marshalKey.ValueStructure, marshalValue.ValueStructure);
+            using (var marshal = new MarshalValueStructure(key, value))
+                return Get(CursorOperation.GetBothRange, marshal.Key, marshal.Value);
         }
 
         /// <summary>
@@ -95,7 +93,7 @@ namespace LightningDB
         public KeyValuePair<byte[], byte[]>? MoveToFirstAfter(byte[] key)
         {
             using(var marshalKey = new MarshalValueStructure(key))
-                return this.Get(CursorOperation.SetRange, marshalKey.ValueStructure);
+                return Get(CursorOperation.SetRange, marshalKey.Key);
         }
 
         //What is the difference from CursorOperation.Set?
@@ -269,14 +267,8 @@ namespace LightningDB
         /// </param>
         public void Put(byte[] key, byte[] value, CursorPutOptions options)
         {
-            using(var keyMarshalStruct = new MarshalValueStructure(key))
-            using (var valueMarshalStruct = new MarshalValueStructure(value))
-            {
-                var keyStruct = keyMarshalStruct.ValueStructure;
-                var valueStruct = valueMarshalStruct.ValueStructure;
-
-                mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, options);
-            }
+            using (var marshal = new MarshalValueStructure(key, value))
+                mdb_cursor_put(_handle, ref marshal.Key, ref marshal.Value, options);
         }
 
         /// <summary>
@@ -289,14 +281,8 @@ namespace LightningDB
         /// <param name="values">The data items operated on.</param>
         public void PutMultiple(byte[] key, byte[][] values)
         {
-            using (var keyMarshalStruct = new MarshalValueStructure(key))
-            using (var valueMarshalStruct = new MarshalMultipleValueStructure(values))
-            {
-                var keyStruct = keyMarshalStruct.ValueStructure;
-                var valueStruct = valueMarshalStruct.ValueStructures;
-
-                mdb_cursor_put(_handle, ref keyStruct, valueStruct, CursorPutOptions.MultipleData);
-            }
+            using (var marshal = new MarshalMultipleValueStructure(key, values))
+                mdb_cursor_put(_handle, ref marshal.Key, marshal.Values, CursorPutOptions.MultipleData);
         }
 
         //TODO: tests

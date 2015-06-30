@@ -114,12 +114,11 @@ namespace LightningDB
         {
             valueFactory = null;
             
-            using (var keyMarshalStruct = new MarshalValueStructure(key))
+            using (var marshal = new MarshalValueStructure(key))
             {
                 ValueStructure valueStruct;
-                var keyStructure = keyMarshalStruct.ValueStructure;
 
-                var res = mdb_get(_handle, dbi, ref keyStructure, out valueStruct);
+                var res = mdb_get(_handle, dbi, ref marshal.Key, out valueStruct);
 
                 var exists = res != MDB_NOTFOUND;
                 if (exists)
@@ -192,14 +191,8 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            using (var keyStructureMarshal = new MarshalValueStructure(key))
-            using (var valueStructureMarshal = new MarshalValueStructure(value))
-            {
-                var keyStruct = keyStructureMarshal.ValueStructure;
-                var valueStruct = valueStructureMarshal.ValueStructure;
-
-                mdb_put(_handle, db._handle, ref keyStruct, ref valueStruct, options);
-            }
+            using (var marshal = new MarshalValueStructure(key, value))
+                mdb_put(_handle, db._handle, ref marshal.Key, ref marshal.Value, options);
         }
 
         /// <summary>
@@ -213,25 +206,28 @@ namespace LightningDB
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
         /// <param name="key">The key to delete from the database</param>
         /// <param name="value">The data to delete (optional)</param>
-        public void Delete(LightningDatabase db, byte[] key, byte[] value = null)
+        public void Delete(LightningDatabase db, byte[] key, byte[] value)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            using (var keyMarshalStruct = new MarshalValueStructure(key))
-            {
-                var keyStructure = keyMarshalStruct.ValueStructure;
-                if (value != null)
-                {
-                    using (var valueMarshalStruct = new MarshalValueStructure(value))
-                    {
-                        var valueStructure = valueMarshalStruct.ValueStructure;
-                        mdb_del(_handle, db._handle, ref keyStructure, ref valueStructure);
-                        return;
-                    }
-                }
-                mdb_del(_handle, db._handle, ref keyStructure);
-            }
+            using (var marshal = new MarshalValueStructure(key, value))
+                mdb_del(_handle, db._handle, ref marshal.Key, ref marshal.Value);
+        }
+        /// <summary>
+        /// Delete items from a database.
+        /// This function removes key/data pairs from the database. 
+        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
+        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted. 
+        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted. 
+        /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
+        /// </summary>
+        /// <param name="db">A database handle returned by mdb_dbi_open()</param>
+        /// <param name="key">The key to delete from the database</param>
+        public void Delete(LightningDatabase db, byte[] key)
+        {
+            using (var marshal = new MarshalValueStructure(key))
+                mdb_del(_handle, db._handle, ref marshal.Key);
         }
 
         /// <summary>
