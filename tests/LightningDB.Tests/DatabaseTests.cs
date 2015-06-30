@@ -16,7 +16,6 @@ namespace LightningDB.Tests
             var path = fileSystem.CreateNewDirectoryForTest();
             _env = new LightningEnvironment(path);
             _env.WithConverters();
-            _env.MaxDatabases = 2;
         }
 
         public void Dispose()
@@ -48,7 +47,7 @@ namespace LightningDB.Tests
         {
             _env.Open();
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase("master", new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            var db = _txn.OpenDatabase();
             //arrange
 
             //act
@@ -67,7 +66,7 @@ namespace LightningDB.Tests
             LightningDatabase db;
             using (var committed = _env.BeginTransaction())
             {
-                db = committed.OpenDatabase("master", new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+                db = committed.OpenDatabase();
                 committed.Commit();
             }
             
@@ -83,6 +82,7 @@ namespace LightningDB.Tests
         [Fact]
         public void DatabaseShouldBeDropped()
         {
+            _env.MaxDatabases = 2;
             _env.Open();
             _txn = _env.BeginTransaction();
             var db = _txn.OpenDatabase("notmaster", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
@@ -109,13 +109,13 @@ namespace LightningDB.Tests
         {
             _env.Open();
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase("master", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
+            var db = _txn.OpenDatabase();
 
-            _txn.Put(db, Encoding.UTF8.GetBytes("hello"), Encoding.UTF8.GetBytes("world"));
+            _txn.Put(db, "hello", "world");
             _txn.Commit();
             _txn.Dispose();
             _txn = _env.BeginTransaction();
-            db = _txn.OpenDatabase("master");
+            db = _txn.OpenDatabase();
             db.Truncate();
             _txn.Commit();
             _txn.Dispose();
