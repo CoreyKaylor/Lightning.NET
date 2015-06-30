@@ -80,6 +80,26 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void NamedDatabaseNameExistsInMaster()
+        {
+            _env.MaxDatabases = 2;
+            _env.Open();
+
+            using (var tx = _env.BeginTransaction())
+            {
+                var db = tx.OpenDatabase("customdb", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
+                tx.Commit();
+            }
+            using (var tx = _env.BeginTransaction())
+            {
+                var db = tx.OpenDatabase();
+                var cursor = tx.CreateCursor(db);
+                var kvp = cursor.MoveNext();
+                Assert.Equal("customdb", Encoding.UTF8.GetString(kvp.Value.Key));
+            }
+        }
+
+        [Fact]
         public void DatabaseShouldBeDropped()
         {
             _env.MaxDatabases = 2;
