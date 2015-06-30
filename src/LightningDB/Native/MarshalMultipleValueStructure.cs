@@ -6,13 +6,15 @@ namespace LightningDB.Native
 {
     internal class MarshalMultipleValueStructure : IDisposable
     {
+        private readonly byte[] _key;
         private readonly byte[] _flattened;
         private readonly int _size;
         private readonly int _count;
 
-        private GCHandle _handle;
+        private GCHandle _keyHandle;
+        private GCHandle _valuesHandle;
 
-        public MarshalMultipleValueStructure(byte[][] values)
+        public MarshalMultipleValueStructure(byte[] key, byte[][] values)
         {
             if (values == null)
                 throw new ArgumentNullException(nameof(values));
@@ -20,7 +22,29 @@ namespace LightningDB.Native
             _size = GetSize(values);
             _count = GetCount(values);
             _flattened = values.SelectMany(x => x).ToArray();
-            _handle = GCHandle.Alloc(_flattened, GCHandleType.Pinned);
+            _valuesHandle = GCHandle.Alloc(_flattened, GCHandleType.Pinned);
+
+            _key = key;
+            _keyHandle = GCHandle.Alloc(_key, GCHandleType.Pinned);
+
+            Values = new[]
+            {
+                new ValueStructure
+                {
+                    size = new IntPtr(_size),
+                    data = _valuesHandle.AddrOfPinnedObject()
+                },
+                new ValueStructure
+                {
+                    size = new IntPtr(_count)
+                }
+            };
+
+            Key = new ValueStructure
+            {
+                size = new IntPtr(_key.Length),
+                data = _keyHandle.AddrOfPinnedObject()
+            };
         }
 
         private int GetSize(byte[][] values)
@@ -36,28 +60,14 @@ namespace LightningDB.Native
             return values.Length;
         }
 
-        public ValueStructure[] ValueStructures
-        {
-            get
-            {
-                return new[]
-                {
-                    new ValueStructure
-                    {
-                        size = new IntPtr(_size),
-                        data = _handle.AddrOfPinnedObject()
-                    },
-                    new ValueStructure
-                    {
-                        size = new IntPtr(_count)
-                    }
-                };
-            }
-        }
+        public ValueStructure Key;
+
+        public ValueStructure[] Values;
 
         public void Dispose()
         {
-            _handle.Free();
+            _keyHandle.Free();
+            _valuesHandle.Free();
             GC.SuppressFinalize(this);
         }
 
