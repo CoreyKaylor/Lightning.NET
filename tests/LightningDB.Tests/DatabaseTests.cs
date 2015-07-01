@@ -100,6 +100,34 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void ReadonlyTransactionOpenedDatabasesDontGetReused()
+        {
+            //This is here to assert that previous issues with the way manager
+            //classes (since removed) worked don't happen anymore.
+            _env.MaxDatabases = 2;
+            _env.Open();
+
+            using (var tx = _env.BeginTransaction())
+            using (var db = tx.OpenDatabase("custom", new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            {
+                tx.Put(db, "hello", "world");
+                tx.Commit();
+            }
+            using (var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+            {
+                var db = tx.OpenDatabase("custom");
+                var result = tx.Get(db, "hello");
+                Assert.Equal(result, "world");
+            }
+            using (var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+            {
+                var db = tx.OpenDatabase("custom");
+                var result = tx.Get(db, "hello");
+                Assert.Equal(result, "world");
+            }
+        }
+
+        [Fact]
         public void DatabaseShouldBeDropped()
         {
             _env.MaxDatabases = 2;
