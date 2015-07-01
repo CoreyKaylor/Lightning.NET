@@ -20,7 +20,7 @@
     "net45": { },
     "dnx451": {
       "dependencies": {
-        "Microsoft.Framework.Runtime.Interfaces": "1.0.0-*"
+        "Microsoft.Framework.Runtime.Abstractions": "1.0.0-*"
       }
     },
     "dnxcore50": {
@@ -30,7 +30,7 @@
         "System.Linq": "4.0.0-beta-*",
         "System.Collections.Concurrent": "4.0.10-beta-*",
         "System.Runtime.InteropServices": "4.0.20-beta-*",
-        "Microsoft.Framework.Runtime.Interfaces": "1.0.0-*",
+        "Microsoft.Framework.Runtime.Abstractions": "1.0.0-*",
         "System.IO.FileSystem": "4.0.0-beta-*",
         "System.Threading": "4.0.10-beta-*"
       }
