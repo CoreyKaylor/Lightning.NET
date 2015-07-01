@@ -11,6 +11,14 @@ cd mdb/libraries/liblmdb/
 make
 cd ../../../
 
+# HACK - dnu restore with beta4 fails most of the time
+# due to timeouts or other failures.
+# Fetch the latest dnu and use that instead
+dnvm update-self
+dnvm upgrade -unstable
+dnu restore
+# end hack
+
 dnvm install 1.0.0-beta5
 dnvm alias default 1.0.0-beta5
 dnu restore
