@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
-using LightningDB.Converters;
+using static System.Text.Encoding;
 
 namespace LightningDB.Tests
 {
@@ -20,7 +19,6 @@ namespace LightningDB.Tests
             
 
             _env = new LightningEnvironment(path);
-            _env.WithConverters();
             _env.Open();
 
             _txn = _env.BeginTransaction();            
@@ -37,10 +35,9 @@ namespace LightningDB.Tests
             using (var cur = _txn.CreateCursor(_db))
             {
                 var keys = Enumerable.Range(1, 5)
-                    .Select(i => Encoding.UTF8.GetBytes("key" + i))
+                    .Select(i => UTF8.GetBytes("key" + i))
                     .ToArray();
 
-                //act
                 foreach (var k in keys)
                 {
                     cur.Put(k, k, CursorPutOptions.None);
@@ -51,42 +48,29 @@ namespace LightningDB.Tests
         [Fact]
         public void CursorShouldBeCreated()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            
-            //act
-
-            //assert
             _txn.CreateCursor(_db);
         }
 
         [Fact]
         public void CursorShouldPutValues()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            
-            //act
-
-            //assert
-            this.PopulateCursorValues();
+            PopulateCursorValues();
         }
 
         [Fact]
         public void CursorShouldMoveToLast()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            this.PopulateCursorValues();
-
-            //assert
+            PopulateCursorValues();
 
             using (var cur = _txn.CreateCursor(_db))
             {
-                var last = cur.MoveToLast().Value;
+                Assert.True(cur.MoveToLast());
 
-                var lastKey = Encoding.UTF8.GetString(last.Key);
-                var lastValue = Encoding.UTF8.GetString(last.Value);
+                var lastKey = UTF8.GetString(cur.Current.Key);
+                var lastValue = UTF8.GetString(cur.Current.Value);
 
                 Assert.Equal("key5", lastKey);
                 Assert.Equal("key5", lastValue);
@@ -96,18 +80,15 @@ namespace LightningDB.Tests
         [Fact]
         public void CursorShouldMoveToFirst()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            this.PopulateCursorValues();
-
-            //assert
+            PopulateCursorValues();
 
             using (var cur = _txn.CreateCursor(_db))
             {
-                var last = cur.MoveToFirst().Value;
+                cur.MoveToFirst();
 
-                var lastKey = Encoding.UTF8.GetString(last.Key);
-                var lastValue = Encoding.UTF8.GetString(last.Value);
+                var lastKey = UTF8.GetString(cur.Current.Key);
+                var lastValue = UTF8.GetString(cur.Current.Value);
 
                 Assert.Equal("key1", lastKey);
                 Assert.Equal("key1", lastValue);
@@ -117,173 +98,125 @@ namespace LightningDB.Tests
         [Fact]
         public void ShouldIterateThroughCursor()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            this.PopulateCursorValues();
+            PopulateCursorValues();
                         
             using (var cur = _txn.CreateCursor(_db))
             {
                 var i = 0;
 
-                //act
-                while (true)
+                while (cur.MoveNext())
                 {
-                    var current = cur.MoveNext();
-                    if (!current.HasValue)
-                        break;
-
-                    var key = Encoding.UTF8.GetString(current.Value.Key);
-                    var value = Encoding.UTF8.GetString(current.Value.Value);
+                    var key = UTF8.GetString(cur.Current.Key);
+                    var value = UTF8.GetString(cur.Current.Value);
 
                     var name = "key" + ++i;
-
-                    //assert
 
                     Assert.Equal(name, key);
                     Assert.Equal(name, value);
                 }                
-            }
-        }
-
-        [Fact]
-        public void ShouldIterateThroughCursorByExtensions()
-        {
-            //arrange
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            this.PopulateCursorValues();
-
-            using (var cur = _txn.CreateCursor(_db))
-            {
-                var i = 0;
-
-                //act
-                for(var current = cur.MoveToFirstBy(); current.PairExists; current = cur.MoveNextBy())
-                {
-                    var pair = current.Pair<string, string>();
-                    var name = "key" + ++i;
-
-                    //assert
-
-                    Assert.Equal(name, pair.Key);
-                    Assert.Equal(name, pair.Value);
-                }
+                Assert.NotEqual(0, i);
             }
         }
 
         [Fact]
         public void CursorShouldDeleteElements()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            this.PopulateCursorValues();
+            PopulateCursorValues();
 
-            using (var cur = _txn.CreateCursor(_db))
+            using (var cursor = _txn.CreateCursor(_db))
             {
-                var i = 0;
-
-                //act
-                for (var current = cur.MoveToFirstBy(); current.PairExists && i < 2; current = cur.MoveNextBy(), i++)
+                for (int i = 0; i < 2; ++i)
                 {
-                    cur.Delete();
-                }
-
-                //assert
-                for (var current = cur.MoveToFirstBy(); current.PairExists; current = cur.MoveNextBy())
-                {
-                    var key = current.Key<string>();
-
-                    Assert.NotEqual("key1", key);
-                    Assert.NotEqual("key2", key);
+                    cursor.MoveNext();
+                    cursor.Delete();
                 }
             }
+            var foundDeleted = _db.AsEnumerable().Select(x => UTF8.GetString(x.Key))
+                .Any(x => x == "key1" || x == "key2");
+            Assert.False(foundDeleted);
         }
 
         [Fact]
         public void ShouldIterateThroughCursorByEnumerator()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
-            this.PopulateCursorValues();
+            PopulateCursorValues();
 
             var i = 0;
-            foreach (var pair in _txn.EnumerateDatabase<string, string>(_db))
+            foreach (var pair in _db)
             {
                 var name = "key" + ++i;
-
-                //assert
-
-                Assert.Equal(name, pair.Key);
-                Assert.Equal(name, pair.Value);
+                Assert.Equal(name, UTF8.GetString(pair.Key));
+                Assert.Equal(name, UTF8.GetString(pair.Value));
             }
         }
 
         [Fact]
         public void ShouldPutMultiple()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
 
-            var values = new[] { 1, 2, 3, 4, 5 };
+            var values = new[] { 1, 2, 3, 4, 5 }.Select(BitConverter.GetBytes).ToArray();
             using (var cur = _txn.CreateCursor(_db))
-                cur.PutMultiple("TestKey", values);
+                cur.PutMultiple(UTF8.GetBytes("TestKey"), values);
 
-            var pairs = new KeyValuePair<string, int>[values.Length];
+            var pairs = new KeyValuePair<byte[], byte[]>[values.Length];
 
-            //act
             using (var cur = _txn.CreateCursor(_db))
             {
                 for (var i = 0; i < values.Length; i++)
-                    cur.MoveNextDuplicate<string, int>(out pairs[i]);
+                {
+                    cur.MoveNextDuplicate();
+                    pairs[i] = cur.Current;
+                }
             }
 
-            //assert
-            for (var i = 0; i < values.Length; i++)
-                Assert.Equal(values[i], pairs[i].Value);
+            Assert.Equal(values, pairs.Select(x => x.Value).ToArray());
         }
 
         [Fact]
         public void ShouldGetMultiple()
         {
-            //arrange
             _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create});
 
-            var values = new[] { 1, 2, 3, 4, 5 };
+            var original = new[] { 1, 2, 3, 4, 5 };
+            var originalBytes = original.Select(BitConverter.GetBytes).ToArray();
             using (var cur = _txn.CreateCursor(_db))
-                cur.PutMultiple("TestKey", values);
+                cur.PutMultiple(UTF8.GetBytes("TestKey"), originalBytes);
 
-            bool result;
-            int[] resultArray;
             using (var cur = _txn.CreateCursor(_db))
             {
-                KeyValuePair<string, int> pair;
-                cur.MoveNext(out pair);
-
-                result = cur.GetMultiple(out resultArray);
+                cur.MoveNext();
+                cur.GetMultiple();
+                var resultPair = cur.Current;
+                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key));
+                var result = resultPair.Value.Split(sizeof(int))
+                    .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
+                Assert.Equal(original, result);
             }
-
-            Assert.True(result);
-            Assert.Equal(values, resultArray);
         }
 
         [Fact]
         public void ShouldMoveNextMultiple()
         {
-            //arrange
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create});
-            const string key = "TestKey";
+            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
 
-            var values = new[] { 1, 2, 3, 4, 5 };
+            var original = new[] { 1, 2, 3, 4, 5 };
+            var originalBytes = original.Select(BitConverter.GetBytes).ToArray();
             using (var cur = _txn.CreateCursor(_db))
-                cur.PutMultiple(key, values);
+                cur.PutMultiple(UTF8.GetBytes("TestKey"), originalBytes);
 
-            bool result;
-            KeyValuePair<string, int[]> resultPair;
             using (var cur = _txn.CreateCursor(_db))
-                result = cur.MoveNextMultiple(out resultPair);
-
-            Assert.True(result);
-            Assert.Equal(key, resultPair.Key);
-            Assert.Equal(values, resultPair.Value);
+            {
+                cur.MoveNextMultiple();
+                var resultPair = cur.Current;
+                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key));
+                var result = resultPair.Value.Split(sizeof(int))
+                    .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
+                Assert.Equal(original, result);
+            }
         }
     }
 }

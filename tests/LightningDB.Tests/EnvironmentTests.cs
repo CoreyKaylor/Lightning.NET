@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using Xunit;
-using LightningDB.Converters;
 
 namespace LightningDB.Tests
 {
@@ -28,13 +27,8 @@ namespace LightningDB.Tests
         [Fact]
         public void EnvironmentShouldBeCreatedIfWithoutFlags()
         {
-            //arrange
-
-            //act
             _env = new LightningEnvironment(_path);
             _env.Open();
-
-            //assert
         }
 
         [Fact]
@@ -48,42 +42,30 @@ namespace LightningDB.Tests
         [Fact]
         public void EnvironmentShouldBeCreatedIfReadOnly()
         {
-            //arrange
-
-            //act
             _env = new LightningEnvironment(_path);
             _env.Open(); //readonly requires environment to have been created at least once before
             _env.Dispose();
             _env = new LightningEnvironment(_path);
             _env.Open(EnvironmentOpenFlags.ReadOnly);
-
-            //assert
         }
 
         [Fact]
         public void EnvironmentShouldBeOpened()
         {
-            //arrange
             _env = new LightningEnvironment(_path);
-
-            //act
             _env.Open();
 
-            //assert
             Assert.True(_env.IsOpened);
         }
 
         [Fact]
         public void EnvironmentShouldBeClosed()
         {
-            //arrange
             _env = new LightningEnvironment(_path);
             _env.Open();
 
-            //act
             _env.Dispose();
 
-            //assert
             Assert.False(_env.IsOpened);
         }
 
@@ -92,14 +74,11 @@ namespace LightningDB.Tests
         [InlineData(false)]
         public void EnvironmentShouldBeCopied(bool compact)
         {
-            //arrange
             _env = new LightningEnvironment(_path);
             _env.Open(); 
 
-            //act
             _env.CopyTo(_pathCopy, compact);
 
-            //assert
             if (Directory.GetFiles(_pathCopy).Length == 0)
                 Assert.True(false, "Copied files doesn't exist");
         }
@@ -107,13 +86,11 @@ namespace LightningDB.Tests
         [Fact]
         public void CanOpenEnvironmentMoreThan50Mb()
         {
-            //arrange
             _env = new LightningEnvironment(_path)
             {
                 MapSize = 55 * 1024 * 1024
             };
 
-            //act-assert
             _env.Open();
         }
 
@@ -121,7 +98,6 @@ namespace LightningDB.Tests
         public void CanCountNumberOfDatabasesThroughEnvironmentEntries()
         {
             _env = new LightningEnvironment(_path);
-            _env.WithConverters();
             _env.MaxDatabases = 5;
             _env.Open();
 
@@ -150,9 +126,7 @@ namespace LightningDB.Tests
         {
             const int entriesCount = 1;
 
-            //arrange
             _env = new LightningEnvironment(_path);
-            _env.WithConverters();
             _env.Open();
 
             var initialUsedSize = _env.UsedSize;
@@ -161,15 +135,13 @@ namespace LightningDB.Tests
             using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
             {
                 for (int i = 0; i < entriesCount; i++)
-                    txn.Put(db, i, i);
+                    txn.Put(db, i.ToString(), i.ToString());
 
                 txn.Commit();
             }
 
-            //act
             var sizeDelta = _env.UsedSize - initialUsedSize;
 
-            //act-assert;
             Assert.Equal(_env.PageSize, sizeDelta);
         }
 
