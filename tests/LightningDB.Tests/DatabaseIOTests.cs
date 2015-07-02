@@ -1,35 +1,23 @@
 ﻿using System;
-using System.Text;
-using System.IO;
-using NUnit.Framework;
+using Xunit;
 
 namespace LightningDB.Tests
 {
     //TODO: Refactor these tests. 
     // Most of them are incorrect because test both input and retrival logic
     // at the same time.
-    [TestFixture]
-    public class DatabaseIOTests
+    [Collection("SharedFileSystem")]
+    public class DatabaseIOTests : IDisposable
     {
-        private string _path;
         private LightningEnvironment _env;
         private LightningTransaction _txn;
         private LightningDatabase _db;
 
-        public DatabaseIOTests()
+        public DatabaseIOTests(SharedFileSystem fileSystem)
         {
-            var location = typeof(EnvironmentTests).Assembly.Location;
-            _path = Path.Combine(
-                Path.GetDirectoryName(location), 
-                "TestDb" + Guid.NewGuid().ToString());
-        }
+            var path = fileSystem.CreateNewDirectoryForTest();
 
-        [SetUp]
-        public void Init()
-        {
-            Directory.CreateDirectory(_path);
-
-            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env = new LightningEnvironment(path);
             _env.MaxDatabases = 2;
             _env.Open();
 
@@ -37,16 +25,12 @@ namespace LightningDB.Tests
             _db = _txn.OpenDatabase();
         }
 
-        [TearDown]
-        public void Cleanup()
+        public void Dispose()
         {
             _env.Close();
-
-            if (Directory.Exists(_path))
-                Directory.Delete(_path, true);
         }
 
-        [Test]
+        [Fact]
         public void DatabasePutShouldNotThrowExceptions()
         {
             var key = "key";
@@ -59,7 +43,7 @@ namespace LightningDB.Tests
             //assert
         }
 
-        [Test]
+        [Fact]
         public void DatabaseGetShouldNotThrowExceptions()
         {
             var key = "key";
@@ -71,7 +55,7 @@ namespace LightningDB.Tests
             //assert
         }
 
-        [Test]
+        [Fact]
         public void DatabaseInsertedValueShouldBeRetrivedThen()
         {
             //arrange
@@ -83,10 +67,10 @@ namespace LightningDB.Tests
             var persistedValue = _txn.Get(_db, key);
             
             //assert
-            Assert.AreEqual(persistedValue, value);
+            Assert.Equal(persistedValue, value);
         }
 
-        [Test]
+        [Fact]
         public void DatabaseDeleteShouldRemoveItem()
         {
             //arrange
@@ -98,10 +82,10 @@ namespace LightningDB.Tests
             _txn.Delete(_db, key);
 
             //assert
-            Assert.IsFalse(_txn.ContainsKey(_db, key));
+            Assert.False(_txn.ContainsKey(_db, key));
         }
 
-        [Test]
+        [Fact]
         public void GetByOperationCanMixTypesWithGenerics()
         {
             var key = "key";
@@ -111,10 +95,10 @@ namespace LightningDB.Tests
 
             var persistedValue = _txn.GetBy(_db, key).Value<int>();
 
-            Assert.AreEqual(value, persistedValue);
+            Assert.Equal(value, persistedValue);
         }
 
-        [Test]
+        [Fact]
         public void ContainsKeyShouldReturnTrueIfKeyExists()
         {
             var key = "key";
@@ -124,20 +108,20 @@ namespace LightningDB.Tests
 
             var exists = _txn.ContainsKey(_db, key);
 
-            Assert.IsTrue(exists);
+            Assert.True(exists);
         }
 
-        [Test]
+        [Fact]
         public void ContainsKeyShouldReturnFalseIfKeyNotExists()
         {
             var key = "key";
 
             var exists = _txn.ContainsKey(_db, key);
 
-            Assert.IsFalse(exists);
+            Assert.False(exists);
         }
 
-        [Test]
+        [Fact]
         public void TryGetShouldReturnValueIfKeyExists()
         {
             var key = "key";
@@ -148,13 +132,13 @@ namespace LightningDB.Tests
             int persistedValue;
             var exists = _txn.TryGet(_db, key, out persistedValue);
 
-            Assert.IsTrue(exists);
-            Assert.AreEqual(value, persistedValue);
+            Assert.True(exists);
+            Assert.Equal(value, persistedValue);
         }
 
-        [Test]
-        [TestCase(null)] 
-        [TestCase("test")]
+        [Theory]
+        [InlineData(null)] 
+        [InlineData("test")]
         public void CanCommitTransactionToNamedDatabase(string dbName)
         {
             using (var db = _txn.OpenDatabase(dbName, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
@@ -169,7 +153,7 @@ namespace LightningDB.Tests
                 using (var db = txn2.OpenDatabase(dbName))
                 {
                     var value = txn2.Get<string, string>(db, "key1");
-                    Assert.AreEqual("value", value);
+                    Assert.Equal("value", value);
                 }
             }
         }

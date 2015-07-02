@@ -1,5 +1,6 @@
 Lightning.NET
 =============
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/u0ch8mk5lkb7dv5q/branch/dnx?svg=true)](https://ci.appveyor.com/project/CoreyKaylor/lightning-net)
 
 .NET-wrapper library for OpenLDAP's Lightning DB key-value store.
 

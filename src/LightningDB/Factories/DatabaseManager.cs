@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using LightningDB.Native;
+using static LightningDB.Native.NativeMethods;
 
 namespace LightningDB.Factories
 {
@@ -43,8 +43,8 @@ namespace LightningDB.Factories
         {
             name = FromInternalDatabaseName(name);
 
-            var handle = default(UInt32);
-            NativeMethods.Execute(lib => lib.mdb_dbi_open(tran._handle, name, flags, out handle));
+            uint handle;
+            mdb_dbi_open(tran._handle, name, flags, out handle);
 
             return new DatabaseHandleCacheEntry(handle, flags);
         }               
@@ -99,7 +99,7 @@ namespace LightningDB.Factories
 
                 try
                 {
-                    NativeMethods.Library.mdb_dbi_close(_environmentHandle, db._handle);
+                    mdb_dbi_close(_environmentHandle, db._handle);
                 }
                 finally
                 {
@@ -112,7 +112,7 @@ namespace LightningDB.Factories
         public void CloseAll()
         {
             foreach (var hdb in _databasesForReuse)
-                NativeMethods.Library.mdb_dbi_close(_environmentHandle, hdb);
+                mdb_dbi_close(_environmentHandle, hdb);
         }
 
         private void Reuse(LightningDatabase db)

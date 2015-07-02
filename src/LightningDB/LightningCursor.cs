@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using LightningDB.Native;
+using static LightningDB.Native.NativeMethods;
 
 namespace LightningDB
 {
@@ -229,9 +230,9 @@ namespace LightningDB
             var keyStruct = key.GetValueOrDefault();
             var valueStruct = value.GetValueOrDefault();
 
-            var res = NativeMethods.Read(lib => lib.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
+            var res = mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation);
 
-            return res == NativeMethods.MDB_NOTFOUND
+            return res == MDB_NOTFOUND
                 ? (KeyValuePair<byte[], byte[]>?) null
                 : new KeyValuePair<byte[], byte[]>(keyStruct.ToByteArray(res), valueStruct.ToByteArray(res));
         }
@@ -241,9 +242,9 @@ namespace LightningDB
             var keyStruct = new ValueStructure();
             var valueStruct = new ValueStructure();
 
-            var res = NativeMethods.Read(lib => lib.mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation));
+            var res = mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation);
 
-            return res == NativeMethods.MDB_NOTFOUND
+            return res == MDB_NOTFOUND
                 ? null
                 : valueStruct.ToByteArray(res);
         }
@@ -273,7 +274,7 @@ namespace LightningDB
                 var keyStruct = keyMarshalStruct.ValueStructure;
                 var valueStruct = valueMarshalStruct.ValueStructure;
 
-                NativeMethods.Execute(lib => lib.mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, options));
+                mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, options);
             }
         }
 
@@ -293,7 +294,7 @@ namespace LightningDB
                 var keyStruct = keyMarshalStruct.ValueStructure;
                 var valueStruct = valueMarshalStruct.ValueStructures;
 
-                NativeMethods.Execute(lib => lib.mdb_cursor_put(_handle, ref keyStruct, valueStruct, CursorPutOptions.MultipleData));
+                mdb_cursor_put(_handle, ref keyStruct, ref valueStruct, CursorPutOptions.MultipleData);
             }
         }
 
@@ -306,7 +307,7 @@ namespace LightningDB
         ///     MDB_NODUPDATA - delete all of the data items for the current key. This flag may only be specified if the database was opened with MDB_DUPSORT.</param>
         public void Delete(CursorDeleteOption option)
         {
-            NativeMethods.Execute(lib => lib.mdb_cursor_del(_handle, option));
+            mdb_cursor_del(_handle, option);
         }
 
         //TODO: tests
@@ -337,7 +338,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            NativeMethods.Execute(lib => lib.mdb_cursor_renew(txn._handle, _handle));
+            mdb_cursor_renew(txn._handle, _handle);
         }
 
         //TODO: tests

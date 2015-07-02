@@ -1,110 +1,69 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
     internal class MarshalMultipleValueStructure : IDisposable
     {
-        private bool _shouldDispose;
-        private byte[][] _values;
+        private readonly byte[] _flattened;
+        private readonly int _size;
+        private readonly int _count;
 
-        private ValueStructure[] _structures;
+        private GCHandle _handle;
 
         public MarshalMultipleValueStructure(byte[][] values)
         {
             if (values == null)
-                throw new ArgumentNullException("values");
+                throw new ArgumentNullException(nameof(values));
 
-            _shouldDispose = false;
-            _values = values;
-
-            this.ValueInitialized = false;
+            _size = GetSize(values);
+            _count = GetCount(values);
+            _flattened = values.SelectMany(x => x).ToArray();
+            _handle = GCHandle.Alloc(_flattened, GCHandleType.Pinned);
         }
 
-        public bool ValueInitialized { get; private set; }
-
-        private int GetSize()
+        private int GetSize(byte[][] values)
         {
-            if (_values.Length == 0 || _values[0] == null || _values[0].Length == 0)
+            if (values.Length == 0 || values[0] == null || values[0].Length == 0)
                 return 0;
 
-            return _values[0].Length;
+            return values[0].Length;
         }
 
-        private int GetCount()
+        private int GetCount(byte[][] values)
         {
-            return _values.Length;
+            return values.Length;
         }
 
-        //Lazy initialization prevents possible leak.
-        //If initialization was in ctor, Dispose could never be called
-        //due to possible exception thrown by Marshal.Copy
         public ValueStructure[] ValueStructures
         {
             get
             {
-                if (!this.ValueInitialized)
+                return new[]
                 {
-                    var size = GetSize();
-                    var count = GetCount();
-                    var totalLength = size * count;
-                    
-                    _structures = new [] 
+                    new ValueStructure
                     {
-                        new ValueStructure 
-                        { 
-                            size = new IntPtr(size), 
-                            data = Marshal.AllocHGlobal(totalLength) 
-                        },
-                        new ValueStructure 
-                        { 
-                            size = new IntPtr(count )
-                        }
-                    };
-                    
-                    _shouldDispose = true;
-
-                    try
+                        size = new IntPtr(_size),
+                        data = _handle.AddrOfPinnedObject()
+                    },
+                    new ValueStructure
                     {
-                        var baseAddress = _structures[0].data.ToInt64();
-                        for (var i = 0; i < count; i++)
-                        {
-                            if (_values[i].Length != size)
-                                throw new InvalidOperationException("all data items should be of the same length");
-
-                            var address = new IntPtr(baseAddress + i * size);
-
-                            Marshal.Copy(_values[i], 0, address, size);
-                        }                        
+                        size = new IntPtr(_count)
                     }
-                    catch
-                    {
-                        this.Dispose();
-                    }
-
-                    this.ValueInitialized = true;
-                }
-
-                return _structures;
+                };
             }
-        }
-
-        protected virtual void Dispose(bool shouldDispose)
-        {
-            if (!shouldDispose)
-                return;
-
-            try
-            {
-                Marshal.FreeHGlobal(_structures[0].data);
-            }
-            catch { }
         }
 
         public void Dispose()
         {
-            this.Dispose(_shouldDispose);
-            _shouldDispose = false;
+            _handle.Free();
+            GC.SuppressFinalize(this);
+        }
+
+        ~MarshalMultipleValueStructure()
+        {
+            Dispose();
         }
     }
 }
