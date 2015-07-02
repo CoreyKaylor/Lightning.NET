@@ -34,7 +34,7 @@ namespace LightningDB
 
             this.Environment = environment;
             this.ParentTransaction = parent;
-            this.IsReadOnly = flags == TransactionBeginFlags.ReadOnly;
+            this.IsReadOnly = (flags & TransactionBeginFlags.ReadOnly) == TransactionBeginFlags.ReadOnly;
             this.State = LightningTransactionState.Active;
 
             _handle = handle;
