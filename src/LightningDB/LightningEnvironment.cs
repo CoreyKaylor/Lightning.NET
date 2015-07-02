@@ -147,6 +147,9 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Will return the count of names for each database stored in the default database.
+        /// </summary>
         public long EntriesCount => GetStat().ms_entries.ToInt64();
 
         /// <summary>
