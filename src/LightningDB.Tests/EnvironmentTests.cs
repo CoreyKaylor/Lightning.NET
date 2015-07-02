@@ -171,5 +171,42 @@ namespace LightningDB.Tests
             Assert.AreEqual(_env.PageSize, sizeDelta);
         }
 
+        [Test]
+        public void UsedSizeShouldAccountForFreePages()
+        {
+            const int entriesCount = 1;
+
+            //arrange
+            _env = new LightningEnvironment(_path, EnvironmentOpenFlags.None);
+            _env.Open();
+
+            using (var txn = _env.BeginTransaction())
+            using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None }))
+            {
+                for (int i = 0; i < entriesCount; i++)
+                    txn.Put(db, i, i);
+
+                txn.Commit();
+            }
+
+            var preDeleteUsedSize = _env.UsedSize;
+
+            using (var txn = _env.BeginTransaction())
+            using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.None }))
+            {
+                for (int i = 0; i < entriesCount; i++)
+                    txn.Delete(db, i, i);
+
+                txn.Commit();
+            }
+
+            //act
+            //<= because the free page list takes up space
+            bool sizeDecreasedAfterDelete = _env.UsedSize <= preDeleteUsedSize;
+
+            //act-assert
+            Assert.IsTrue(sizeDecreasedAfterDelete);
+        }
+
     }
 }
