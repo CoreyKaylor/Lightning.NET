@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using static LightningDB.Native.Lmdb;
 
@@ -7,7 +9,7 @@ namespace LightningDB
     /// <summary>
     /// Lightning database.
     /// </summary>
-    public class LightningDatabase : IDisposable
+    public class LightningDatabase : IDisposable, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         internal uint _handle;
         private readonly DatabaseOptions _options;
@@ -111,9 +113,19 @@ namespace LightningDB
             Dispose(true);
         }
 
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            return _transaction.CreateCursor(this);
+        }
+
         ~LightningDatabase()
         {
             Dispose(false);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

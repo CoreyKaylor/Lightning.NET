@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using LightningDB.Converters;
 using Xunit;
 
 namespace LightningDB.Tests
@@ -15,7 +14,6 @@ namespace LightningDB.Tests
         {
             var path = fileSystem.CreateNewDirectoryForTest();
             _env = new LightningEnvironment(path);
-            _env.WithConverters();
             _env.Open();
         }
 
@@ -35,115 +33,90 @@ namespace LightningDB.Tests
         [Fact]
         public void TransactionShouldBeAbortedIfEnvironmentCloses()
         {
-            //arrange
             var txn = _env.BeginTransaction();
 
-            //act
             _env.Dispose();
 
-            //assert
             Assert.Equal(LightningTransactionState.Aborted, txn.State);
         }
 
         [Fact]
         public void TransactionShouldChangeStateOnCommit()
         {
-            //arrange
             var txn = _env.BeginTransaction();
 
-            //act
             txn.Commit();
 
-            //assert
             Assert.Equal(LightningTransactionState.Commited, txn.State);
         }
 
         [Fact]
         public void ChildTransactionShouldBeCreated()
         {
-            //arrange
             var txn = _env.BeginTransaction();
 
-            //act
             var subTxn = txn.BeginTransaction();
 
-            //assert
             Assert.Equal(LightningTransactionState.Active, subTxn.State);
         }
 
         [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsAborted()
         {
-            //arrange
             var txn = _env.BeginTransaction();
             var child = txn.BeginTransaction();
 
-            //act
             txn.Abort();
 
-            //assert
             Assert.Equal(LightningTransactionState.Aborted, child.State);
         }
 
         [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsCommited()
         {
-            //arrange
             var txn = _env.BeginTransaction();
             var child = txn.BeginTransaction();
 
-            //act
             txn.Commit();
 
-            //assert
             Assert.Equal(LightningTransactionState.Aborted, child.State);
         }
 
         [Fact]
         public void ChildTransactionShouldBeAbortedIfEnvironmentIsClosed()
         {
-            //arrange
             var txn = _env.BeginTransaction();
             var child = txn.BeginTransaction();
 
-            //act
             _env.Dispose();
 
-            //assert
             Assert.Equal(LightningTransactionState.Aborted, child.State);
         }
 
         [Fact]
         public void ReadOnlyTransactionShouldChangeStateOnReset()
         {
-            //arrange
             var txn = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
 
-            //act
             txn.Reset();
 
-            //assert
             Assert.Equal(LightningTransactionState.Reseted, txn.State);
         }
 
         [Fact]
         public void ReadOnlyTransactionShouldChangeStateOnRenew()
         {
-            //arrange
             var txn = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
             txn.Reset();
 
-            //act
             txn.Renew();
 
-            //assert
             Assert.Equal(LightningTransactionState.Active, txn.State);
         }
 
         [Fact]
         public void CanCountTransactionEntries()
         {
-            //arrange
             var txn = _env.BeginTransaction();
             var db = txn.OpenDatabase();
 
@@ -151,10 +124,8 @@ namespace LightningDB.Tests
             for (var i = 0; i < entriesCount; i++)
                 txn.Put(db, i.ToString(), i.ToString());
 
-            //act
             var count = txn.GetEntriesCount(db);
 
-            //assert;
             Assert.Equal(entriesCount, count);
         }
 
@@ -174,22 +145,19 @@ namespace LightningDB.Tests
             Array.Sort(keysSorted, new Comparison<int>(comparison));
 
             for (var i = 0; i < keysUnsorted.Length; i++)
-                txn.Put(db, keysUnsorted[i], i);
+                txn.Put(db, BitConverter.GetBytes(keysUnsorted[i]), BitConverter.GetBytes(i));
 
             using (var c = txn.CreateCursor(db))
             {
                 int order = 0;
-
-                KeyValuePair<int, int> pair;
-                while (c.MoveNext(out pair))
-                    Assert.Equal(keysSorted[order++], pair.Key);
+                while (c.MoveNext())
+                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.Current.Key, 0));
             }
         }
 
         [Fact]
         public void TransactionShouldSupportCustomDupSorter()
         {
-            //arrange
             Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
 
             var txn = _env.BeginTransaction();
@@ -202,18 +170,15 @@ namespace LightningDB.Tests
             var valuesSorted = valuesUnsorted.ToArray();
             Array.Sort(valuesSorted, new Comparison<int>(comparison));
 
-            //act
             using (var c = txn.CreateCursor(db))
-                c.PutMultiple(123, valuesUnsorted);
+                c.PutMultiple(BitConverter.GetBytes(123), valuesUnsorted.Select(BitConverter.GetBytes).ToArray());
 
-            //assert
             using (var c = txn.CreateCursor(db))
             {
                 int order = 0;
 
-                KeyValuePair<int, int> pair;
-                while (c.MoveNextDuplicate(out pair))
-                    Assert.Equal(valuesSorted[order++], pair.Value);
+                while (c.MoveNext())
+                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.Current.Value, 0));
             }
         }
     }

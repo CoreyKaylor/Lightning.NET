@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using LightningDB.Converters;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
@@ -44,13 +43,6 @@ namespace LightningDB
                 MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
             else
                 _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
-        }
-
-        public void WithConverters()
-        {
-            ConverterStore = new ConverterStore();
-            var defaultConverters = new DefaultConverters();
-            defaultConverters.RegisterDefault(this);
         }
 
         private MDBStat GetStat()
@@ -161,11 +153,6 @@ namespace LightningDB
         /// Directory path to store database files.
         /// </summary>
         public string Path { get; }
-
-        /// <summary>
-        /// Converters to use when converting database keys and values.
-        /// </summary>
-        public ConverterStore ConverterStore { get; private set; }
 
         /// <summary>
         /// Open the environment.

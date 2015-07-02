@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
@@ -8,10 +9,27 @@ namespace LightningDB
     /// <summary>
     /// Cursor to iterate over a database
     /// </summary>
-    public class LightningCursor : IDisposable
+    public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>
     {
+        //optimize for unnecessary marshaling when we don't have to
+        private static Func<LightningCursor, KeyValuePair<byte[],byte[]>> _currentWithOptimizedKey = x => new KeyValuePair<byte[], byte[]>(x._currentKey, x._currentValueStructure.GetBytes());
+        private static Func<LightningCursor, KeyValuePair<byte[],byte[]>> _currentWithOptimizedPair = x => x._currentPair;
+        private static Func<LightningCursor, KeyValuePair<byte[], byte[]>> _currentDefault = x =>
+        {
+            if (x._currentKeyStructure.size == IntPtr.Zero)
+                return default(KeyValuePair<byte[], byte[]>);
+
+            return new KeyValuePair<byte[], byte[]>(x._currentKeyStructure.GetBytes(),
+                x._currentValueStructure.GetBytes());
+        };
+
         internal readonly IntPtr _handle;
-        private bool _shouldDispose;
+
+        private byte[] _currentKey;
+        private KeyValuePair<byte[], byte[]> _currentPair; 
+        private ValueStructure _currentKeyStructure;
+        private ValueStructure _currentValueStructure;
+        private Func<LightningCursor, KeyValuePair<byte[], byte[]>> _getCurrent;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -21,44 +39,60 @@ namespace LightningDB
         internal LightningCursor(LightningDatabase db, LightningTransaction txn)
         {
             if (db == null)
-                throw new ArgumentNullException("db");
+                throw new ArgumentNullException(nameof(db));
 
             if (txn == null)
-                throw new ArgumentNullException("txn");
+                throw new ArgumentNullException(nameof(txn));
+
+            _getCurrent = _currentDefault;
 
             mdb_cursor_open(txn._handle, db._handle, out _handle);
 
-            this.Database = db;
-            this.Transaction = txn;
+            Database = db;
+            Transaction = txn;
             Transaction.Disposing += Dispose;
-
-            _shouldDispose = true;
         }
 
         /// <summary>
         /// Cursor's environment.
         /// </summary>
-        public LightningEnvironment Environment { get { return this.Database.Environment; } }
+        public LightningEnvironment Environment => Database.Environment;
 
         /// <summary>
         /// Cursor's database.
         /// </summary>
-        public LightningDatabase Database { get; private set; }
+        public LightningDatabase Database { get; }
 
         /// <summary>
         /// Cursor's transaction.
         /// </summary>
-        public LightningTransaction Transaction { get; private set; }
+        public LightningTransaction Transaction { get; }
+
+        public void Reset()
+        {
+            Renew();
+        }
+
+        object IEnumerator.Current => Current;
+
+        public KeyValuePair<byte[], byte[]> Current
+        {
+            get
+            {
+                _currentPair = _getCurrent(this);
+                _getCurrent = _currentWithOptimizedPair;
+                return _currentPair;
+            }
+        }
 
         /// <summary>
         /// Position at specified key
         /// </summary>
         /// <param name="key">Key</param>
-        /// <returns>Key-value pair for the specified key</returns>
-        public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key)
+        /// <returns>Returns true if the key was found.</returns>
+        public bool MoveTo(byte[] key)
         {
-            using (var marshal = new MarshalValueStructure(key))
-                return Get(CursorOperation.Set, marshal.Key);
+            return Get(CursorOperation.Set, key);
         }
 
         /// <summary>
@@ -66,11 +100,10 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key.</param>
         /// <param name="value">Value</param>
-        /// <returns>Current key/data pair.</returns>
-        public KeyValuePair<byte[], byte[]>? MoveTo(byte[] key, byte[] value)
+        /// <returns>Returns true if the key/value pair was found.</returns>
+        public bool MoveTo(byte[] key, byte[] value)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
-                return Get(CursorOperation.GetBoth, marshal.Key, marshal.Value);
+            return Get(CursorOperation.GetBoth, key, value);
         }
 
         /// <summary>
@@ -78,162 +111,188 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <param name="value">Value</param>
-        /// <returns>Nearest value and corresponding key</returns>
-        public KeyValuePair<byte[], byte[]>? MoveToFirstValueAfter(byte[] key, byte[] value)
+        /// <returns>Returns true if the key/value pair is found.</returns>
+        public bool MoveToFirstValueAfter(byte[] key, byte[] value)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
-                return Get(CursorOperation.GetBothRange, marshal.Key, marshal.Value);
+            return Get(CursorOperation.GetBothRange, key, value);
         }
 
         /// <summary>
         /// Position at first key greater than or equal to specified key.
         /// </summary>
         /// <param name="key">Key</param>
-        /// <returns>First key-value pair with a key greater than or equal to specified key.</returns>
-        public KeyValuePair<byte[], byte[]>? MoveToFirstAfter(byte[] key)
+        /// <returns>Returns true if the key is found and had one more item after it to advance to.</returns>
+        public bool MoveToFirstAfter(byte[] key)
         {
-            using(var marshalKey = new MarshalValueStructure(key))
-                return Get(CursorOperation.SetRange, marshalKey.Key);
+            return Get(CursorOperation.SetRange, key);
         }
 
-        //What is the difference from CursorOperation.Set?
-        /*public KeyValuePair<byte[], byte[]> MoveTo(byte[] key)
-        {
-            using (var marshalKey = new MarshalValueStructure(key))
-                return this.Get(CursorOperation.SetKey, marshalKey.ValueStructure, null);
-        }*/
+        //CursorOperation.SetKey should be unnecessary in our use-case.
 
         /// <summary>
         /// Position at first key/data item
         /// </summary>
-        /// <returns>First key/data item</returns>
-        public KeyValuePair<byte[], byte[]>? MoveToFirst()
+        /// <returns>True if first pair is found.</returns>
+        public bool MoveToFirst()
         {
-            return this.Get(CursorOperation.First);
+            return Get(CursorOperation.First);
         }
 
         /// <summary>
         /// Position at first data item of current key. Only for MDB_DUPSORT
         /// </summary>
-        /// <returns>First data item of current key. Only for MDB_DUPSORT</returns>
-        public byte[] MoveToFirstDuplicate()
+        /// <returns>True if first duplicate is found.</returns>
+        public bool MoveToFirstDuplicate()
         {
-            return this.GetValue(CursorOperation.FirstDuplicate);
+            return Get(CursorOperation.FirstDuplicate);
         }
 
         /// <summary>
         /// Position at last key/data item
         /// </summary>
-        /// <returns>Last key/data item</returns>
-        public KeyValuePair<byte[], byte[]>? MoveToLast()
+        /// <returns>True if last pair is found.</returns>
+        public bool MoveToLast()
         {
-            return this.Get(CursorOperation.Last);
+            return Get(CursorOperation.Last);
         }
 
         /// <summary>
         /// Position at last data item of current key. Only for MDB_DUPSORT
         /// </summary>
-        /// <returns>Last data item of current key</returns>
-        public byte[] MoveToLastDuplicate()
+        /// <returns>True if last duplicate is found.</returns>
+        public bool MoveToLastDuplicate()
         {
-            return this.GetValue(CursorOperation.LastDuplicate);
+            return Get(CursorOperation.LastDuplicate);
         }
 
         /// <summary>
         /// Return key/data at current cursor position
         /// </summary>
         /// <returns>Key/data at current cursor position</returns>
-        public KeyValuePair<byte[], byte[]>? GetCurrent()
+        public KeyValuePair<byte[], byte[]> GetCurrent()
         {
-            return this.Get(CursorOperation.GetCurrent);
-        }
-
-        /// <summary>
-        /// Return all the duplicate data items at the current cursor position. Only for MDB_DUPFIXED
-        /// </summary>
-        /// <remarks>Not sure what it should do and if the wrapper is correct</remarks>
-        /// <returns>All the duplicate data items at the current cursor position.</returns>
-        public byte[] GetMultiple()
-        {
-            return this.GetValue(CursorOperation.GetMultiple);
+            Get(CursorOperation.GetCurrent);
+            return Current;
         }
 
         /// <summary>
         /// Position at next data item
         /// </summary>
-        /// <returns>Next data item</returns>
-        public KeyValuePair<byte[], byte[]>? MoveNext()
+        /// <returns>True if next item exists.</returns>
+        public bool MoveNext()
         {
-            return this.Get(CursorOperation.Next);
+            return Get(CursorOperation.Next);
         }
 
         /// <summary>
         /// Position at next data item of current key. Only for MDB_DUPSORT
         /// </summary>
-        /// <returns>Next data item of current key</returns>
-        public KeyValuePair<byte[], byte[]>? MoveNextDuplicate()
+        /// <returns>True if next duplicate exists.</returns>
+        public bool MoveNextDuplicate()
         {
-            return this.Get(CursorOperation.NextDuplicate);
+            return Get(CursorOperation.NextDuplicate);
         }
 
         /// <summary>
         /// Position at first data item of next key. Only for MDB_DUPSORT.
         /// </summary>
-        /// <returns>
-        /// First data item of next key.
-        /// </returns>
-        public KeyValuePair<byte[], byte[]>? MoveNextNoDuplicate()
+        /// <returns>True if items exists without duplicates.</returns>
+        public bool MoveNextNoDuplicate()
         {
-            return this.Get(CursorOperation.NextNoDuplicate);
+            return Get(CursorOperation.NextNoDuplicate);
         }
 
         /// <summary>
-        /// Return all duplicate data items at the next cursor position. Only for MDB_DUPFIXED
+        /// Return up to a page of duplicate data items at the next cursor position. Only for MDB_DUPFIXED
+        /// It is assumed you know the array size to break up a single byte[] into byte[][].
         /// </summary>
-        /// <remarks>Not sure what it should do and if the wrapper is correct</remarks>
-        /// <returns>All duplicate data items at the next cursor position</returns>
-        public KeyValuePair<byte[], byte[]>? MoveNextMultiple()
+        /// <returns>Returns true if duplicates are found.</returns>
+        public bool MoveNextMultiple()
         {
-            return this.Get(CursorOperation.NextMultiple);
+            return GetMultiple(CursorOperation.NextMultiple);
         }
 
         /// <summary>
         /// Position at previous data item.
         /// </summary>
-        /// <returns>Previous data item.</returns>
-        public KeyValuePair<byte[], byte[]>? MovePrev()
+        /// <returns>Returns true if previous item is found.</returns>
+        public bool MovePrev()
         {
-            return this.Get(CursorOperation.Previous);
+            return Get(CursorOperation.Previous);
         }
 
         /// <summary>
         /// Position at previous data item of current key. Only for MDB_DUPSORT.
         /// </summary>
         /// <returns>Previous data item of current key.</returns>
-        public KeyValuePair<byte[], byte[]>? MovePrevDuplicate()
+        public bool MovePrevDuplicate()
         {
-            return this.Get(CursorOperation.PreviousDuplicate);
+            return Get(CursorOperation.PreviousDuplicate);
         }
 
         /// <summary>
         /// Position at last data item of previous key. Only for MDB_DUPSORT.
         /// </summary>
-        /// <returns>Previous data item of current key.</returns>
-        public KeyValuePair<byte[], byte[]>? MovePrevNoDuplicate()
+        /// <returns>True if previous entry without duplicate is found.</returns>
+        public bool MovePrevNoDuplicate()
         {
-            return this.Get(CursorOperation.PreviousNoDuplicate);
+            return Get(CursorOperation.PreviousNoDuplicate);
         }
         
-        private KeyValuePair<byte[], byte[]>? Get(CursorOperation operation, ValueStructure? key = null, ValueStructure? value = null)
+        private bool Get(CursorOperation operation)
         {
-            var keyStruct = key.GetValueOrDefault();
-            var valueStruct = value.GetValueOrDefault();
+            _currentKeyStructure = default(ValueStructure);
+            _currentValueStructure = default(ValueStructure);
+            
+            var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+            if (found)
+                _getCurrent = _currentDefault;
 
-            var res = mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation);
+            return found;
+        }
 
-            return res == MDB_NOTFOUND
-                ? (KeyValuePair<byte[], byte[]>?) null
-                : new KeyValuePair<byte[], byte[]>(keyStruct.GetBytes(), valueStruct.GetBytes());
+        private bool Get(CursorOperation operation, byte[] key)
+        {
+            _currentValueStructure = default(ValueStructure);
+
+            using (var marshal = new MarshalValueStructure(key))
+            {
+                _currentKeyStructure = marshal.Key;
+                var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+                if (found)
+                {
+                    _getCurrent = _currentWithOptimizedKey;
+                    _currentKey = key;
+                }
+                return found;
+            }
+        }
+
+        private bool Get(CursorOperation operation, byte[] key, byte[] value)
+        {
+            using (var marshal = new MarshalValueStructure(key, value))
+            {
+                _currentKeyStructure = marshal.Key;
+                _currentValueStructure = marshal.Value;
+                var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+                if (found)
+                {
+                    _getCurrent = _currentWithOptimizedPair;
+                    _currentPair = new KeyValuePair<byte[], byte[]>(key, value);
+                }
+                return found;
+            }
+        }
+
+        private bool GetMultiple(CursorOperation operation)
+        {
+            var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+            if (found)
+            {
+                _currentPair = new KeyValuePair<byte[], byte[]>(_currentKeyStructure.GetBytes(), _currentValueStructure.GetBytes());
+                _getCurrent = _currentWithOptimizedPair;
+            }
+            return found;
         }
 
         private byte[] GetValue(CursorOperation operation)
@@ -285,6 +344,16 @@ namespace LightningDB
                 mdb_cursor_put(_handle, ref marshal.Key, marshal.Values, CursorPutOptions.MultipleData);
         }
 
+        /// <summary>
+        /// Return up to a page of the duplicate data items at the current cursor position. Only for MDB_DUPFIXED
+        /// It is assumed you know the array size to break up a single byte[] into byte[][].
+        /// </summary>
+        /// <returns>True if key and multiple items are found.</returns>
+        public bool GetMultiple()
+        {
+            return GetMultiple(CursorOperation.GetMultiple);
+        }
+
         //TODO: tests
         /// <summary>
         /// Delete current key/data pair.
@@ -295,21 +364,6 @@ namespace LightningDB
         private void Delete(CursorDeleteOption option)
         {
             mdb_cursor_del(_handle, option);
-        }
-
-        public CursorMultipleGetByOperation MoveNextMultipleBy()
-        {
-            return new CursorMultipleGetByOperation(this, MoveNextMultiple());
-        }
-
-        internal CursorGetByOperation CursorMoveBy(Func<KeyValuePair<byte[], byte[]>?> mover)
-        {
-            return new CursorGetByOperation(this, mover.Invoke());
-        }
-
-        internal GetByOperation CursorMoveValueBy(Func<byte[]> mover)
-        {
-            return new GetByOperation(Database, mover());
         }
 
         /// <summary>
@@ -339,7 +393,7 @@ namespace LightningDB
         /// </summary>
         public void Renew()
         {
-            this.Renew(this.Transaction);
+            Renew(Transaction);
         }
 
         //TODO: tests
@@ -353,7 +407,7 @@ namespace LightningDB
         public void Renew(LightningTransaction txn)
         {
             if(txn == null)
-                throw new ArgumentNullException("txn");
+                throw new ArgumentNullException(nameof(txn));
 
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");

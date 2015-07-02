@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Text;
 using Xunit;
-using LightningDB.Converters;
+using static System.Text.Encoding;
 
 namespace LightningDB.Tests
 {
@@ -15,7 +14,6 @@ namespace LightningDB.Tests
         {
             var path = fileSystem.CreateNewDirectoryForTest();
             _env = new LightningEnvironment(path);
-            _env.WithConverters();
         }
 
         public void Dispose()
@@ -48,19 +46,15 @@ namespace LightningDB.Tests
             _env.Open();
             _txn = _env.BeginTransaction();
             var db = _txn.OpenDatabase();
-            //arrange
 
-            //act
             db.Dispose();
 
-            //assert
             Assert.Equal(false, db.IsOpened);
         }
 
         [Fact]
         public void DatabaseFromCommitedTransactionShouldBeAccessable()
         {
-            //arrange
             _env.Open();
 
             LightningDatabase db;
@@ -70,11 +64,10 @@ namespace LightningDB.Tests
                 committed.Commit();
             }
             
-            //act
             using (db)
             using (var txn = _env.BeginTransaction())
             {
-                txn.Put(db, "key", 1);
+                txn.Put(db, "key", 1.ToString());
                 txn.Commit();
             }
         }
@@ -94,8 +87,8 @@ namespace LightningDB.Tests
             {
                 var db = tx.OpenDatabase();
                 var cursor = tx.CreateCursor(db);
-                var kvp = cursor.MoveNext();
-                Assert.Equal("customdb", Encoding.UTF8.GetString(kvp.Value.Key));
+                cursor.MoveNext();
+                Assert.Equal("customdb", UTF8.GetString(cursor.Current.Key));
             }
         }
 
@@ -168,7 +161,7 @@ namespace LightningDB.Tests
             _txn.Commit();
             _txn.Dispose();
             _txn = _env.BeginTransaction();
-            var result = _txn.Get(db, Encoding.UTF8.GetBytes("hello"));
+            var result = _txn.Get(db, UTF8.GetBytes("hello"));
 
             Assert.Null(result);
         }
