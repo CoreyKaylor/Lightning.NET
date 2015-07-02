@@ -75,6 +75,9 @@ namespace LightningDB
 
         object IEnumerator.Current => Current;
 
+        /// <summary>
+        /// The current item the cursor is pointed to, or default KeyValuePair&lt;byte[], byte[]&gt;
+        /// </summary>
         public KeyValuePair<byte[], byte[]> Current
         {
             get
@@ -295,18 +298,6 @@ namespace LightningDB
             return found;
         }
 
-        private byte[] GetValue(CursorOperation operation)
-        {
-            var keyStruct = new ValueStructure();
-            var valueStruct = new ValueStructure();
-
-            var res = mdb_cursor_get(_handle, ref keyStruct, ref valueStruct, operation);
-
-            return res == MDB_NOTFOUND
-                ? null
-                : valueStruct.GetBytes();
-        }
-
         /// <summary>
         /// Store by cursor.
         /// This function stores key/data pairs into the database. 
@@ -354,7 +345,6 @@ namespace LightningDB
             return GetMultiple(CursorOperation.GetMultiple);
         }
 
-        //TODO: tests
         /// <summary>
         /// Delete current key/data pair.
         /// This function deletes the key/data pair to which the cursor refers.

@@ -12,6 +12,14 @@ namespace LightningDB
             StatusCode = statusCode;
         }
 
+        /// <summary>
+        /// The status code LMDB returned from an operation.
+        /// </summary>
         public int StatusCode { get; }
+
+        public override string ToString()
+        {
+            return $"LightningDB {StatusCode}: {Message}";
+        }
     }
 }

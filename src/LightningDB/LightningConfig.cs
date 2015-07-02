@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace LightningDB
@@ -65,33 +63,15 @@ namespace LightningDB
         /// </summary>
         public static class Database
         {
-            private static Encoding _defaultEncoding;
-
             static Database()
             {
                 DefaultOpenFlags = DatabaseOpenFlags.None;
-                DefaultEncoding = Encoding.UTF8;
             }
 
             /// <summary>
             /// Default database open flags
             /// </summary>
             public static DatabaseOpenFlags DefaultOpenFlags { get; set; }
-
-            /// <summary>
-            /// Default database encoding
-            /// </summary>
-            public static Encoding DefaultEncoding
-            {
-                get { return _defaultEncoding; }
-                set
-                {
-                    if (value == null)
-                        throw new ArgumentNullException("value");
-
-                    _defaultEncoding = value;
-                }
-            }
         }
     }
 }

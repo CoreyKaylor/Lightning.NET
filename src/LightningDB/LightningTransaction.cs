@@ -278,6 +278,11 @@ namespace LightningDB
             mdb_txn_abort(_handle);
         }
 
+        /// <summary>
+        /// The number of items in the database.
+        /// </summary>
+        /// <param name="db">The database we are counting items in.</param>
+        /// <returns>The number of items.</returns>
         public long GetEntriesCount(LightningDatabase db)
         {
             MDBStat stat;

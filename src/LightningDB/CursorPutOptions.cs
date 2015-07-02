@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LightningDB
+﻿namespace LightningDB
 {
     /// <summary>
     /// Special options for cursor put operation.

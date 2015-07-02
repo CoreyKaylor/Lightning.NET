@@ -40,6 +40,9 @@ namespace LightningDB
             IsOpened = true;
         }
 
+        /// <summary>
+        /// Whether the database handle has been release from Dispose, or from unsuccessful OpenDatabase call.
+        /// </summary>
         public bool IsReleased => _handle == default(uint);
 
         /// <summary>
@@ -113,6 +116,10 @@ namespace LightningDB
             Dispose(true);
         }
 
+        /// <summary>
+        /// Enumerates the database with the transaction used to open the database.
+        /// </summary>
+        /// <returns></returns>
         public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
         {
             return _transaction.CreateCursor(this);
