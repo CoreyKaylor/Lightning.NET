@@ -14,7 +14,7 @@ namespace LightningDB
         /// </summary>
         public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
-        internal IntPtr _handle;
+        private IntPtr _handle;
         private readonly IntPtr _originalHandle;
 
         /// <summary>
@@ -39,9 +39,14 @@ namespace LightningDB
                 parent.StateChanging += OnParentStateChanging;
             }
 
-            var parentHandle = parent?._handle ?? IntPtr.Zero;
-            mdb_txn_begin(environment._handle, parentHandle, flags, out _handle);
+            var parentHandle = parent?.Handle() ?? IntPtr.Zero;
+            mdb_txn_begin(environment.Handle(), parentHandle, flags, out _handle);
             _originalHandle = _handle;
+        }
+
+        internal IntPtr Handle()
+        {
+            return _handle;
         }
 
         private void OnParentStateChanging(LightningTransactionState state)
@@ -152,7 +157,7 @@ namespace LightningDB
                 throw new ArgumentNullException(nameof(db));
 
             Func<byte[]> factory;
-            var result = TryGetInternal(db._handle, key, out factory);
+            var result = TryGetInternal(db.Handle(), key, out factory);
 
             value = result
                 ? factory.Invoke()
@@ -173,7 +178,7 @@ namespace LightningDB
                 throw new ArgumentNullException(nameof(db));
 
             Func<byte[]> factory;
-            return TryGetInternal(db._handle, key, out factory);
+            return TryGetInternal(db.Handle(), key, out factory);
         }
 
         /// <summary>
@@ -189,7 +194,7 @@ namespace LightningDB
                 throw new ArgumentNullException(nameof(db));
 
             using (var marshal = new MarshalValueStructure(key, value))
-                mdb_put(_handle, db._handle, ref marshal.Key, ref marshal.Value, options);
+                mdb_put(_handle, db.Handle(), ref marshal.Key, ref marshal.Value, options);
         }
 
         /// <summary>
@@ -209,7 +214,7 @@ namespace LightningDB
                 throw new ArgumentNullException(nameof(db));
 
             using (var marshal = new MarshalValueStructure(key, value))
-                mdb_del(_handle, db._handle, ref marshal.Key, ref marshal.Value);
+                mdb_del(_handle, db.Handle(), ref marshal.Key, ref marshal.Value);
         }
         /// <summary>
         /// Delete items from a database.
@@ -224,7 +229,7 @@ namespace LightningDB
         public void Delete(LightningDatabase db, byte[] key)
         {
             using (var marshal = new MarshalValueStructure(key))
-                mdb_del(_handle, db._handle, ref marshal.Key);
+                mdb_del(_handle, db.Handle(), ref marshal.Key);
         }
 
         /// <summary>
@@ -286,7 +291,7 @@ namespace LightningDB
         public long GetEntriesCount(LightningDatabase db)
         {
             MDBStat stat;
-            mdb_stat(_handle, db._handle, out stat);
+            mdb_stat(_handle, db.Handle(), out stat);
 
             return stat.ms_entries.ToInt64();
         }

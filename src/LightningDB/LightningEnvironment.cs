@@ -13,7 +13,7 @@ namespace LightningDB
         private readonly IDisposable _binding;
         private readonly EnvironmentConfiguration _config;
 
-        internal IntPtr _handle;
+        private IntPtr _handle;
 
         public event Action Disposing;
 
@@ -35,6 +35,11 @@ namespace LightningDB
 
             _config = configuration ?? new EnvironmentConfiguration();
             _config.Configure(this);
+        }
+
+        internal IntPtr Handle()
+        {
+            return _handle;
         }
 
         private MDBStat GetStat()

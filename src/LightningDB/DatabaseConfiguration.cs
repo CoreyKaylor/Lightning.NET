@@ -21,11 +21,11 @@ namespace LightningDB
         {
             if (_comparer != null)
             {
-                mdb_set_compare(tx._handle, db._handle, Compare);
+                mdb_set_compare(tx.Handle(), db.Handle(), Compare);
             }
             if (_duplicatesComparer != null)
             {
-                mdb_set_dupsort(tx._handle, db._handle, IsDuplicate);
+                mdb_set_dupsort(tx.Handle(), db.Handle(), IsDuplicate);
             }
         }
 

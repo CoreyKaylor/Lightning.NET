@@ -11,7 +11,7 @@ namespace LightningDB
     /// </summary>
     public class LightningDatabase : IDisposable, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        internal uint _handle;
+        private uint _handle;
         private readonly DatabaseConfiguration _configuration;
 
         private readonly LightningTransaction _transaction;
@@ -35,9 +35,14 @@ namespace LightningDB
             _transaction = transaction;
             _configuration = configuration;
             _transaction.Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction._handle, name, _configuration.Flags, out _handle);
+            mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle);
             _configuration.ConfigureDatabase(_transaction, this);
             IsOpened = true;
+        }
+
+        internal uint Handle()
+        {
+            return _handle;
         }
 
         /// <summary>
@@ -70,7 +75,7 @@ namespace LightningDB
         /// </summary>
         public void Drop()
         {
-            mdb_drop(_transaction._handle, _handle, true);
+            mdb_drop(_transaction.Handle(), _handle, true);
             IsOpened = false;
             _handle = default(uint);
         }
@@ -80,7 +85,7 @@ namespace LightningDB
         /// </summary>
         public void Truncate()
         {
-            mdb_drop(_transaction._handle, _handle, false);
+            mdb_drop(_transaction.Handle(), _handle, false);
         }
 
         /// <summary>
@@ -97,7 +102,7 @@ namespace LightningDB
             if (disposing)
             {
                 //From finalizer, this will likely throw
-                mdb_dbi_close(_transaction.Environment._handle, _handle);
+                mdb_dbi_close(_transaction.Environment.Handle(), _handle);
                 GC.SuppressFinalize(this);
             }
             _handle = default(uint);
