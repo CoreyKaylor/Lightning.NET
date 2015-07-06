@@ -48,21 +48,21 @@ namespace LightningDB.Tests
         [Fact]
         public void CursorShouldBeCreated()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             _txn.CreateCursor(_db);
         }
 
         [Fact]
         public void CursorShouldPutValues()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             PopulateCursorValues();
         }
 
         [Fact]
         public void CursorShouldMoveToLast()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             PopulateCursorValues();
 
             using (var cur = _txn.CreateCursor(_db))
@@ -80,7 +80,7 @@ namespace LightningDB.Tests
         [Fact]
         public void CursorShouldMoveToFirst()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             PopulateCursorValues();
 
             using (var cur = _txn.CreateCursor(_db))
@@ -98,7 +98,7 @@ namespace LightningDB.Tests
         [Fact]
         public void ShouldIterateThroughCursor()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             PopulateCursorValues();
                         
             using (var cur = _txn.CreateCursor(_db))
@@ -122,7 +122,7 @@ namespace LightningDB.Tests
         [Fact]
         public void CursorShouldDeleteElements()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             PopulateCursorValues();
 
             using (var cursor = _txn.CreateCursor(_db))
@@ -141,7 +141,7 @@ namespace LightningDB.Tests
         [Fact]
         public void ShouldIterateThroughCursorByEnumerator()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             PopulateCursorValues();
 
             var i = 0;
@@ -156,7 +156,7 @@ namespace LightningDB.Tests
         [Fact]
         public void ShouldPutMultiple()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
 
             var values = new[] { 1, 2, 3, 4, 5 }.Select(BitConverter.GetBytes).ToArray();
             using (var cur = _txn.CreateCursor(_db))
@@ -179,7 +179,7 @@ namespace LightningDB.Tests
         [Fact]
         public void ShouldGetMultiple()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create});
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create});
 
             var original = new[] { 1, 2, 3, 4, 5 };
             var originalBytes = original.Select(BitConverter.GetBytes).ToArray();
@@ -201,7 +201,7 @@ namespace LightningDB.Tests
         [Fact]
         public void ShouldMoveNextMultiple()
         {
-            _db = _txn.OpenDatabase(options: new DatabaseOptions { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
 
             var original = new[] { 1, 2, 3, 4, 5 };
             var originalBytes = original.Select(BitConverter.GetBytes).ToArray();

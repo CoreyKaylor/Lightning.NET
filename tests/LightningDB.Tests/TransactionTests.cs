@@ -135,10 +135,10 @@ namespace LightningDB.Tests
             Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
 
             var txn = _env.BeginTransaction();
-            var options = new DatabaseOptions {Flags = DatabaseOpenFlags.Create};
+            var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create};
             Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
             options.CompareWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
-            var db = txn.OpenDatabase(options: options);
+            var db = txn.OpenDatabase(configuration: options);
 
             var keysUnsorted = new [] { 2, 10, 5 };
             var keysSorted = keysUnsorted.ToArray();
@@ -161,10 +161,10 @@ namespace LightningDB.Tests
             Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
 
             var txn = _env.BeginTransaction();
-            var options = new DatabaseOptions {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
+            var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
             Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
             options.FindDuplicatesWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
-            var db = txn.OpenDatabase(options: options);
+            var db = txn.OpenDatabase(configuration: options);
 
             var valuesUnsorted = new [] { 2, 10, 5, 0 };
             var valuesSorted = valuesUnsorted.ToArray();

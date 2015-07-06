@@ -102,7 +102,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase("master", new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (var db = txn.OpenDatabase("master", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             {
                 for (var i = 0; i < 3; i++)
                     txn.Put(db, i.ToString(), i.ToString());
@@ -110,7 +110,7 @@ namespace LightningDB.Tests
                 txn.Commit();
             }
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase("notmaster", new DatabaseOptions {Flags = DatabaseOpenFlags.Create}))
+            using (var db = txn.OpenDatabase("notmaster", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create}))
             {
                 for (var i = 0; i < 3; i++)
                     txn.Put(db, i.ToString(), i.ToString());
@@ -132,7 +132,7 @@ namespace LightningDB.Tests
             var initialUsedSize = _env.UsedSize;
 
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase(null, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (var db = txn.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             {
                 for (int i = 0; i < entriesCount; i++)
                     txn.Put(db, i.ToString(), i.ToString());
