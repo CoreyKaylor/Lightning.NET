@@ -23,8 +23,7 @@ namespace LightningDB
                 x._currentValueStructure.GetBytes());
         };
 
-        internal readonly IntPtr _handle;
-
+        private readonly IntPtr _handle;
         private byte[] _currentKey;
         private KeyValuePair<byte[], byte[]> _currentPair; 
         private ValueStructure _currentKeyStructure;
@@ -46,11 +45,16 @@ namespace LightningDB
 
             _getCurrent = _currentDefault;
 
-            mdb_cursor_open(txn._handle, db._handle, out _handle);
+            mdb_cursor_open(txn.Handle(), db.Handle(), out _handle);
 
             Database = db;
             Transaction = txn;
             Transaction.Disposing += Dispose;
+        }
+
+        internal IntPtr Handle()
+        {
+            return _handle;
         }
 
         /// <summary>
@@ -402,7 +406,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            mdb_cursor_renew(txn._handle, _handle);
+            mdb_cursor_renew(txn.Handle(), _handle);
         }
 
         /// <summary>
