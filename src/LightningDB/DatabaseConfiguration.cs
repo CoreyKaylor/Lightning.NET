@@ -1,22 +1,18 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
-    public class DatabaseOptions
+    public class DatabaseConfiguration
     {
         private IComparer<byte[]> _comparer;
         private IComparer<byte[]> _duplicatesComparer;
 
-        public DatabaseOptions()
+        public DatabaseConfiguration()
         {
             Flags = DatabaseOpenFlags.None;
-            Encoding = Encoding.UTF8;
         }
-
-        public Encoding Encoding { get; set; }
 
         public DatabaseOpenFlags Flags { get; set; }
 

@@ -12,7 +12,7 @@ namespace LightningDB
     public class LightningDatabase : IDisposable, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         internal uint _handle;
-        private readonly DatabaseOptions _options;
+        private readonly DatabaseConfiguration _configuration;
 
         private readonly LightningTransaction _transaction;
 
@@ -21,22 +21,22 @@ namespace LightningDB
         /// </summary>
         /// <param name="name">Database name.</param>
         /// <param name="transaction">Active transaction.</param>
-        /// <param name="options">Options for the database, like encoding, option flags, and comparison logic.</param>
-        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseOptions options)
+        /// <param name="configuration">Options for the database, like encoding, option flags, and comparison logic.</param>
+        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseConfiguration configuration)
         {
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
-            if (options == null)
-                throw new ArgumentNullException(nameof(options));
+            if (configuration == null)
+                throw new ArgumentNullException(nameof(configuration));
 
             Name = name;
             Environment = transaction.Environment;
             _transaction = transaction;
-            _options = options;
+            _configuration = configuration;
             _transaction.Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction._handle, name, _options.Flags, out _handle);
-            _options.ConfigureDatabase(_transaction, this);
+            mdb_dbi_open(transaction._handle, name, _configuration.Flags, out _handle);
+            _configuration.ConfigureDatabase(_transaction, this);
             IsOpened = true;
         }
 
@@ -54,11 +54,6 @@ namespace LightningDB
         /// Database name.
         /// </summary>
         public string Name { get; }
-
-        /// <summary>
-        /// Default strings encoding.
-        /// </summary>
-        public Encoding Encoding => _options.Encoding;
 
         /// <summary>
         /// Environment in which the database was opened.

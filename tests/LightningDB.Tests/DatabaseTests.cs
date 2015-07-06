@@ -28,12 +28,12 @@ namespace LightningDB.Tests
             _env.MaxDatabases = 2;
             _env.Open();
             using (var txn = _env.BeginTransaction())
-            using (txn.OpenDatabase(dbName, new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (txn.OpenDatabase(dbName, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             {
                 txn.Commit();
             }
             using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase(dbName, new DatabaseOptions { Flags = DatabaseOpenFlags.None }))
+            using (var db = txn.OpenDatabase(dbName, new DatabaseConfiguration { Flags = DatabaseOpenFlags.None }))
             {
                 Assert.False(db.IsReleased);
                 txn.Commit();
@@ -80,7 +80,7 @@ namespace LightningDB.Tests
 
             using (var tx = _env.BeginTransaction())
             {
-                var db = tx.OpenDatabase("customdb", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
+                var db = tx.OpenDatabase("customdb", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
                 tx.Commit();
             }
             using (var tx = _env.BeginTransaction())
@@ -101,7 +101,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             using (var tx = _env.BeginTransaction())
-            using (var db = tx.OpenDatabase("custom", new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (var db = tx.OpenDatabase("custom", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             {
                 tx.Put(db, "hello", "world");
                 tx.Commit();
@@ -126,7 +126,7 @@ namespace LightningDB.Tests
             _env.MaxDatabases = 2;
             _env.Open();
             _txn = _env.BeginTransaction();
-            var db = _txn.OpenDatabase("notmaster", new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
+            var db = _txn.OpenDatabase("notmaster", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
             _txn.Commit();
             _txn.Dispose();
             db.Dispose();

@@ -88,12 +88,12 @@ namespace LightningDB
         /// Opens a database in context of this transaction.
         /// </summary>
         /// <param name="name">Database name (optional). If null then the default name is used.</param>
-        /// <param name="options">Database open options.</param>
+        /// <param name="configuration">Database open options.</param>
         /// <returns>Created database wrapper.</returns>
-        public LightningDatabase OpenDatabase(string name = null, DatabaseOptions options = null)
+        public LightningDatabase OpenDatabase(string name = null, DatabaseConfiguration configuration = null)
         {
-            options = options ?? new DatabaseOptions();
-            var db = new LightningDatabase(name, this, options);
+            configuration = configuration ?? new DatabaseConfiguration();
+            var db = new LightningDatabase(name, this, configuration);
             return db;
         }
 

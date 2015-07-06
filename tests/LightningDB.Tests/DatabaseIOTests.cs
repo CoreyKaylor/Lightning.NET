@@ -20,7 +20,7 @@ namespace LightningDB.Tests
             _env.Open();
 
             _txn = _env.BeginTransaction();
-            _db = _txn.OpenDatabase(options: new DatabaseOptions {Flags = DatabaseOpenFlags.Create});
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
         }
 
         public void Dispose()
@@ -108,7 +108,7 @@ namespace LightningDB.Tests
         [Fact]
         public void CanCommitTransactionToNamedDatabase()
         {
-            using (var db = _txn.OpenDatabase("test", new DatabaseOptions { Flags = DatabaseOpenFlags.Create }))
+            using (var db = _txn.OpenDatabase("test", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
             {
                 _txn.Put(db, "key1", "value");
 

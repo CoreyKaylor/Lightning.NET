@@ -6,8 +6,6 @@ namespace LightningDB.Native
 {
     internal static class Lmdb
     {
-        #region Native Binding
-
         internal static IDisposable NativeBinding()
         {
             var binder = DetermineNativeBinder();
@@ -66,9 +64,6 @@ namespace LightningDB.Native
             }
             return path;
         }
-#endregion
-
-        #region Constants
 
         /// <summary>
         /// Txn has too many dirty pages
@@ -125,10 +120,6 @@ namespace LightningDB.Native
         /// </summary>
         public const int MDB_DUPFIXED = 0x10;
 
-#endregion Constants
-
-#region Helpers
-
         static int check(int statusCode)
         {
             if (statusCode != 0)
@@ -143,8 +134,6 @@ namespace LightningDB.Native
         {
             return statusCode == MDB_NOTFOUND ? statusCode : check(statusCode);
         }
-
-#endregion Helpers
 
         public static int mdb_env_create(out IntPtr env)
         {
@@ -163,19 +152,7 @@ namespace LightningDB.Native
 
         public static int mdb_env_set_mapsize(IntPtr env, long size)
         {
-            IntPtr sizeValue;
-            if (size > int.MaxValue)
-            {
-                if (LightningConfig.Environment.AutoReduceMapSizeIn32BitProcess)
-                    sizeValue = new IntPtr(int.MaxValue);
-                else
-                    throw new InvalidOperationException("Can't set MapSize larger than int.MaxValue in 32-bit process");
-            }
-            else
-            {
-                sizeValue = new IntPtr((int)size);
-            }
-            return check(LmdbMethods.mdb_env_set_mapsize(env, sizeValue));
+            return check(LmdbMethods.mdb_env_set_mapsize(env, new IntPtr(size)));
         }
 
         public static int mdb_env_get_maxreaders(IntPtr env, out uint readers)

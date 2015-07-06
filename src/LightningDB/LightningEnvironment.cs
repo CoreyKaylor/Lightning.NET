@@ -11,11 +11,9 @@ namespace LightningDB
     public class LightningEnvironment : IDisposable
     {
         private readonly IDisposable _binding;
+        private readonly EnvironmentConfiguration _config;
 
         internal IntPtr _handle;
-
-        private long _mapSize;
-        private int _maxDbs;
 
         public event Action Disposing;
 
@@ -23,7 +21,8 @@ namespace LightningDB
         /// Creates a new instance of LightningEnvironment.
         /// </summary>
         /// <param name="path">Directory for storing database files.</param>
-        public LightningEnvironment(string path)
+        /// <param name="configuration">Configuration for the environment.</param>
+        public LightningEnvironment(string path, EnvironmentConfiguration configuration = null)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
@@ -34,15 +33,8 @@ namespace LightningDB
 
             Path = path;
 
-            if (LightningConfig.Environment.DefaultMapSize != LightningConfig.Environment.LibDefaultMapSize)
-                MapSize = LightningConfig.Environment.DefaultMapSize;
-            else
-                _mapSize = LightningConfig.Environment.LibDefaultMapSize;
-
-            if (LightningConfig.Environment.DefaultMaxDatabases != LightningConfig.Environment.LibDefaultMaxDatabases)
-                MaxDatabases = LightningConfig.Environment.DefaultMaxDatabases;
-            else
-                _maxDbs = LightningConfig.Environment.LibDefaultMaxDatabases;
+            _config = configuration ?? new EnvironmentConfiguration();
+            _config.Configure(this);
         }
 
         private MDBStat GetStat()
@@ -75,18 +67,18 @@ namespace LightningDB
         /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space.
         public long MapSize
         {
-            get { return _mapSize; }
+            get { return _config.MapSize; }
             set
             {
-               // if (this.IsOpened)
-               //     throw new InvalidOperationException("Can't change MapSize of opened environment");
-
-                if (value == _mapSize) 
+                if (value == _config.MapSize) 
                     return;
 
-                mdb_env_set_mapsize(_handle, value);
+                if (_config.AutoReduceMapSizeIn32BitProcess && IntPtr.Size == 4)
+                    _config.MapSize = int.MaxValue;
+                else
+                    _config.MapSize = value;
 
-                _mapSize = value;
+                mdb_env_set_mapsize(_handle, _config.MapSize);
             }
         }
 
@@ -110,10 +102,7 @@ namespace LightningDB
         {
             get
             {
-                uint readers;
-                mdb_env_get_maxreaders(_handle, out readers);
-
-                return (int)readers;
+                return _config.MaxReaders;
             }
             set
             {
@@ -121,6 +110,8 @@ namespace LightningDB
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
                 mdb_env_set_maxreaders(_handle, (uint)value);
+
+                _config.MaxReaders = value;
             }
         }
 
@@ -132,18 +123,18 @@ namespace LightningDB
         /// </summary>
         public int MaxDatabases
         {
-            get { return _maxDbs; }
+            get { return _config.MaxDatabases; }
             set
             {
                 if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxDatabases of opened environment");
 
-                if (value == _maxDbs) 
+                if (value == _config.MaxDatabases) 
                     return;
 
                 mdb_env_set_maxdbs(_handle, (uint)value);
 
-                _maxDbs = value;
+                _config.MaxDatabases = value;
             }
         }
 
