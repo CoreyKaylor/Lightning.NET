@@ -251,7 +251,7 @@ namespace LightningDB
             _currentKeyStructure = default(ValueStructure);
             _currentValueStructure = default(ValueStructure);
             
-            var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+            var found = mdb_cursor_get(_handle, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
             if (found)
                 _getCurrent = _currentDefault;
 
@@ -261,42 +261,34 @@ namespace LightningDB
         private bool Get(CursorOperation operation, byte[] key)
         {
             _currentValueStructure = default(ValueStructure);
-
-            using (var marshal = new MarshalValueStructure(key))
+            var found = mdb_cursor_get(_handle, key, out _currentValueStructure, operation) == 0;
+            if (found)
             {
-                _currentKeyStructure = marshal.Key;
-                var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
-                if (found)
-                {
-                    _getCurrent = _currentWithOptimizedKey;
-                    _currentKey = key;
-                }
-                return found;
+                _getCurrent = _currentWithOptimizedKey;
+                _currentKey = key;
             }
+            return found;
         }
 
         private bool Get(CursorOperation operation, byte[] key, byte[] value)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
+            var found = mdb_cursor_get(_handle, key, value, operation) == 0;
+            if (found)
             {
-                _currentKeyStructure = marshal.Key;
-                _currentValueStructure = marshal.Value;
-                var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
-                if (found)
-                {
-                    _getCurrent = _currentWithOptimizedPair;
-                    _currentPair = new KeyValuePair<byte[], byte[]>(key, value);
-                }
-                return found;
+                _getCurrent = _currentWithOptimizedPair;
+                _currentPair = new KeyValuePair<byte[], byte[]>(key, value);
             }
+            return found;
         }
 
         private bool GetMultiple(CursorOperation operation)
         {
-            var found = mdb_cursor_get(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+            byte[] key;
+            byte[] value;
+            var found = mdb_cursor_get(_handle, out key, out value, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
             if (found)
             {
-                _currentPair = new KeyValuePair<byte[], byte[]>(_currentKeyStructure.GetBytes(), _currentValueStructure.GetBytes());
+                _currentPair = new KeyValuePair<byte[], byte[]>(key, value);
                 _getCurrent = _currentWithOptimizedPair;
             }
             return found;
@@ -321,8 +313,7 @@ namespace LightningDB
         /// </param>
         public void Put(byte[] key, byte[] value, CursorPutOptions options)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
-                mdb_cursor_put(_handle, ref marshal.Key, ref marshal.Value, options);
+            mdb_cursor_put(_handle, key, value, options);
         }
 
         /// <summary>
