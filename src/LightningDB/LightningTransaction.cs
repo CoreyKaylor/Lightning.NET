@@ -112,23 +112,6 @@ namespace LightningDB
             return new LightningCursor(db, this);
         }
 
-        private bool TryGetInternal(uint dbi, byte[] key, out Func<byte[]> valueFactory)
-        {
-            valueFactory = null;
-
-            using (var marshal = new MarshalValueStructure(key))
-            {
-                ValueStructure valueStruct;
-
-                var res = mdb_get(_handle, dbi, ref marshal.Key, out valueStruct);
-
-                var exists = res != MDB_NOTFOUND;
-                if (exists)
-                    valueFactory = () => valueStruct.GetBytes();
-
-                return exists;
-            }
-        }
 
         /// <summary>
         /// Get value from a database.
@@ -140,7 +123,6 @@ namespace LightningDB
         {
             byte[] value;
             TryGet(db, key, out value);
-
             return value;
         }
 
@@ -156,14 +138,7 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            Func<byte[]> factory;
-            var result = TryGetInternal(db.Handle(), key, out factory);
-
-            value = result
-                ? factory.Invoke()
-                : null;
-
-            return result;
+            return mdb_get(_handle, db.Handle(), key, out value) != MDB_NOTFOUND;
         }
 
         /// <summary>
@@ -177,8 +152,8 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            Func<byte[]> factory;
-            return TryGetInternal(db.Handle(), key, out factory);
+            byte[] value;
+            return TryGet(db, key, out value);
         }
 
         /// <summary>
@@ -193,8 +168,7 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            using (var marshal = new MarshalValueStructure(key, value))
-                mdb_put(_handle, db.Handle(), ref marshal.Key, ref marshal.Value, options);
+            mdb_put(_handle, db.Handle(), key, value, options);
         }
 
         /// <summary>
@@ -213,9 +187,9 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            using (var marshal = new MarshalValueStructure(key, value))
-                mdb_del(_handle, db.Handle(), ref marshal.Key, ref marshal.Value);
+            mdb_del(_handle, db.Handle(), key, value);
         }
+
         /// <summary>
         /// Delete items from a database.
         /// This function removes key/data pairs from the database. 
@@ -228,8 +202,7 @@ namespace LightningDB
         /// <param name="key">The key to delete from the database</param>
         public void Delete(LightningDatabase db, byte[] key)
         {
-            using (var marshal = new MarshalValueStructure(key))
-                mdb_del(_handle, db.Handle(), ref marshal.Key);
+            mdb_del(_handle, db.Handle(), key);
         }
 
         /// <summary>
