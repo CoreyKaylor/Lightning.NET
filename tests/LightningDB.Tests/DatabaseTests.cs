@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Xunit;
 using static System.Text.Encoding;
 
@@ -164,6 +165,28 @@ namespace LightningDB.Tests
             var result = _txn.Get(db, UTF8.GetBytes("hello"));
 
             Assert.Null(result);
+        }
+
+        [Fact]
+        public void FindAllStartingWith()
+        {
+            var value = UTF8.GetBytes("hello world!");
+            _env.Open();
+            _txn = _env.BeginTransaction();
+            var db = _txn.OpenDatabase();
+            _txn.Put(db, UTF8.GetBytes("a"), value);
+            _txn.Put(db, UTF8.GetBytes("ball"), value);
+            _txn.Put(db, UTF8.GetBytes("ball2"), value);
+            _txn.Put(db, UTF8.GetBytes("ball3"), value);
+            _txn.Put(db, UTF8.GetBytes("c"), value);
+
+            var items = db.FindAllStartingWith(UTF8.GetBytes("b")).ToList();
+            Assert.Equal(3, items.Count);
+            foreach (var item in items)
+            {
+                var key = UTF8.GetString(item.Key);
+                Assert.True(key.StartsWith("b"));
+            }
         }
     }
 }

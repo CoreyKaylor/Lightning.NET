@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -86,6 +85,26 @@ namespace LightningDB
         public void Truncate()
         {
             mdb_drop(_transaction.Handle(), _handle, false);
+        }
+
+        public IEnumerable<KeyValuePair<byte[], byte[]>> FindAllStartingWith(byte[] keyPrefix)
+        {
+            using (var cursor = _transaction.CreateCursor(this))
+            {
+                if (!cursor.MoveToFirstAfter(keyPrefix))
+                {
+                    yield break;
+                }
+                do
+                {
+                    var current = cursor.Current;
+                    var currentKey = current.Key;
+                    if(currentKey.StartsWith(keyPrefix))
+                        yield return current;
+                    else
+                        yield break;
+                } while (cursor.MoveNext());
+            }
         }
 
         /// <summary>

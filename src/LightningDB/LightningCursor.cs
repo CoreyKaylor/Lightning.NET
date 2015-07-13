@@ -12,7 +12,6 @@ namespace LightningDB
     public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         //optimize for unnecessary marshaling when we don't have to
-        private static Func<LightningCursor, KeyValuePair<byte[],byte[]>> _currentWithOptimizedKey = x => new KeyValuePair<byte[], byte[]>(x._currentKey, x._currentValueStructure.GetBytes());
         private static Func<LightningCursor, KeyValuePair<byte[],byte[]>> _currentWithOptimizedPair = x => x._currentPair;
         private static Func<LightningCursor, KeyValuePair<byte[], byte[]>> _currentDefault = x =>
         {
@@ -24,7 +23,6 @@ namespace LightningDB
         };
 
         private readonly IntPtr _handle;
-        private byte[] _currentKey;
         private KeyValuePair<byte[], byte[]> _currentPair; 
         private ValueStructure _currentKeyStructure;
         private ValueStructure _currentValueStructure;
@@ -261,11 +259,10 @@ namespace LightningDB
         private bool Get(CursorOperation operation, byte[] key)
         {
             _currentValueStructure = default(ValueStructure);
-            var found = mdb_cursor_get(_handle, key, out _currentValueStructure, operation) == 0;
+            var found = mdb_cursor_get(_handle, key, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
             if (found)
             {
-                _getCurrent = _currentWithOptimizedKey;
-                _currentKey = key;
+                _getCurrent = _currentDefault;
             }
             return found;
         }
