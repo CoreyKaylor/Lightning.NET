@@ -9,7 +9,7 @@ namespace LightningDB
     /// <summary>
     /// Cursor to iterate over a database
     /// </summary>
-    public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>
+    public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         //optimize for unnecessary marshaling when we don't have to
         private static Func<LightningCursor, KeyValuePair<byte[],byte[]>> _currentWithOptimizedKey = x => new KeyValuePair<byte[], byte[]>(x._currentKey, x._currentValueStructure.GetBytes());
@@ -424,6 +424,16 @@ namespace LightningDB
         public void Dispose()
         {
             Dispose(true);
+        }
+
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        {
+            return this;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         ~LightningCursor()
