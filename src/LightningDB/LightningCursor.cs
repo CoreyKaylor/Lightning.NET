@@ -12,21 +12,13 @@ namespace LightningDB
     public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         //optimize for unnecessary marshaling when we don't have to
-        private static Func<LightningCursor, KeyValuePair<byte[],byte[]>> _currentWithOptimizedPair = x => x._currentPair;
-        private static Func<LightningCursor, KeyValuePair<byte[], byte[]>> _currentDefault = x =>
-        {
-            if (x._currentKeyStructure.size == IntPtr.Zero)
-                return default(KeyValuePair<byte[], byte[]>);
-
-            return new KeyValuePair<byte[], byte[]>(x._currentKeyStructure.GetBytes(),
-                x._currentValueStructure.GetBytes());
-        };
-
+        private readonly Func<KeyValuePair<byte[], byte[]>> _currentWithOptimizedPair;
+        private readonly Func<KeyValuePair<byte[], byte[]>> _currentDefault;
         private readonly IntPtr _handle;
         private KeyValuePair<byte[], byte[]> _currentPair; 
         private ValueStructure _currentKeyStructure;
         private ValueStructure _currentValueStructure;
-        private Func<LightningCursor, KeyValuePair<byte[], byte[]>> _getCurrent;
+        private Func<KeyValuePair<byte[], byte[]>> _getCurrent;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -40,6 +32,16 @@ namespace LightningDB
 
             if (txn == null)
                 throw new ArgumentNullException(nameof(txn));
+
+            _currentWithOptimizedPair = () => _currentPair;
+            _currentDefault = () =>
+            {
+                if (_currentKeyStructure.size == IntPtr.Zero)
+                    return default(KeyValuePair<byte[], byte[]>);
+
+                return new KeyValuePair<byte[], byte[]>(_currentKeyStructure.GetBytes(),
+                    _currentValueStructure.GetBytes());
+            };
 
             _getCurrent = _currentDefault;
 
@@ -84,20 +86,30 @@ namespace LightningDB
         {
             get
             {
-                _currentPair = _getCurrent(this);
+                _currentPair = _getCurrent();
                 _getCurrent = _currentWithOptimizedPair;
                 return _currentPair;
             }
         }
 
         /// <summary>
-        /// Position at specified key
+        /// Position at specified key, Current will not be populated.
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns true if the key was found.</returns>
         public bool MoveTo(byte[] key)
         {
             return Get(CursorOperation.Set, key);
+        }
+
+        /// <summary>
+        /// Moves to the key and populates Current with the values stored.
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>Returns true if the key was found.</returns>
+        public bool MoveToAndGet(byte[] key)
+        {
+            return Get(CursorOperation.SetKey);
         }
 
         /// <summary>
@@ -131,8 +143,6 @@ namespace LightningDB
         {
             return Get(CursorOperation.SetRange, key);
         }
-
-        //CursorOperation.SetKey should be unnecessary in our use-case.
 
         /// <summary>
         /// Position at first key/data item

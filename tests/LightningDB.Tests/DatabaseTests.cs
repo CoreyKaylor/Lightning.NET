@@ -54,26 +54,6 @@ namespace LightningDB.Tests
         }
 
         [Fact]
-        public void DatabaseFromCommitedTransactionShouldBeAccessable()
-        {
-            _env.Open();
-
-            LightningDatabase db;
-            using (var committed = _env.BeginTransaction())
-            {
-                db = committed.OpenDatabase();
-                committed.Commit();
-            }
-            
-            using (db)
-            using (var txn = _env.BeginTransaction())
-            {
-                txn.Put(db, "key", 1.ToString());
-                txn.Commit();
-            }
-        }
-
-        [Fact]
         public void NamedDatabaseNameExistsInMaster()
         {
             _env.MaxDatabases = 2;
@@ -162,6 +142,7 @@ namespace LightningDB.Tests
             _txn.Commit();
             _txn.Dispose();
             _txn = _env.BeginTransaction();
+            db = _txn.OpenDatabase();
             var result = _txn.Get(db, UTF8.GetBytes("hello"));
 
             Assert.Null(result);

@@ -64,6 +64,7 @@ namespace LightningDB
         }
 
         public event Action Disposing;
+        internal event Action DisposingComplete;
         private event Action<LightningTransactionState> StateChanging;
 
         /// <summary>
@@ -301,11 +302,12 @@ namespace LightningDB
                 ParentTransaction.StateChanging -= OnParentStateChanging;
             }
 
-            var copy = Disposing;
-            copy?.Invoke();
+            Disposing?.Invoke();
 
             if (State == LightningTransactionState.Active)
                 Abort();
+
+            DisposingComplete?.Invoke();
 
             _handle = IntPtr.Zero;
 

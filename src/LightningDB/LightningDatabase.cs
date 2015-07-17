@@ -11,9 +11,8 @@ namespace LightningDB
     public class LightningDatabase : IDisposable, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private uint _handle;
+        private LightningTransaction _transaction;
         private readonly DatabaseConfiguration _configuration;
-
-        private readonly LightningTransaction _transaction;
 
         /// <summary>
         /// Creates a LightningDatabase instance.
@@ -30,11 +29,11 @@ namespace LightningDB
                 throw new ArgumentNullException(nameof(configuration));
 
             Name = name;
+            _configuration = configuration;
             Environment = transaction.Environment;
             _transaction = transaction;
-            _configuration = configuration;
-            _transaction.Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle);
+            _transaction.DisposingComplete += Dispose;
+            mdb_dbi_open(_transaction.Handle(), name, _configuration.Flags, out _handle);
             _configuration.ConfigureDatabase(_transaction, this);
             IsOpened = true;
         }
@@ -108,7 +107,7 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Deallocates resources opeened by the database.
+        /// Deallocates resources opened by the database.
         /// </summary>
         /// <param name="disposing">true if called from Dispose.</param>
         protected virtual void Dispose(bool disposing)
@@ -116,14 +115,15 @@ namespace LightningDB
             if (_handle == default(uint))
                 return;
 
-            _transaction.Environment.Disposing -= Dispose;
+            _transaction.DisposingComplete -= Dispose;
             IsOpened = false;
             if (disposing)
             {
                 //From finalizer, this will likely throw
-                mdb_dbi_close(_transaction.Environment.Handle(), _handle);
+                mdb_dbi_close(Environment.Handle(), _handle);
                 GC.SuppressFinalize(this);
             }
+            _transaction = null;
             _handle = default(uint);
         }
 
