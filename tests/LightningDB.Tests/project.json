@@ -6,7 +6,8 @@
     "LightningDB": "1.0.0-*"
   },
   "commands": {
-    "test": "xunit.runner.dnx"
+    "test": "xunit.runner.dnx -notrait prof=explicit",
+    "proftest": "xunit.runner.dnx -trait prof=explicit"
   },
   "frameworks": {
     "dnx451": {
