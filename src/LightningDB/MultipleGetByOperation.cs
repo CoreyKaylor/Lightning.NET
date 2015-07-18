@@ -22,6 +22,10 @@ namespace LightningDB
             _rawValue = rawValue;
         }
 
+		/// <summary>
+		/// Gets a value indicating whether this instance has value.
+		/// </summary>
+		/// <value><c>true</c> if this instance has value; otherwise, <c>false</c>.</value>
         public bool HasValue { get { return _rawValue != null; } }
 
         /// <summary>

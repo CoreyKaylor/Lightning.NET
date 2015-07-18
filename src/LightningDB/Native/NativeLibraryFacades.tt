@@ -6,6 +6,7 @@
 	{
 		{ "lmdb32", "Native32Bit" },
 		{ "lmdb64", "Native64Bit" },
+		{ "liblmdb64", "LinuxNative64Bit" },
 		{ "lmdb", "Fallback" }
 	};
 #>

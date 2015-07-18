@@ -5,6 +5,9 @@ using System.Text;
 
 namespace LightningDB
 {
+	/// <summary>
+	/// Compare function builder.
+	/// </summary>
     public class CompareFunctionBuilder
     {
         private static LightningCompareDelegate CreateComparisonFunction<TKey>(
