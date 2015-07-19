@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
@@ -102,6 +101,22 @@ namespace LightningDB
             configuration = configuration ?? new DatabaseConfiguration();
             var db = new LightningDatabase(name, this, configuration);
             return db;
+        }
+
+        /// <summary>
+        /// Drops the database.
+        /// </summary>
+        public void DropDatabase(LightningDatabase database)
+        {
+            database.Drop(this);
+        }
+
+        /// <summary>
+        /// Truncates all data from the database.
+        /// </summary>
+        public void TruncateDatabase(LightningDatabase database)
+        {
+            database.Truncate(this);
         }
 
         /// <summary>
