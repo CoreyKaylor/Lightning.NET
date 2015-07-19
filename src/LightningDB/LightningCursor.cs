@@ -303,7 +303,8 @@ namespace LightningDB
 
         /// <summary>
         /// Store by cursor.
-        /// This function stores key/data pairs into the database. 
+        /// This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
+        /// Note: Earlier documentation incorrectly said errors would leave the state of the cursor unchanged.
         /// If the function fails for any reason, the state of the cursor will be unchanged. 
         /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
         /// </summary>
