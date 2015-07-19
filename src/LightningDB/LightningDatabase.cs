@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using static LightningDB.Native.Lmdb;
 
@@ -7,9 +8,10 @@ namespace LightningDB
     /// <summary>
     /// Lightning database.
     /// </summary>
-    public class LightningDatabase : IDisposable
+    public class LightningDatabase : IDisposable, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
         private uint _handle;
+        private LightningTransaction _transaction;
         private readonly DatabaseConfiguration _configuration;
 
         /// <summary>
@@ -29,9 +31,10 @@ namespace LightningDB
             Name = name;
             _configuration = configuration;
             Environment = transaction.Environment;
-            Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle);
-            _configuration.ConfigureDatabase(transaction, this);
+            _transaction = transaction;
+            _transaction.DisposingComplete += Dispose;
+            mdb_dbi_open(_transaction.Handle(), name, _configuration.Flags, out _handle);
+            _configuration.ConfigureDatabase(_transaction, this);
             IsOpened = true;
         }
 
@@ -63,18 +66,44 @@ namespace LightningDB
         /// <summary>
         /// Flags with which the database was opened.
         /// </summary>
-        public DatabaseOpenFlags OpenFlags => _configuration.Flags;
+        public DatabaseOpenFlags OpenFlags { get; private set; }
 
-        internal void Drop(LightningTransaction transaction)
+        /// <summary>
+        /// Drops the database.
+        /// </summary>
+        public void Drop()
         {
-            mdb_drop(transaction.Handle(), _handle, true);
+            mdb_drop(_transaction.Handle(), _handle, true);
             IsOpened = false;
             _handle = default(uint);
         }
 
-        internal void Truncate(LightningTransaction transaction)
+        /// <summary>
+        /// Truncates all data from the database.
+        /// </summary>
+        public void Truncate()
         {
-            mdb_drop(transaction.Handle(), _handle, false);
+            mdb_drop(_transaction.Handle(), _handle, false);
+        }
+
+        public IEnumerable<KeyValuePair<byte[], byte[]>> FindAllStartingWith(byte[] keyPrefix)
+        {
+            using (var cursor = _transaction.CreateCursor(this))
+            {
+                if (!cursor.MoveToFirstAfter(keyPrefix))
+                {
+                    yield break;
+                }
+                do
+                {
+                    var current = cursor.Current;
+                    var currentKey = current.Key;
+                    if(currentKey.StartsWith(keyPrefix))
+                        yield return current;
+                    else
+                        yield break;
+                } while (cursor.MoveNext());
+            }
         }
 
         /// <summary>
@@ -86,7 +115,7 @@ namespace LightningDB
             if (_handle == default(uint))
                 return;
 
-            Environment.Disposing -= Dispose;
+            _transaction.DisposingComplete -= Dispose;
             IsOpened = false;
             if (disposing)
             {
@@ -94,6 +123,7 @@ namespace LightningDB
                 mdb_dbi_close(Environment.Handle(), _handle);
                 GC.SuppressFinalize(this);
             }
+            _transaction = null;
             _handle = default(uint);
         }
 
@@ -106,17 +136,22 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Enumerates the database with the transaction.
+        /// Enumerates the database with the transaction used to open the database.
         /// </summary>
         /// <returns></returns>
-        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator(LightningTransaction transaction)
+        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
         {
-            return transaction.CreateCursor(this);
+            return _transaction.CreateCursor(this);
         }
 
         ~LightningDatabase()
         {
             Dispose(false);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
