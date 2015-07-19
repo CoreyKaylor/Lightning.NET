@@ -77,6 +77,23 @@ namespace LightningDB
             Renew();
         }
 
+        public IEnumerable<KeyValuePair<byte[], byte[]>> FindAllStartingWith(byte[] keyPrefix)
+        {
+            if (!MoveToFirstAfter(keyPrefix))
+            {
+                yield break;
+            }
+            do
+            {
+                var current = Current;
+                var currentKey = current.Key;
+                if (currentKey.StartsWith(keyPrefix))
+                    yield return current;
+                else
+                    yield break;
+            } while (MoveNext());
+        }
+
         object IEnumerator.Current => Current;
 
         /// <summary>
