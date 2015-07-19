@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
-    internal class MarshalValueStructure : IDisposable
+    public class MarshalValueStructure : IDisposable
     {
         private readonly byte[] _key;
         private readonly byte[] _value;

@@ -52,7 +52,7 @@ namespace LightningDB
             Transaction.Disposing += Dispose;
         }
 
-        internal IntPtr Handle()
+        public IntPtr Handle()
         {
             return _handle;
         }

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
-    internal struct ValueStructure
+    public struct ValueStructure
     {
         public IntPtr size;
 

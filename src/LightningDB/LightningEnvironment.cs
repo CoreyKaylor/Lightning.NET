@@ -37,19 +37,9 @@ namespace LightningDB
             _config.Configure(this);
         }
 
-        internal IntPtr Handle()
+        public IntPtr Handle()
         {
             return _handle;
-        }
-
-        private MDBStat GetStat()
-        {
-            EnsureOpened();
-
-            MDBStat stat;
-            mdb_env_stat(_handle, out stat);
-
-            return stat;
         }
 
         /// <summary>
@@ -84,19 +74,6 @@ namespace LightningDB
                     _config.MapSize = value;
 
                 mdb_env_set_mapsize(_handle, _config.MapSize);
-            }
-        }
-
-        public uint PageSize => GetStat().ms_psize;
-
-        public long UsedSize
-        {
-            get
-            {
-                MDBEnvInfo envInfo;
-                mdb_env_info(_handle, out envInfo);
-
-                return envInfo.me_last_pgno.ToInt64() * PageSize;
             }
         }
 
@@ -142,11 +119,6 @@ namespace LightningDB
                 _config.MaxDatabases = value;
             }
         }
-
-        /// <summary>
-        /// Will return the count of names for each database stored in the default database.
-        /// </summary>
-        public long EntriesCount => GetStat().ms_entries.ToInt64();
 
         /// <summary>
         /// Directory path to store database files.

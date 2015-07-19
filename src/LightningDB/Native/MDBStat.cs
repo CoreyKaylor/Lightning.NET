@@ -2,7 +2,7 @@
 
 namespace LightningDB.Native
 {
-    struct MDBStat
+    public struct MDBStat
     {
         /// <summary>
         /// Size of a database page. This is currently the same for all databases.

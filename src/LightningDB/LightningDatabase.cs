@@ -38,7 +38,7 @@ namespace LightningDB
             IsOpened = true;
         }
 
-        internal uint Handle()
+        public uint Handle()
         {
             return _handle;
         }
