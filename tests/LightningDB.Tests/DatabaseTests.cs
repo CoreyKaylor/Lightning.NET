@@ -54,26 +54,6 @@ namespace LightningDB.Tests
         }
 
         [Fact]
-        public void DatabaseFromCommitedTransactionShouldBeAccessable()
-        {
-            _env.Open();
-
-            LightningDatabase db;
-            using (var committed = _env.BeginTransaction())
-            {
-                db = committed.OpenDatabase();
-                committed.Commit();
-            }
-
-            using (db)
-            using (var txn = _env.BeginTransaction())
-            {
-                txn.Put(db, "key", 1.ToString());
-                txn.Commit();
-            }
-        }
-
-        [Fact]
         public void NamedDatabaseNameExistsInMaster()
         {
             _env.MaxDatabases = 2;
@@ -135,7 +115,7 @@ namespace LightningDB.Tests
             _txn = _env.BeginTransaction();
             db = _txn.OpenDatabase("notmaster");
 
-            _txn.DropDatabase(db);
+            db.Drop();
             _txn.Commit();
             _txn.Dispose();
 
@@ -158,7 +138,7 @@ namespace LightningDB.Tests
             _txn.Dispose();
             _txn = _env.BeginTransaction();
             db = _txn.OpenDatabase();
-            _txn.TruncateDatabase(db);
+            db.Truncate();
             _txn.Commit();
             _txn.Dispose();
             _txn = _env.BeginTransaction();
@@ -181,7 +161,7 @@ namespace LightningDB.Tests
             _txn.Put(db, UTF8.GetBytes("ball3"), value);
             _txn.Put(db, UTF8.GetBytes("c"), value);
 
-            var items = _txn.FindAllStartingWith(db, UTF8.GetBytes("b")).ToList();
+            var items = db.FindAllStartingWith(UTF8.GetBytes("b")).ToList();
             Assert.Equal(3, items.Count);
             foreach (var item in items)
             {

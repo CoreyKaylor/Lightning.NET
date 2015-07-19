@@ -133,12 +133,9 @@ namespace LightningDB.Tests
                     cursor.Delete();
                 }
             }
-            using (var cursor = _txn.CreateCursor(_db))
-            {
-                var foundDeleted = cursor.Select(x => UTF8.GetString(x.Key))
-                    .Any(x => x == "key1" || x == "key2");
-                Assert.False(foundDeleted);
-            }
+            var foundDeleted = _db.AsEnumerable().Select(x => UTF8.GetString(x.Key))
+                .Any(x => x == "key1" || x == "key2");
+            Assert.False(foundDeleted);
         }
 
         [Fact]
@@ -148,14 +145,11 @@ namespace LightningDB.Tests
             PopulateCursorValues();
 
             var i = 0;
-            using (var cursor = _txn.CreateCursor(_db))
+            foreach (var pair in _db)
             {
-                foreach (var pair in cursor)
-                {
-                    var name = "key" + ++i;
-                    Assert.Equal(name, UTF8.GetString(pair.Key));
-                    Assert.Equal(name, UTF8.GetString(pair.Value));
-                }
+                var name = "key" + ++i;
+                Assert.Equal(name, UTF8.GetString(pair.Key));
+                Assert.Equal(name, UTF8.GetString(pair.Value));
             }
         }
 

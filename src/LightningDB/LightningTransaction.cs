@@ -105,28 +105,6 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Drops the database.
-        /// </summary>
-        public void DropDatabase(LightningDatabase database)
-        {
-            database.Drop(this);
-        }
-
-        /// <summary>
-        /// Truncates all data from the database.
-        /// </summary>
-        public void TruncateDatabase(LightningDatabase database)
-        {
-            database.Truncate(this);
-        }
-
-        public IEnumerable<KeyValuePair<byte[], byte[]>> FindAllStartingWith(LightningDatabase dataabse, byte[] keyPrefix)
-        {
-            using (var cursor = CreateCursor(dataabse))
-                return cursor.FindAllStartingWith(keyPrefix);
-        }
-
-        /// <summary>
         /// Create a cursor.
         /// Cursors are associated with a specific transaction and database and may not span threads.
         /// </summary>
