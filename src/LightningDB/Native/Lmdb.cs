@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
-    internal static class Lmdb
+    public static class Lmdb
     {
         internal static IDisposable NativeBinding()
         {

@@ -45,7 +45,7 @@ namespace LightningDB
             _originalHandle = _handle;
         }
 
-        internal IntPtr Handle()
+        public IntPtr Handle()
         {
             return _handle;
         }

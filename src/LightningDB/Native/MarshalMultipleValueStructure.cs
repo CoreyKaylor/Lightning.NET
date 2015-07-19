@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
-    internal class MarshalMultipleValueStructure : IDisposable
+    public class MarshalMultipleValueStructure : IDisposable
     {
         private readonly byte[] _key;
         private readonly byte[] _flattened;

@@ -2,7 +2,7 @@
 
 namespace LightningDB.Native
 {
-    struct MDBEnvInfo
+    public struct MDBEnvInfo
     {
         /// <summary>
         /// Address of map, if fixed

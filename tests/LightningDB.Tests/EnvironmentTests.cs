@@ -93,57 +93,5 @@ namespace LightningDB.Tests
 
             _env.Open();
         }
-
-        [Fact]
-        public void CanCountNumberOfDatabasesThroughEnvironmentEntries()
-        {
-            _env = new LightningEnvironment(_path);
-            _env.MaxDatabases = 5;
-            _env.Open();
-
-            using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase("master", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
-            {
-                for (var i = 0; i < 3; i++)
-                    txn.Put(db, i.ToString(), i.ToString());
-
-                txn.Commit();
-            }
-            using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase("notmaster", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create}))
-            {
-                for (var i = 0; i < 3; i++)
-                    txn.Put(db, i.ToString(), i.ToString());
-
-                txn.Commit();
-            }
-
-            Assert.Equal(2, _env.EntriesCount);
-        }
-
-        [Fact]
-        public void CanGetUsedSize()
-        {
-            const int entriesCount = 1;
-
-            _env = new LightningEnvironment(_path);
-            _env.Open();
-
-            var initialUsedSize = _env.UsedSize;
-
-            using (var txn = _env.BeginTransaction())
-            using (var db = txn.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
-            {
-                for (int i = 0; i < entriesCount; i++)
-                    txn.Put(db, i.ToString(), i.ToString());
-
-                txn.Commit();
-            }
-
-            var sizeDelta = _env.UsedSize - initialUsedSize;
-
-            Assert.Equal(_env.PageSize, sizeDelta);
-        }
-
     }
 }
