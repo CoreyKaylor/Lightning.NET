@@ -19,5 +19,5 @@ dnu install xunit.runner.dnx 2.1.0-beta4-* -s https://www.myget.org/F/xunit/
 cd ../../
 dnu restore
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-LD_LIBRARY_PATH=./mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dnx ./tests/LightningDB.Tests test
+LD_LIBRARY_PATH=./mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dnx ./tests/LightningDB.Tests test -parallel none
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
