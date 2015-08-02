@@ -30,7 +30,7 @@ set PATH=!USERPROFILE!\.dnx\runtimes\dnx-clr-win-x86.1.0.0-beta6\bin;!PATH!
 call dnu restore
 if %errorlevel% neq 0 exit /b %errorlevel%
 cd tests\LightningDB.Tests
-call dnx . test
+call dnx . test -parallel none
 if %errorlevel% neq 0 exit /b %errorlevel%
 cd ..\..\src\LightningDB
 call dnu build
