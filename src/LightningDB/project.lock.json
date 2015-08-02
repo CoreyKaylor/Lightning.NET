@@ -3,7 +3,7 @@
   "version": 1,
   "targets": {
     ".NETFramework,Version=v4.5": {},
-    "DNX,Version=v4.5.1": {
+    "DNX,Version=v4.6": {
       "Microsoft.Framework.Runtime.Abstractions/1.0.0-beta6-12234": {
         "frameworkAssemblies": [
           "Microsoft.CSharp",
@@ -1274,7 +1274,7 @@
   "projectFileDependencyGroups": {
     "": [],
     ".NETFramework,Version=v4.5": [],
-    "DNX,Version=v4.5.1": [
+    "DNX,Version=v4.6": [
       "Microsoft.Framework.Runtime.Abstractions >= 1.0.0-beta6-*"
     ],
     "DNXCore,Version=v5.0": [
