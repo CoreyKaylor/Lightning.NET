@@ -175,7 +175,7 @@ namespace LightningDB.Native
             var statusCode = LmdbMethods.mdb_dbi_open(txn, name, flags, out db);
             if(statusCode == MDB_NOTFOUND)
                 throw new LightningException($"Error opening database {name}: {mdb_strerror(statusCode)}", statusCode);
-            return statusCode;
+            return check(statusCode);
         }
 
         public static void mdb_dbi_close(IntPtr env, uint dbi)
