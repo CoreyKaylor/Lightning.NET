@@ -10,7 +10,7 @@
     "proftest": "xunit.runner.dnx -trait prof=explicit"
   },
   "frameworks": {
-    "dnx46": {
+    "dnx451": {
     },
     "dnxcore50": {
     }

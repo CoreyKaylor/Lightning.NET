@@ -22,7 +22,7 @@ namespace LightningDB.Native
             return new UnixNativeBinder(path);
         }
 
-#if DNXCORE50 || DNX46
+#if DNXCORE50 || DNX451
         private static string FindNativeLibPath()
         {
             var locator = Microsoft.Framework.Runtime.Infrastructure.CallContextServiceLocator.Locator;
