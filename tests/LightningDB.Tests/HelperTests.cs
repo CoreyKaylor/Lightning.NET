@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using Xunit;
+﻿using Xunit;
 using System.Text;
 
 namespace LightningDB.Tests
@@ -35,31 +33,6 @@ namespace LightningDB.Tests
             var messageBytes = Encoding.UTF8.GetBytes(message);
             var worldBytes = Encoding.UTF8.GetBytes(world);
             Assert.False(messageBytes.StartsWith(worldBytes));
-        }
-
-        [Fact]
-        public void SimpleStartsWithIsFasterThanStringStartsWithAndConversion()
-        {
-            var idString = $"{Guid.NewGuid()}";
-            var keyString = $"{idString}/someotherinformation";
-            var keyBytes = Encoding.UTF8.GetBytes(keyString);
-            var idBytes = Encoding.UTF8.GetBytes(idString);
-            var stopwatch = Stopwatch.StartNew();
-            for (var i = 0; i < 100; ++i)
-            {
-                var keyAfterConversion = Encoding.UTF8.GetString(keyBytes);
-                var result = keyAfterConversion.StartsWith(idString);
-            }
-            stopwatch.Stop();
-            var totalForStringConversion = stopwatch.Elapsed.TotalMilliseconds;
-            stopwatch.Restart();
-            for (var i = 0; i < 100; ++i)
-            {
-                var result = keyBytes.StartsWith(idBytes);
-            }
-            stopwatch.Stop();
-            var totalForSimple = stopwatch.Elapsed.TotalMilliseconds;
-            Assert.True(totalForSimple < totalForStringConversion);
         }
     }
 }
