@@ -319,7 +319,7 @@ namespace LightningDB
 
             Disposing?.Invoke();
 
-            if (State == LightningTransactionState.Active)
+            if (State == LightningTransactionState.Active || State == LightningTransactionState.Reseted)
                 Abort();
 
             DisposingComplete?.Invoke();

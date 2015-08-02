@@ -61,6 +61,15 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void ResetTransactionAbortedOnDispose()
+        {
+            var txn = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            txn.Reset();
+            txn.Dispose();
+            Assert.Equal(LightningTransactionState.Aborted, txn.State);
+        }
+
+        [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsAborted()
         {
             var txn = _env.BeginTransaction();
