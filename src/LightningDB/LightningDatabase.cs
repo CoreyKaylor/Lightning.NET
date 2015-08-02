@@ -93,16 +93,9 @@ namespace LightningDB
 
             Environment.Disposing -= Dispose;
             IsOpened = false;
+            mdb_dbi_close(Environment.Handle(), _handle);
             if (disposing)
             {
-                //From finalizer, this will likely throw
-                try
-                {
-                    mdb_dbi_close(Environment.Handle(), _handle);
-                }
-                catch
-                {
-                }
                 GC.SuppressFinalize(this);
             }
             _handle = default(uint);
