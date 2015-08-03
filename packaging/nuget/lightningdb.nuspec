@@ -4,8 +4,8 @@
     <id>LightningDB</id>
     <version>0.0.0</version>
     <authors>Ilya Lukyanov, Corey Kaylor</authors>
-    <owners>Ilya Lukyanov</owners>
-    <projectUrl>https://github.com/ilyalukyanov/Lightning.NET</projectUrl>
+    <owners>Corey Kaylor</owners>
+    <projectUrl>https://github.com/CoreyKaylor/Lightning.NET</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>.NET-wrapper library for OpenLDAP's Lightning DB key-value store.</description>
     <tags>lmdb lightning storage persistance key-value nosql</tags>
