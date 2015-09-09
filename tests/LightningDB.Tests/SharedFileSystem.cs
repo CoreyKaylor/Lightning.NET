@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using Microsoft.Framework.Runtime;
-using Microsoft.Framework.Runtime.Infrastructure;
+using Microsoft.Dnx.Runtime;
+using Microsoft.Dnx.Runtime.Infrastructure;
 using Xunit;
 
 namespace LightningDB.Tests
@@ -17,7 +17,7 @@ namespace LightningDB.Tests
             var locator = CallContextServiceLocator.Locator;
             var services = locator.ServiceProvider;
             _libraryManager = (ILibraryManager) services.GetService(typeof(ILibraryManager));
-            _testProjectDir = Path.GetDirectoryName(_libraryManager.GetLibraryInformation("LightningDB.Tests").Path);
+            _testProjectDir = Path.GetDirectoryName(_libraryManager.GetLibrary("LightningDB.Tests").Path);
             _testTempDir = Path.Combine(Directory.GetParent(_testProjectDir).Parent.FullName, "testrun");
         }
 

@@ -11,7 +11,6 @@ IF NOT EXIST %LocalAppData%\NuGet md %LocalAppData%\NuGet
 @powershell -NoProfile -ExecutionPolicy unrestricted -Command "$ProgressPreference = 'SilentlyContinue'; Invoke-WebRequest 'https://www.nuget.org/nuget.exe' -OutFile '%CACHED_NUGET%'"
 
 :checkdnx
-set "DNX_NUGET_API_URL=https://www.nuget.org/api/v2"
 setlocal EnableDelayedExpansion 
 where dnvm
 if %ERRORLEVEL% neq 0 (
@@ -22,15 +21,15 @@ if %ERRORLEVEL% neq 0 (
 )
 
 :install
-call dnvm install 1.0.0-beta6
-call dnvm use 1.0.0-beta6
+call dnvm install 1.0.0-beta7
+call dnvm use 1.0.0-beta7
 rem set the runtime path because the above commands set \.dnx<space>\runtimes
-set PATH=!USERPROFILE!\.dnx\runtimes\dnx-clr-win-x86.1.0.0-beta6\bin;!PATH!
+set PATH=!USERPROFILE!\.dnx\runtimes\dnx-clr-win-x86.1.0.0-beta7\bin;!PATH!
 
 call dnu restore
 if %errorlevel% neq 0 exit /b %errorlevel%
 cd tests\LightningDB.Tests
-call dnx . test -parallel none
+call dnx test -parallel none
 if %errorlevel% neq 0 exit /b %errorlevel%
 cd ..\..\src\LightningDB
 call dnu build
