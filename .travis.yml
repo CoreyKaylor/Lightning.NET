@@ -6,9 +6,9 @@ addons:
     packages:
       - make
       - gcc
-	  - libunwind8
-	  - libssl-dev
-	  - unzip
+      - libunwind8
+      - libssl-dev
+      - unzip
 sudo: false
 install:
   - mozroots --import --sync
