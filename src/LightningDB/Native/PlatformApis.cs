@@ -11,7 +11,7 @@ namespace LightningDB.Native
 #if DNXCORE50
             // Until Environment.OSVersion.Platform is exposed on .NET Core, we
             // try to call uname and if that fails we assume we are on Windows.
-            return true;
+            return GetUname() == string.Empty;
 #else
             var p = (int)Environment.OSVersion.Platform;
             return (p != 4) && (p != 6) && (p != 128);
@@ -21,24 +21,25 @@ namespace LightningDB.Native
         [DllImport("libc")]
         static extern int uname(StringBuilder buf);
 
-        public static bool IsDarwin()
+        private static string GetUname()
         {
             var buffer = new StringBuilder(8192);
             try
             {
-                if (uname(buffer) == 0)
+                if(uname(buffer) == 0)
                 {
-                    return string.Equals(
-                        buffer.ToString(),
-                        "Darwin",
-                        StringComparison.Ordinal);
+                    return buffer.ToString();
                 }
             }
-            catch (Exception)
+            catch
             {
             }
+            return string.Empty;
+        }
 
-            return false;
+        public static bool IsDarwin()
+        {
+            return string.Equals(GetUname(), "Darwin", StringComparison.Ordinal);
         }
     }
 }
