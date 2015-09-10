@@ -11,6 +11,7 @@ cd mdb/libraries/liblmdb/
 make
 cd ../../../
 
+dnvm upgrade -u
 dnvm install 1.0.0-beta7 -r coreclr
 dnvm use 1.0.0-beta7 -r coreclr
 dnu restore
