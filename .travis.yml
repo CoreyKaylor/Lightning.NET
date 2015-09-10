@@ -6,8 +6,12 @@ addons:
     packages:
       - make
       - gcc
+	  - libunwind8
+	  - libssl-dev
+	  - unzip
 sudo: false
 install:
+  - mozroots --import --sync
   - curl -sSL https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.sh | sh && source ~/.dnx/dnvm/dnvm.sh && dnvm upgrade
 script:
 - ". ./build.sh"
