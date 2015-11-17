@@ -16,11 +16,15 @@
   "projectUrl": "https://github.com/ilyalukyanov/Lightning.NET",
   "dependencies": {
   },
+  "packInclude": {
+    "content/": "content/**"
+  },  
   "frameworks": {
     "net45": { },
     "dnx451": {
       "dependencies": {
-        "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7"
+        "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7",
+        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*"
       }
     },
     "dnxcore50": {
@@ -32,7 +36,8 @@
         "System.Runtime.InteropServices": "4.0.21-beta-*",
         "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7",
         "System.IO.FileSystem": "4.0.1-beta-*",
-        "System.Threading": "4.0.11-beta-*"
+        "System.Threading": "4.0.11-beta-*",
+        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*"
       }
     }
   }

@@ -25,10 +25,7 @@ namespace LightningDB.Native
 #if DNXCORE50 || DNX451
         private static string FindNativeLibPath()
         {
-            var locator = Microsoft.Dnx.Runtime.Infrastructure.CallContextServiceLocator.Locator;
-            var services = locator.ServiceProvider;
-            var libraryManager = (Microsoft.Dnx.Runtime.ILibraryManager)
-                services.GetService(typeof(Microsoft.Dnx.Runtime.ILibraryManager));
+            var libraryManager = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.LibraryManager;
             var info = libraryManager.GetLibrary("LightningDB");
             var path = info.Path;
             if (info.Type == "Project")
