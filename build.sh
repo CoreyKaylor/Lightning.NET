@@ -11,11 +11,8 @@ cd mdb/libraries/liblmdb/
 make
 cd ../../../
 
-dnvm install 1.0.0-beta7 -r coreclr
-dnvm install 1.0.0-beta7 -r mono
-dnvm use 1.0.0-beta7 -r mono
+dnvm install 1.0.0-rc1-final -r coreclr
 dnu restore
-dnvm use 1.0.0-beta7 -r coreclr
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 LD_LIBRARY_PATH=./mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dnx -p ./tests/LightningDB.Tests test
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
