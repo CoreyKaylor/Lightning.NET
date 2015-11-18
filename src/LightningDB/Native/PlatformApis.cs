@@ -8,7 +8,7 @@ namespace LightningDB.Native
     {
         public static bool IsWindows()
         {
-#if DNXCORE50
+#if DOTNET5_4
             // Until Environment.OSVersion.Platform is exposed on .NET Core, we
             // try to call uname and if that fails we assume we are on Windows.
             return GetUname() == string.Empty;

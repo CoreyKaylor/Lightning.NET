@@ -20,21 +20,18 @@
     "content/": "content/**"
   },  
   "frameworks": {
-    "net45": { },
-    "dnx451": {
+    "net451": {
       "dependencies": {
-        "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7",
         "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*"
       }
     },
-    "dnxcore50": {
+    "dotnet5.4": {
       "dependencies": {
         "System.Net.Primitives": "4.0.11-beta-*",
         "System.Runtime": "4.0.21-beta-*",
         "System.Linq": "4.0.1-beta-*",
         "System.Collections.Concurrent": "4.0.11-beta-*",
         "System.Runtime.InteropServices": "4.0.21-beta-*",
-        "Microsoft.Dnx.Runtime.Abstractions": "1.0.0-beta7",
         "System.IO.FileSystem": "4.0.1-beta-*",
         "System.Threading": "4.0.11-beta-*",
         "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*"

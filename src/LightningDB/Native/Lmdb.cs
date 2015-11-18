@@ -22,7 +22,6 @@ namespace LightningDB.Native
             return new UnixNativeBinder(path);
         }
 
-#if DNXCORE50 || DNX451
         private static string FindNativeLibPath()
         {
             var libraryManager = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.LibraryManager;
@@ -35,14 +34,6 @@ namespace LightningDB.Native
             path = Path.Combine(path, "content");
             return FindPlatformSpecificNativeFilePath(path);
         }
-#else
-
-        private static string FindNativeLibPath()
-        {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            return FindPlatformSpecificNativeFilePath(path);
-        }
-#endif
 
         private static string FindPlatformSpecificNativeFilePath(string dir)
         {
