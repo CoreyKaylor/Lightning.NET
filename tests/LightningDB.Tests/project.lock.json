@@ -3,7 +3,7 @@
   "version": 2,
   "targets": {
     "DNX,Version=v4.5.1": {
-      "LightningDB/0.9.2": {
+      "LightningDB/0.9.3-rc1-2": {
         "type": "project",
         "framework": ".NETFramework,Version=v4.5.1"
       },
@@ -248,7 +248,7 @@
       }
     },
     "DNXCore,Version=v5.0": {
-      "LightningDB/0.9.2": {
+      "LightningDB/0.9.3-rc1-2": {
         "type": "project",
         "framework": ".NETPlatform,Version=v5.4",
         "dependencies": {
@@ -1141,7 +1141,7 @@
       }
     },
     "DNX,Version=v4.5.1/win7-x86": {
-      "LightningDB/0.9.2": {
+      "LightningDB/0.9.3-rc1-2": {
         "type": "project",
         "framework": ".NETFramework,Version=v4.5.1"
       },
@@ -1386,7 +1386,7 @@
       }
     },
     "DNX,Version=v4.5.1/win7-x64": {
-      "LightningDB/0.9.2": {
+      "LightningDB/0.9.3-rc1-2": {
         "type": "project",
         "framework": ".NETFramework,Version=v4.5.1"
       },
@@ -1631,7 +1631,7 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x86": {
-      "LightningDB/0.9.2": {
+      "LightningDB/0.9.3-rc1-2": {
         "type": "project",
         "framework": ".NETPlatform,Version=v5.4",
         "dependencies": {
@@ -2889,7 +2889,7 @@
       }
     },
     "DNXCore,Version=v5.0/win7-x64": {
-      "LightningDB/0.9.2": {
+      "LightningDB/0.9.3-rc1-2": {
         "type": "project",
         "framework": ".NETPlatform,Version=v5.4",
         "dependencies": {
@@ -4148,7 +4148,7 @@
     }
   },
   "libraries": {
-    "LightningDB/0.9.2": {
+    "LightningDB/0.9.3-rc1-2": {
       "type": "project",
       "path": "../../src/LightningDB/project.json"
     },
