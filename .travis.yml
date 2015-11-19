@@ -10,6 +10,6 @@ addons:
       - libcurl4-openssl-dev
       - libicu-dev
       - zlib1g
-sudo: false
+sudo: required
 script:
 - ". ./build.sh"
