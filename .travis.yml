@@ -6,6 +6,10 @@ addons:
       - libunwind8
       - libssl-dev
       - unzip
+      - gettext
+      - libcurl4-openssl-dev
+      - libicu-dev
+      - zlib1g
 sudo: false
 script:
 - ". ./build.sh"
