@@ -3,15 +3,13 @@ version: LDB-{branch}-{build}
 test: off
 
 install:
-  - ps: $env:LIGHTNING_VERSION = Get-Content .\VERSION.txt -Raw
-  #Change "." to "+" when NuGet.exe 3.0 comes out for semver 2.0 compliance 
-  - ps: $env:LIGHTNING_NUGET_VERSION = $env:LIGHTNING_VERSION + "." + $env:APPVEYOR_BUILD_NUMBER
+  - ps: $env:DNX_BUILD_VERSION = $env:APPVEYOR_BUILD_NUMBER
 
 build_script:
   - cmd: build.cmd
   
 artifacts:
-  - path: artifacts\*.nupkg
+  - path: artifacts\Release\*.nupkg
 
 deploy:
   - provider: NuGet
