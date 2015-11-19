@@ -7,7 +7,5 @@ addons:
       - libssl-dev
       - unzip
 sudo: false
-install:
-  - mozroots --import --sync
 script:
 - ". ./build.sh"
