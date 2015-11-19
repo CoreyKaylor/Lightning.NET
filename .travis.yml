@@ -1,3 +1,6 @@
+language: csharp
+dist: trusty
+sudo: required
 addons:
   apt:
     packages:
@@ -10,6 +13,7 @@ addons:
       - libcurl4-openssl-dev
       - libicu-dev
       - zlib1g
-sudo: required
+mono:
+  - 4.0.5
 script:
 - ". ./build.sh"
