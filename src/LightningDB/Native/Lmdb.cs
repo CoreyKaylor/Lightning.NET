@@ -1,58 +1,10 @@
 ﻿using System;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
     public static class Lmdb
     {
-        internal static IDisposable NativeBinding()
-        {
-            var binder = DetermineNativeBinder();
-            return binder;
-        }
-
-        private static IDisposable DetermineNativeBinder()
-        {
-            var path = FindNativeLibPath();
-            if (PlatformApis.IsWindows())
-            {
-                return new WindowsNativeBinder(path);
-            }
-            return new UnixNativeBinder(path);
-        }
-
-        private static string FindNativeLibPath()
-        {
-            var libraryManager = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.LibraryManager;
-            var info = libraryManager.GetLibrary("LightningDB");
-            var path = info.Path;
-            if (info.Type == "Project")
-            {
-                path = Path.GetDirectoryName(path);
-            }
-            path = Path.Combine(path, "content");
-            return FindPlatformSpecificNativeFilePath(path);
-        }
-
-        private static string FindPlatformSpecificNativeFilePath(string dir)
-        {
-            var path = dir;
-            if (PlatformApis.IsDarwin())
-            {
-                path = Path.Combine(path, "liblmdb.dylib");
-            }
-            else if (PlatformApis.IsWindows())
-            {
-                path = Path.Combine(path, IntPtr.Size == 4 ? "lmdb32.dll" : "lmdb64.dll");
-            }
-            else
-            {
-                path = "liblmdb.so";
-            }
-            return path;
-        }
-
         /// <summary>
         /// Txn has too many dirty pages
         /// </summary>
@@ -332,7 +284,7 @@ namespace LightningDB.Native
 
         public static int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ValueStructure[] data, CursorPutOptions flags)
         {
-            return check(LmdbMethods.Overloads.mdb_cursor_put(cursor, ref key, data, flags));
+            return check(LmdbMethods.mdb_cursor_put(cursor, ref key, data, flags));
         }
 
         public static int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)

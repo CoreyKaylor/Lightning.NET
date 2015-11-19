@@ -10,7 +10,6 @@ namespace LightningDB
     /// </summary>
     public class LightningEnvironment : IDisposable
     {
-        private readonly IDisposable _binding;
         private readonly EnvironmentConfiguration _config;
 
         private IntPtr _handle;
@@ -26,8 +25,6 @@ namespace LightningDB
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
-
-            _binding = NativeBinding();
 
             mdb_env_create(out _handle);
 
@@ -250,7 +247,6 @@ namespace LightningDB
                 IsOpened = false;
             }
 
-            _binding.Dispose();
             _handle = IntPtr.Zero;
             if (disposing)
             {

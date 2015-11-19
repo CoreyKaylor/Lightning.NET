@@ -17,12 +17,11 @@
   "dependencies": {
   },
   "packInclude": {
-    "content/": "content/**"
+    "runtimes/": "runtimes/**"
   },  
   "frameworks": {
     "net451": {
       "dependencies": {
-        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*"
       }
     },
     "dotnet5.4": {
@@ -34,7 +33,6 @@
         "System.Runtime.InteropServices": "4.0.21-beta-*",
         "System.IO.FileSystem": "4.0.1-beta-*",
         "System.Threading": "4.0.11-beta-*",
-        "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1-*"
       }
     }
   }

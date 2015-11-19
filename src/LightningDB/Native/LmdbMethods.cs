@@ -5,149 +5,109 @@ namespace LightningDB.Native
 {
     internal static class LmdbMethods
     {
-#pragma warning disable 649
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_create_delegate(out IntPtr env);
-        public static mdb_env_create_delegate mdb_env_create;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_create(out IntPtr env);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void mdb_env_close_delegate(IntPtr env);
-        public static mdb_env_close_delegate mdb_env_close;
+        [DllImport("lmdb")]
+        public static extern void mdb_env_close(IntPtr env);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_open_delegate(IntPtr env, string path, EnvironmentOpenFlags flags, UnixAccessMode mode);
-        public static mdb_env_open_delegate mdb_env_open;
+        [DllImport("lmdb")]
+        internal static extern int mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, UnixAccessMode mode);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_set_mapsize_delegate(IntPtr env, IntPtr size);
-        public static mdb_env_set_mapsize_delegate mdb_env_set_mapsize;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_set_mapsize(IntPtr env, IntPtr size);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_get_maxreaders_delegate(IntPtr env, out uint readers);
-        public static mdb_env_get_maxreaders_delegate mdb_env_get_maxreaders;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_get_maxreaders(IntPtr env, out uint readers);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_set_maxreaders_delegate(IntPtr env, uint readers);
-        public static mdb_env_set_maxreaders_delegate mdb_env_set_maxreaders;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_set_maxreaders(IntPtr env, uint readers);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_set_maxdbs_delegate(IntPtr env, uint dbs);
-        public static mdb_env_set_maxdbs_delegate mdb_env_set_maxdbs;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_set_maxdbs(IntPtr env, uint dbs);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_dbi_open_delegate(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db);
-        public static mdb_dbi_open_delegate mdb_dbi_open;
+        [DllImport("lmdb")]
+        public static extern int mdb_dbi_open(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void mdb_dbi_close_delegate(IntPtr env, uint dbi);
-        public static mdb_dbi_close_delegate mdb_dbi_close;
+        [DllImport("lmdb")]
+        public static extern void mdb_dbi_close(IntPtr env, uint dbi);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_drop_delegate(IntPtr txn, uint dbi, bool del);
-        public static mdb_drop_delegate mdb_drop;
+        [DllImport("lmdb")]
+        public static extern int mdb_drop(IntPtr txn, uint dbi, bool del);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_txn_begin_delegate(IntPtr env, IntPtr parent, TransactionBeginFlags flags, out IntPtr txn);
-        public static mdb_txn_begin_delegate mdb_txn_begin;
+        [DllImport("lmdb")]
+        public static extern int mdb_txn_begin(IntPtr env, IntPtr parent, TransactionBeginFlags flags, out IntPtr txn);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_txn_commit_delegate(IntPtr txn);
-        public static mdb_txn_commit_delegate mdb_txn_commit;
+        [DllImport("lmdb")]
+        public static extern int mdb_txn_commit(IntPtr txn);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void mdb_txn_abort_delegate(IntPtr txn);
-        public static mdb_txn_abort_delegate mdb_txn_abort;
+        [DllImport("lmdb")]
+        public static extern void mdb_txn_abort(IntPtr txn);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void mdb_txn_reset_delegate(IntPtr txn);
-        public static mdb_txn_reset_delegate mdb_txn_reset;
+        [DllImport("lmdb")]
+        public static extern void mdb_txn_reset(IntPtr txn);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_txn_renew_delegate(IntPtr txn);
-        public static mdb_txn_renew_delegate mdb_txn_renew;
+        [DllImport("lmdb")]
+        public static extern int mdb_txn_renew(IntPtr txn);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate IntPtr mdb_version_delegate(out int major, out int minor, out int patch);
-        public static mdb_version_delegate mdb_version;
+        [DllImport("lmdb")]
+        public static extern IntPtr mdb_version(out int major, out int minor, out int patch);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate IntPtr mdb_strerror_delegate(int err);
-        public static mdb_strerror_delegate mdb_strerror;
+        [DllImport("lmdb")]
+        public static extern IntPtr mdb_strerror(int err);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_stat_delegate(IntPtr txn, uint dbi, out MDBStat stat);
-        public static mdb_stat_delegate mdb_stat;
+        [DllImport("lmdb")]
+        public static extern int mdb_stat(IntPtr txn, uint dbi, out MDBStat stat);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_copy_delegate(IntPtr env, string path);
-        public static mdb_env_copy_delegate mdb_env_copy;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_copy(IntPtr env, string path);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_copy2_delegate(IntPtr env, string path, EnvironmentCopyFlags copyFlags);
-        public static mdb_env_copy2_delegate mdb_env_copy2;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_copy2(IntPtr env, string path, EnvironmentCopyFlags copyFlags);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_info_delegate(IntPtr env, out MDBEnvInfo stat);
-        public static mdb_env_info_delegate mdb_env_info;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_info(IntPtr env, out MDBEnvInfo stat);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_stat_delegate(IntPtr env, out MDBStat stat);
-        public static mdb_env_stat_delegate mdb_env_stat;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_stat(IntPtr env, out MDBStat stat);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_env_sync_delegate(IntPtr env, bool force);
-        public static mdb_env_sync_delegate mdb_env_sync;
+        [DllImport("lmdb")]
+        public static extern int mdb_env_sync(IntPtr env, bool force);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_get_delegate(IntPtr txn, uint dbi, ref ValueStructure key, out ValueStructure data);
-        public static mdb_get_delegate mdb_get;
+        [DllImport("lmdb")]
+        public static extern int mdb_get(IntPtr txn, uint dbi, ref ValueStructure key, out ValueStructure data);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_put_delegate(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
-        public static mdb_put_delegate mdb_put;
+        [DllImport("lmdb")]
+        public static extern int mdb_put(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_del_delegate(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data);
-        public static mdb_del_delegate mdb_del;
+        [DllImport("lmdb")]
+        public static extern int mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_cursor_open_delegate(IntPtr txn, uint dbi, out IntPtr cursor);
-        public static mdb_cursor_open_delegate mdb_cursor_open;
+        [DllImport("lmdb")]
+        public static extern int mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate void mdb_cursor_close_delegate(IntPtr cursor);
-        public static mdb_cursor_close_delegate mdb_cursor_close;
+        [DllImport("lmdb")]
+        public static extern void mdb_cursor_close(IntPtr cursor);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_cursor_renew_delegate(IntPtr txn, IntPtr cursor);
-        public static mdb_cursor_renew_delegate mdb_cursor_renew;
+        [DllImport("lmdb")]
+        public static extern int mdb_cursor_renew(IntPtr txn, IntPtr cursor);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_cursor_get_delegate(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
-        public static mdb_cursor_get_delegate mdb_cursor_get;
+        [DllImport("lmdb")]
+        public static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_cursor_put_delegate(IntPtr cursor, ref ValueStructure key, ref ValueStructure value, CursorPutOptions flags);
-        public static mdb_cursor_put_delegate mdb_cursor_put;
+        [DllImport("lmdb")]
+        public static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure value, CursorPutOptions flags);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_cursor_del_delegate(IntPtr cursor, CursorDeleteOption flags);
-        public static mdb_cursor_del_delegate mdb_cursor_del;
+        [DllImport("lmdb")]
+        public static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_set_compare_delegate(IntPtr txn, uint dbi, CompareFunction cmp);
-        public static mdb_set_compare_delegate mdb_set_compare;
+        [DllImport("lmdb")]
+        public static extern int mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        public delegate int mdb_set_dupsort_delegate(IntPtr txn, uint dbi, CompareFunction cmp);
-        public static mdb_set_dupsort_delegate mdb_set_dupsort;
+        [DllImport("lmdb")]
+        public static extern int mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
 
-        public static class Overloads
-        {
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            public delegate int mdb_cursor_put_delegate(IntPtr cursor, ref ValueStructure key, ValueStructure[] value, CursorPutOptions flags);
-            public static mdb_cursor_put_delegate mdb_cursor_put;
-        }
-#pragma warning restore 649
+        [DllImport("lmdb")]
+        public static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ValueStructure[] value, CursorPutOptions flags);
     }
 }

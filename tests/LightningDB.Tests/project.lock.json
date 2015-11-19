@@ -5,10 +5,7 @@
     "DNX,Version=v4.5.1": {
       "LightningDB/0.9.2": {
         "type": "project",
-        "framework": ".NETFramework,Version=v4.5.1",
-        "dependencies": {
-          "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1"
-        }
+        "framework": ".NETFramework,Version=v4.5.1"
       },
       "Microsoft.Dnx.Compilation.Abstractions/1.0.0-rc1-final": {
         "type": "package",
@@ -255,7 +252,6 @@
         "type": "project",
         "framework": ".NETPlatform,Version=v5.4",
         "dependencies": {
-          "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1",
           "System.Collections.Concurrent": "4.0.11-beta",
           "System.IO.FileSystem": "4.0.1-beta",
           "System.Linq": "4.0.1-beta",
@@ -1147,10 +1143,7 @@
     "DNX,Version=v4.5.1/win7-x86": {
       "LightningDB/0.9.2": {
         "type": "project",
-        "framework": ".NETFramework,Version=v4.5.1",
-        "dependencies": {
-          "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1"
-        }
+        "framework": ".NETFramework,Version=v4.5.1"
       },
       "Microsoft.Dnx.Compilation.Abstractions/1.0.0-rc1-final": {
         "type": "package",
@@ -1395,10 +1388,7 @@
     "DNX,Version=v4.5.1/win7-x64": {
       "LightningDB/0.9.2": {
         "type": "project",
-        "framework": ".NETFramework,Version=v4.5.1",
-        "dependencies": {
-          "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1"
-        }
+        "framework": ".NETFramework,Version=v4.5.1"
       },
       "Microsoft.Dnx.Compilation.Abstractions/1.0.0-rc1-final": {
         "type": "package",
@@ -1645,7 +1635,6 @@
         "type": "project",
         "framework": ".NETPlatform,Version=v5.4",
         "dependencies": {
-          "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1",
           "System.Collections.Concurrent": "4.0.11-beta",
           "System.IO.FileSystem": "4.0.1-beta",
           "System.Linq": "4.0.1-beta",
@@ -2904,7 +2893,6 @@
         "type": "project",
         "framework": ".NETPlatform,Version=v5.4",
         "dependencies": {
-          "Microsoft.Extensions.PlatformAbstractions": "1.0.0-rc1",
           "System.Collections.Concurrent": "4.0.11-beta",
           "System.IO.FileSystem": "4.0.1-beta",
           "System.Linq": "4.0.1-beta",
@@ -6811,7 +6799,8 @@
     "": [
       "xunit >= 2.1.0-*",
       "xunit.runner.dnx >= 2.1.0-rc1-*",
-      "LightningDB >= 1.0.0-*"
+      "LightningDB >= 1.0.0-*",
+      "Microsoft.Extensions.PlatformAbstractions >= 1.0.0-rc1-*"
     ],
     "DNX,Version=v4.5.1": [],
     "DNXCore,Version=v5.0": []
