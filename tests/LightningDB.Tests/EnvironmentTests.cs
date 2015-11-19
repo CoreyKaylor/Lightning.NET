@@ -32,6 +32,19 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void EnvironmentCreatedFromConfig()
+        {
+            var mapExpected = 1024*1024*20;
+            var maxDatabaseExpected = 2;
+            var maxReadersExpected = 3;
+            var config = new EnvironmentConfiguration {MapSize = mapExpected, MaxDatabases = maxDatabaseExpected, MaxReaders = maxReadersExpected};
+            _env = new LightningEnvironment(_path, config);
+            Assert.Equal(_env.MapSize, mapExpected);
+            Assert.Equal(_env.MaxDatabases, maxDatabaseExpected);
+            Assert.Equal(_env.MaxReaders, maxReadersExpected);
+        }
+
+        [Fact]
         public void CanLoadAndDisposeMultipleEnvironments()
         {
             _env = new LightningEnvironment(_path);
