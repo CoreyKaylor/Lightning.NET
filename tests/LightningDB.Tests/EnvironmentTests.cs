@@ -45,6 +45,21 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void MaxDatabasesWorksThroughConfigIssue62()
+        {
+            var config = new EnvironmentConfiguration { MaxDatabases = 2 };
+            _env = new LightningEnvironment(_path, config);
+            _env.Open();
+            using (var tx = _env.BeginTransaction())
+            {
+                tx.OpenDatabase("db1", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+                tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+                tx.Commit();
+            }
+            Assert.Equal(_env.MaxDatabases, 2);
+        }
+
+        [Fact]
         public void CanLoadAndDisposeMultipleEnvironments()
         {
             _env = new LightningEnvironment(_path);
