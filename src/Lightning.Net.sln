@@ -1,17 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3992FBBE-4BD8-4E28-9ED7-32421AFBF08B}"
 	ProjectSection(SolutionItems) = preProject
-		..\global.json = ..\global.json
 		..\NuGet.config = ..\NuGet.config
 	EndProjectSection
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "LightningDB", "LightningDB\LightningDB.xproj", "{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "LightningDB.Tests", "..\tests\LightningDB.Tests\LightningDB.Tests.xproj", "{3A8F29FB-1110-4755-9700-4EB064BB463E}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "LightningDB.Tests", "LightningDB.Tests\LightningDB.Tests.xproj", "{3A8F29FB-1110-4755-9700-4EB064BB463E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

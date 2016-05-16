@@ -1,23 +1,17 @@
 ﻿using System;
 using System.IO;
-using Microsoft.Extensions.PlatformAbstractions;
 using Xunit;
 
 namespace LightningDB.Tests
 {
     public class SharedFileSystem : IDisposable
     {
-        private readonly ILibraryManager _libraryManager;
-        private readonly string _testProjectDir;
         private readonly string _testTempDir;
 
         public SharedFileSystem()
         {
-            var locator = CallContextServiceLocator.Locator;
-            var services = locator.ServiceProvider;
-            _libraryManager = (ILibraryManager) services.GetService(typeof(ILibraryManager));
-            _testProjectDir = Path.GetDirectoryName(_libraryManager.GetLibrary("LightningDB.Tests").Path);
-            _testTempDir = Path.Combine(Directory.GetParent(_testProjectDir).Parent.FullName, "testrun");
+            _testTempDir = Directory.GetCurrentDirectory();
+            Console.WriteLine(_testTempDir);
         }
 
         public void Dispose()

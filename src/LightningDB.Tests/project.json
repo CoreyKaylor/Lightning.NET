@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0-*",
+  "dependencies": {
+    "xunit": "2.1.0",
+    "dotnet-test-xunit": "1.0.0-*",
+    "Microsoft.NETCore.Platforms": "1.0.1-*",
+    "LightningDB": "0.9.4-rc2"
+  },
+  "frameworks": {
+    "net452": {
+    }
+  },
+  "testRunner": "xunit"
+}

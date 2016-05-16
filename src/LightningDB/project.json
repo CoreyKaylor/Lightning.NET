@@ -1,38 +1,32 @@
 {
-  "version": "0.9.3-rc1-*",
+  "version": "0.9.4-rc2-*",
   "description": "LightningDB",
   "authors": [
     "Ilya Lukyanov",
     "Corey Kaylor"
   ],
-  "tags": [
-    "lmdb",
-    "lightning",
-    "storage",
-    "persistance",
-    "key-value",
-    "nosql"
-  ],
-  "projectUrl": "https://github.com/ilyalukyanov/Lightning.NET",
+  "packOptions": {
+    "tags": [
+      "lmdb",
+      "lightning",
+      "storage",
+      "persistance",
+      "key-value",
+      "nosql"
+    ],
+    "projectUrl": "https://github.com/CoreyKaylor/Lightning.NET",
+    "packInclude": {
+      "runtimes/": "runtimes/**"
+    }
+  },
   "dependencies": {
   },
-  "packInclude": {
-    "runtimes/": "runtimes/**"
-  },  
   "frameworks": {
-    "net451": {
-      "dependencies": {
-      }
+    "net452": {
     },
-    "dotnet5.4": {
+    "netstandard1.3": {
       "dependencies": {
-        "System.Net.Primitives": "4.0.11-beta-*",
-        "System.Runtime": "4.0.21-beta-*",
-        "System.Linq": "4.0.1-beta-*",
-        "System.Collections.Concurrent": "4.0.11-beta-*",
-        "System.Runtime.InteropServices": "4.0.21-beta-*",
-        "System.IO.FileSystem": "4.0.1-beta-*",
-        "System.Threading": "4.0.11-beta-*",
+        "Netstandard.Library": "1.5.0-rc2-24027"
       }
     }
   }

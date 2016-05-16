@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
