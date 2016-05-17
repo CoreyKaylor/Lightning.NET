@@ -10,8 +10,7 @@ namespace LightningDB.Tests
 
         public SharedFileSystem()
         {
-            _testTempDir = Directory.GetCurrentDirectory();
-            Console.WriteLine(_testTempDir);
+            _testTempDir = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName, "testrun");
         }
 
         public void Dispose()

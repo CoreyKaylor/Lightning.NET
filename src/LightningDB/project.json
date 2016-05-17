@@ -1,5 +1,5 @@
 {
-  "version": "0.9.4-rc2-*",
+  "version": "0.9.3-rc2-*",
   "description": "LightningDB",
   "authors": [
     "Ilya Lukyanov",
@@ -15,18 +15,26 @@
       "nosql"
     ],
     "projectUrl": "https://github.com/CoreyKaylor/Lightning.NET",
-    "packInclude": {
-      "runtimes/": "runtimes/**"
+    "files": {
+      "mappings": {
+        "runtimes/win7-x64/native/": "runtimes/win7-x64/native/*",
+        "runtimes/win7-x86/native/": "runtimes/win7-x86/native/*",
+        "runtimes/osx/native/": "runtimes/osx/native/*"
+      }
     }
   },
-  "dependencies": {
-  },
   "frameworks": {
-    "net452": {
+    "net451": {
     },
     "netstandard1.3": {
       "dependencies": {
-        "Netstandard.Library": "1.5.0-rc2-24027"
+        "System.Net.Primitives": "4.0.11-rc2-24027",
+        "System.Runtime": "4.1.0-rc2-24027",
+        "System.Linq": "4.1.0-rc2-24027",
+        "System.Collections.Concurrent": "4.0.12-rc2-24027",
+        "System.Runtime.InteropServices": "4.1.0-rc2-24027",
+        "System.IO.FileSystem": "4.0.1-rc2-24027",
+        "System.Threading": "4.0.11-rc2-24027"
       }
     }
   }
