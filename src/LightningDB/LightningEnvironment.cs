@@ -165,6 +165,9 @@ namespace LightningDB
         /// </returns>
         public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
         {
+            if (!IsOpened)
+                throw new InvalidOperationException("Environment must be opened before starting a transaction");
+
             return new LightningTransaction(this, parent, beginFlags);
         }
 
