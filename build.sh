@@ -12,7 +12,11 @@ type gcc >/dev/null 2>&1 || { echo >&2 "Can't find dependency 'gcc' for lmdb nat
 
 cd mdb/libraries/liblmdb/
 make
-cd ../../../src/LightningDB.Tests
+cd ../../../
+cd workaround/LibLmdb
+dotnet restore
+dotnet pack --configuration Release --output ../../artifacts
+cd ../../src/LightningDB.Tests
 
 dotnet restore
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
