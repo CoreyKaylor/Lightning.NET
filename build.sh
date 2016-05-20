@@ -1,8 +1,10 @@
 #!/bin/bash
 rm -rf artifacts
 if ! type dotnet > /dev/null 2>&1; then
-    curl -sSL https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.sh | bash /dev/stdin --version 1.0.0-preview1-002702 --install-dir ~/dotnet
-    sudo ln -s ~/dotnet/dotnet /usr/local/bin
+    sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
+    sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+    sudo apt-get update
+    sudo apt-get install dotnet-dev-1.0.0-preview1-002702
 fi
 
 type make >/dev/null 2>&1 || { echo >&2 "Can't find dependency 'make' for lmdb native lib compile.  Aborting."; exit 1; }
