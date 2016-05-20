@@ -91,13 +91,13 @@ namespace LightningDB
             if (_handle == default(uint))
                 return;
 
+            if(!disposing)
+                throw new InvalidOperationException("The LightningDatabase was not disposed and cannot be reliably dealt with from the finalizer");
+
             Environment.Disposing -= Dispose;
             IsOpened = false;
             mdb_dbi_close(Environment.Handle(), _handle);
-            if (disposing)
-            {
-                GC.SuppressFinalize(this);
-            }
+            GC.SuppressFinalize(this);
             _handle = default(uint);
         }
 

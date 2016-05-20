@@ -416,14 +416,15 @@ namespace LightningDB
         {
             if (_handle == IntPtr.Zero)
                 return;
+
+            if (!disposing)
+                throw new InvalidOperationException("The LightningCursor was not disposed and cannot be reliably dealt with from the finalizer");
+
             mdb_cursor_close(_handle);
 
             Transaction.Disposing -= Dispose;
 
-            if (disposing)
-            {
-                GC.SuppressFinalize(this);
-            }
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>

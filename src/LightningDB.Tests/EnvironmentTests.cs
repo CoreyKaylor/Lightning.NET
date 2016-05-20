@@ -18,7 +18,7 @@ namespace LightningDB.Tests
 
         public void Dispose()
         {
-            if (_env != null && _env.IsOpened)
+            if (_env != null)
                 _env.Dispose();
 
             _env = null;

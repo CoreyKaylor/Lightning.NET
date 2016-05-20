@@ -49,7 +49,7 @@ namespace LightningDB.Tests
         public void CursorShouldBeCreated()
         {
             _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            _txn.CreateCursor(_db);
+            _txn.CreateCursor(_db).Dispose();
         }
 
         [Fact]

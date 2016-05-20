@@ -248,6 +248,9 @@ namespace LightningDB
             if (_handle == IntPtr.Zero)
                 return;
 
+            if(!disposing)
+                throw new InvalidOperationException("The LightningEnvironment was not disposed and cannot be reliably dealt with from the finalizer");
+
             var copy = Disposing;
             copy?.Invoke();
 
@@ -258,10 +261,7 @@ namespace LightningDB
             }
 
             _handle = IntPtr.Zero;
-            if (disposing)
-            {
-                GC.SuppressFinalize(this);
-            }
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>

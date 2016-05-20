@@ -87,9 +87,11 @@ namespace LightningDB.Tests
             using (var tx = _env.BeginTransaction())
             {
                 var db = tx.OpenDatabase();
-                var cursor = tx.CreateCursor(db);
-                cursor.MoveNext();
-                Assert.Equal("customdb", UTF8.GetString(cursor.Current.Key));
+                using (var cursor = tx.CreateCursor(db))
+                {
+                    cursor.MoveNext();
+                    Assert.Equal("customdb", UTF8.GetString(cursor.Current.Key));
+                }
             }
         }
 
