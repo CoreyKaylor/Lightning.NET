@@ -133,7 +133,14 @@ namespace LightningDB
             if (!Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
 
-            mdb_env_open(_handle, Path, openFlags, accessMode);
+            try
+            {
+                mdb_env_open(_handle, Path, openFlags, accessMode);
+            }
+            catch(Exception ex)
+            {
+                throw new LightningException($"Failed to open environment at path {Path}", ex);
+            }
 
             IsOpened = true;
         }

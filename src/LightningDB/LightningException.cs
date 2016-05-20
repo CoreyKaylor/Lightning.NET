@@ -12,6 +12,10 @@ namespace LightningDB
             StatusCode = statusCode;
         }
 
+        internal LightningException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
         /// <summary>
         /// The status code LMDB returned from an operation.
         /// </summary>
