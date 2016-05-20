@@ -3,7 +3,12 @@ version: LDB-{branch}-{build}
 test: off
 
 install:
-  - cmd: @powershell -NoProfile -ExecutionPolicy unrestricted -Command "&{$Branch='dev';$wc=New-Object System.Net.WebClient;$wc.Proxy=[System.Net.WebRequest]::DefaultWebProxy;$wc.Proxy.Credentials=[System.Net.CredentialCache]::DefaultNetworkCredentials;Invoke-Expression ($wc.DownloadString('https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/install.ps1'))}"
+  - ps: mkdir -Force ".\build\" | Out-Null
+  - ps: Invoke-WebRequest "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/install.ps1" -OutFile ".\build\installcli.ps1"
+  - ps: $env:DOTNET_INSTALL_DIR = "$pwd\.dotnetcli"
+  - ps: $cliversion = (Get-Content -Path $globalJson -Raw | ConvertFrom-JSON).sdk.version
+  - ps: '& .\build\installcli.ps1 -Channel "preview" -version "$env:cliversion" -InstallDir "$env:DOTNET_INSTALL_DIR" -NoPath'
+  - ps: $env:Path = "$env:DOTNET_INSTALL_DIR;$env:Path"
   - ps: $env:DOTNET_BUILD_VERSION = $env:APPVEYOR_BUILD_NUMBER
 
 build_script:
