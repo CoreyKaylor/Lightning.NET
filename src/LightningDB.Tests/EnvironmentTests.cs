@@ -45,6 +45,13 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void StartingTransactionBeforeEnvironmentOpen()
+        {
+            _env = new LightningEnvironment(_path);
+            Assert.Throws<InvalidOperationException>(() => _env.BeginTransaction());
+        }
+
+        [Fact]
         public void MaxDatabasesWorksThroughConfigIssue62()
         {
             var config = new EnvironmentConfiguration { MaxDatabases = 2 };
