@@ -25,3 +25,4 @@ _ReSharper.*
 *.dotCover
 *ncrunch*
 *.o
+*.sln.iml
