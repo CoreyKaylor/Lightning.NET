@@ -15,7 +15,7 @@ namespace LightningDB.Tests
             _env.Open();
         }
 
-        [Fact, Trait("prof", "explicit")]
+        [Fact(Skip = "Can come back to profiling tests later"), Trait("prof", "explicit")]
         public void DoStuff()
         {
             Console.WriteLine("Take a baseline snapshot then press enter.");

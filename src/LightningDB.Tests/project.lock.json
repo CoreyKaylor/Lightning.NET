@@ -17,6 +17,32 @@
           "lib/netcoreapp1.0/dotnet-test-xunit.dll": {}
         }
       },
+      "LibLmdb/0.0.1": {
+        "type": "package",
+        "dependencies": {
+          "System.Runtime": "4.1.0-rc2-24027"
+        },
+        "compile": {
+          "lib/netstandard1.3/LibLmdb.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard1.3/LibLmdb.dll": {}
+        },
+        "runtimeTargets": {
+          "runtimes/osx/native/lmdb.dylib": {
+            "assetType": "native",
+            "rid": "osx"
+          },
+          "runtimes/win7-x64/native/lmdb.dll": {
+            "assetType": "native",
+            "rid": "win7-x64"
+          },
+          "runtimes/win7-x86/native/lmdb.dll": {
+            "assetType": "native",
+            "rid": "win7-x86"
+          }
+        }
+      },
       "Microsoft.CodeAnalysis.Analyzers/1.1.0": {
         "type": "package"
       },
@@ -2449,6 +2475,29 @@
           }
         }
       },
+      "LibLmdb/0.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/net451/LibLmdb.dll": {}
+        },
+        "runtime": {
+          "lib/net451/LibLmdb.dll": {}
+        },
+        "runtimeTargets": {
+          "runtimes/osx/native/lmdb.dylib": {
+            "assetType": "native",
+            "rid": "osx"
+          },
+          "runtimes/win7-x64/native/lmdb.dll": {
+            "assetType": "native",
+            "rid": "win7-x64"
+          },
+          "runtimes/win7-x86/native/lmdb.dll": {
+            "assetType": "native",
+            "rid": "win7-x86"
+          }
+        }
+      },
       "Microsoft.DiaSymReader/1.0.6": {
         "type": "package",
         "compile": {
@@ -2781,6 +2830,19 @@
         "runtimes/unix-x64/lib/net451/dotnet-test-xunit.exe",
         "runtimes/win7-x64/lib/net451/dotnet-test-xunit.exe",
         "runtimes/win7-x86/lib/net451/dotnet-test-xunit.exe"
+      ]
+    },
+    "LibLmdb/0.0.1": {
+      "sha512": "l5AQ7OHJWYLeXXuHzKim6AQX+WZDy88Z5Mk1cU9V+uuD4DbiREYhwk2i0Z2ey3KPi3jPUuZZ7p7oTZtajhhdDw==",
+      "type": "package",
+      "files": [
+        "LibLmdb.0.0.1.nupkg.sha512",
+        "LibLmdb.nuspec",
+        "lib/net451/LibLmdb.dll",
+        "lib/netstandard1.3/LibLmdb.dll",
+        "runtimes/osx/native/lmdb.dylib",
+        "runtimes/win7-x64/native/lmdb.dll",
+        "runtimes/win7-x86/native/lmdb.dll"
       ]
     },
     "Microsoft.CodeAnalysis.Analyzers/1.1.0": {
@@ -7500,7 +7562,6 @@
       "sha512": "u/7VQSOSXa7kSG4iK6Lcn7RqKZQ3hk7cnyMNVMpXHSP0RI5VQEtc44hvkG3LyWOVsx1dhUDD3rPAHAxyOUDQJw==",
       "type": "package",
       "files": [
-        "xunit.2.1.0.nupkg",
         "xunit.2.1.0.nupkg.sha512",
         "xunit.nuspec"
       ]
@@ -7527,7 +7588,6 @@
         "lib/portable-net45+win8+wp8+wpa81/xunit.assert.dll",
         "lib/portable-net45+win8+wp8+wpa81/xunit.assert.pdb",
         "lib/portable-net45+win8+wp8+wpa81/xunit.assert.xml",
-        "xunit.assert.2.1.0.nupkg",
         "xunit.assert.2.1.0.nupkg.sha512",
         "xunit.assert.nuspec"
       ]
@@ -7547,7 +7607,6 @@
         "build/wp8/_._",
         "build/wpa81/xunit.core.props",
         "build/xamarinios/_._",
-        "xunit.core.2.1.0.nupkg",
         "xunit.core.2.1.0.nupkg.sha512",
         "xunit.core.nuspec"
       ]
@@ -7649,6 +7708,7 @@
   },
   "projectFileDependencyGroups": {
     "": [
+      "LibLmdb >= 0.0.1",
       "LightningDB >= 0.9.3-rc2",
       "dotnet-test-xunit >= 1.0.0-rc3-build10019",
       "xunit >= 2.1.0"

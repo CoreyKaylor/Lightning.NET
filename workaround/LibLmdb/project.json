@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "description": "Lmdb",
+  "packOptions": {
+    "files": {
+      "mappings": {
+        "runtimes/win7-x64/native/": "../../src/LightningDB/runtimes/win7-x64/native/*",
+        "runtimes/win7-x86/native/": "../../src/LightningDB/runtimes/win7-x86/native/*",
+        "runtimes/osx/native/": "../../src/LightningDB/runtimes/osx/native/*"
+      }
+    }
+  },
+  "frameworks": {
+    "net451": {
+    },
+    "netstandard1.3": {
+      "dependencies": {
+        "System.Runtime": "4.1.0-rc2-24027"
+      }
+    }
+  }
+}

@@ -12,8 +12,11 @@ cd mdb/libraries/liblmdb/
 make
 cd ../../../
 
+mkdir artifacts
+cd workaround/LibLmdb
+dotnet pack --configuration Release --output ../../artifacts
+cd ../../src/LightningDB.Tests
 dotnet restore
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-cd src/LightningDB.Tests
 LD_LIBRARY_PATH=./mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi

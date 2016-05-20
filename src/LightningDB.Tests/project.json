@@ -1,6 +1,7 @@
 {
   "testRunner": "xunit",
   "dependencies": {
+    "LibLmdb": "0.0.1",
     "LightningDB": "0.9.3-rc2",
     "xunit": "2.1.0",
     "dotnet-test-xunit": "1.0.0-rc3-build10019"
