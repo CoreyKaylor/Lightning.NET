@@ -4,6 +4,7 @@ pushd %~dp0
 
 md artifacts
 cd workaround/LibLmdb
+call dotnet restore
 call dotnet pack --configuration Release --output ..\..\artifacts
 cd ..\..\src\LightningDB.Tests
 call dotnet restore
