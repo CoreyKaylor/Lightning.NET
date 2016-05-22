@@ -18,5 +18,5 @@ cd ../../src/LightningDB.Tests
 
 dotnet restore
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-LD_LIBRARY_PATH=../../mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test
+LD_LIBRARY_PATH=../../mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f netcoreapp1.0
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
