@@ -6,17 +6,14 @@ md artifacts
 cd workaround/LibLmdb
 call dotnet restore
 call dotnet pack --configuration Release --output ..\..\artifacts
-cd ..\..\src\LightningDB.Tests
+cd ..\..\
 call dotnet restore
 if %errorlevel% neq 0 exit /b %errorlevel%
-call dotnet test
+call dotnet test src/LightningDB.Tests
 if %errorlevel% neq 0 exit /b %errorlevel%
-cd ..\..\
 
 echo Packing LightningDb Nuget
-cd src/LightningDB
-call dotnet pack --configuration Release --output ..\..\artifacts
-cd ..\..\
+call dotnet pack src/LightningDB --configuration Release --output artifacts
 del artifacts\LibLmdb.0.0.1.nupkg
 del artifacts\LibLmdb.0.0.1.symbols.nupkg
 
