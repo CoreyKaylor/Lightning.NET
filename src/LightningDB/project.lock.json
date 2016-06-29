@@ -2,7 +2,7 @@
   "locked": false,
   "version": 2,
   "targets": {
-    ".NETFramework,Version=v4.5.1": {},
+    ".NETFramework,Version=v4.5": {},
     ".NETStandard,Version=v1.3": {
       "Microsoft.NETCore.Platforms/1.0.1": {
         "type": "package",
@@ -1634,7 +1634,7 @@
   },
   "projectFileDependencyGroups": {
     "": [],
-    ".NETFramework,Version=v4.5.1": [],
+    ".NETFramework,Version=v4.5": [],
     ".NETStandard,Version=v1.3": [
       "System.Collections.Concurrent >= 4.0.12",
       "System.IO.FileSystem >= 4.0.1",

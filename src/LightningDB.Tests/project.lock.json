@@ -2506,7 +2506,7 @@
           "lib/netstandard1.1/xunit.runner.utility.dotnet.dll": {}
         }
       },
-      "LightningDB/0.9.3-rc2": {
+      "LightningDB/0.9.4": {
         "type": "project",
         "framework": ".NETStandard,Version=v1.3",
         "dependencies": {
@@ -2931,14 +2931,14 @@
           "lib/net45/xunit.runner.utility.desktop.dll": {}
         }
       },
-      "LightningDB/0.9.3-rc2": {
+      "LightningDB/0.9.4": {
         "type": "project",
-        "framework": ".NETFramework,Version=v4.5.1",
+        "framework": ".NETFramework,Version=v4.5",
         "compile": {
-          "net451/LightningDB.dll": {}
+          "net45/LightningDB.dll": {}
         },
         "runtime": {
-          "net451/LightningDB.dll": {}
+          "net45/LightningDB.dll": {}
         }
       }
     }
@@ -7936,7 +7936,7 @@
         "xunit.runner.utility.nuspec"
       ]
     },
-    "LightningDB/0.9.3-rc2": {
+    "LightningDB/0.9.4": {
       "type": "project",
       "path": "../LightningDB/project.json",
       "msbuildProject": "../LightningDB/LightningDB.xproj"
