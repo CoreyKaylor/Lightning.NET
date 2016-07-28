@@ -26,3 +26,4 @@ _ReSharper.*
 *ncrunch*
 *.o
 *.sln.iml
+.idea*
