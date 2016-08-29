@@ -11,14 +11,9 @@ namespace LightningDB
     /// </summary>
     public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        //optimize for unnecessary marshaling when we don't have to
-        private readonly Func<KeyValuePair<byte[], byte[]>> _currentWithOptimizedPair;
-        private readonly Func<KeyValuePair<byte[], byte[]>> _currentDefault;
         private readonly IntPtr _handle;
-        private KeyValuePair<byte[], byte[]> _currentPair; 
         private ValueStructure _currentKeyStructure;
         private ValueStructure _currentValueStructure;
-        private Func<KeyValuePair<byte[], byte[]>> _getCurrent;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -32,18 +27,6 @@ namespace LightningDB
 
             if (txn == null)
                 throw new ArgumentNullException(nameof(txn));
-
-            _currentWithOptimizedPair = () => _currentPair;
-            _currentDefault = () =>
-            {
-                if (_currentKeyStructure.size == IntPtr.Zero)
-                    return default(KeyValuePair<byte[], byte[]>);
-
-                return new KeyValuePair<byte[], byte[]>(_currentKeyStructure.GetBytes(),
-                    _currentValueStructure.GetBytes());
-            };
-
-            _getCurrent = _currentDefault;
 
             mdb_cursor_open(txn.Handle(), db.Handle(), out _handle);
 
@@ -86,9 +69,11 @@ namespace LightningDB
         {
             get
             {
-                _currentPair = _getCurrent();
-                _getCurrent = _currentWithOptimizedPair;
-                return _currentPair;
+                if (_currentKeyStructure.size == IntPtr.Zero)
+                    return default(KeyValuePair<byte[], byte[]>);
+
+                return new KeyValuePair<byte[], byte[]>(_currentKeyStructure.GetBytes(),
+                    _currentValueStructure.GetBytes());
             }
         }
 
@@ -259,46 +244,23 @@ namespace LightningDB
             _currentKeyStructure = default(ValueStructure);
             _currentValueStructure = default(ValueStructure);
             
-            var found = mdb_cursor_get(_handle, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
-            if (found)
-                _getCurrent = _currentDefault;
-
-            return found;
+            return mdb_cursor_get(_handle, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
         }
 
         private bool Get(CursorOperation operation, byte[] key)
         {
             _currentValueStructure = default(ValueStructure);
-            var found = mdb_cursor_get(_handle, key, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
-            if (found)
-            {
-                _getCurrent = _currentDefault;
-            }
-            return found;
+            return mdb_cursor_get(_handle, key, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
         }
 
         private bool Get(CursorOperation operation, byte[] key, byte[] value)
         {
-            var found = mdb_cursor_get(_handle, key, value, operation) == 0;
-            if (found)
-            {
-                _getCurrent = _currentWithOptimizedPair;
-                _currentPair = new KeyValuePair<byte[], byte[]>(key, value);
-            }
-            return found;
+            return mdb_cursor_get(_handle, key, value, operation) == 0;
         }
 
         private bool GetMultiple(CursorOperation operation)
         {
-            byte[] key;
-            byte[] value;
-            var found = mdb_cursor_get(_handle, out key, out value, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
-            if (found)
-            {
-                _currentPair = new KeyValuePair<byte[], byte[]>(key, value);
-                _getCurrent = _currentWithOptimizedPair;
-            }
-            return found;
+            return mdb_cursor_get_multiple(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
         }
 
         /// <summary>

@@ -265,17 +265,11 @@ namespace LightningDB.Native
             return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op));
         }
 
-        public static int mdb_cursor_get(IntPtr cursor, out byte[] key, out byte[] value, ref ValueStructure keyStructure, ref ValueStructure valueStructure, CursorOperation op)
+        public static int mdb_cursor_get_multiple(IntPtr cursor, ref ValueStructure key, ref ValueStructure value, CursorOperation op)
         {
-            key = value = null;
-            var result = checkRead(LmdbMethods.mdb_cursor_get(cursor, ref keyStructure, ref valueStructure, op));
-            if (result == 0)
-            {
-                key = keyStructure.GetBytes();
-                value = valueStructure.GetBytes();
-            }
-            return result;
+            return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op));
         }
+
         public static int mdb_cursor_put(IntPtr cursor, byte[] key, byte[] value, CursorPutOptions flags)
         {
             using(var marshal = new MarshalValueStructure(key, value))
