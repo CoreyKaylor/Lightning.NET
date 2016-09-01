@@ -18,7 +18,7 @@ namespace LightningDB
         /// <summary>
         /// Creates a new instance of LightningEnvironment.
         /// </summary>
-        /// <param name="path">Directory for storing database files.</param>
+        /// <param name="path">Directory for storing database files, or file path if EnvironmentOpenFlags.NoSubDir is used when opening the database.</param>
         /// <param name="configuration">Configuration for the environment.</param>
         public LightningEnvironment(string path, EnvironmentConfiguration configuration = null)
         {
@@ -118,7 +118,7 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Directory path to store database files.
+        /// Directory path to store database files, or file path if EnvironmentOpenFlags.NoSubDir is used when opening the database.
         /// </summary>
         public string Path { get; }
 
@@ -130,8 +130,11 @@ namespace LightningDB
             if(IsOpened)
                 throw new InvalidOperationException("Environment is already opened.");
 
-            if (!Directory.Exists(Path))
+            if (!openFlags.HasFlag(EnvironmentOpenFlags.NoSubDir) && !Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
+
+            if (openFlags.HasFlag(EnvironmentOpenFlags.NoSubDir) && !Directory.Exists(System.IO.Path.GetDirectoryName(Path)))
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path));
 
             try
             {
