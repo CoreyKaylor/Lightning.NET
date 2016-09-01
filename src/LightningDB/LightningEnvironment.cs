@@ -9,7 +9,7 @@ namespace LightningDB
     /// </summary>
     public class LightningEnvironment : IDisposable
     {
-        private readonly EnvironmentConfiguration _config = new EnvironmentConfiguration();
+        private readonly EnvironmentConfiguration _config;
 
         private IntPtr _handle;
 
@@ -29,9 +29,8 @@ namespace LightningDB
 
             Path = path;
 
-            var config = configuration ?? _config;
-            config.Configure(this);
-            _config = config;
+            _config = configuration ?? new EnvironmentConfiguration();
+            _config.Configure(this);
         }
 
         public IntPtr Handle()
