@@ -61,9 +61,6 @@ namespace LightningDB
             get { return _config.MapSize; }
             set
             {
-                if (value == _config.MapSize) 
-                    return;
-
                 if (_config.AutoReduceMapSizeIn32BitProcess && IntPtr.Size == 4)
                     _config.MapSize = int.MaxValue;
                 else
@@ -106,10 +103,7 @@ namespace LightningDB
             {
                 if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxDatabases of opened environment");
-
-                if (value == _config.MaxDatabases) 
-                    return;
-
+                
                 mdb_env_set_maxdbs(_handle, (uint)value);
 
                 _config.MaxDatabases = value;
