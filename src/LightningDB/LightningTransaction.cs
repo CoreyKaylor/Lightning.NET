@@ -63,7 +63,6 @@ namespace LightningDB
         }
 
         public event Action Disposing;
-        internal event Action DisposingComplete;
         private event Action<LightningTransactionState> StateChanging;
 
         /// <summary>
@@ -321,8 +320,6 @@ namespace LightningDB
 
             if (State == LightningTransactionState.Active || State == LightningTransactionState.Reseted)
                 Abort();
-
-            DisposingComplete?.Invoke();
 
             _handle = IntPtr.Zero;
 
