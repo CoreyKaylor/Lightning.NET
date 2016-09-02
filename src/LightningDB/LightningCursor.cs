@@ -11,7 +11,7 @@ namespace LightningDB
     /// </summary>
     public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>, IEnumerable<KeyValuePair<byte[], byte[]>>
     {
-        private readonly IntPtr _handle;
+        private IntPtr _handle;
         private ValueStructure _currentKeyStructure;
         private ValueStructure _currentValueStructure;
 
@@ -30,7 +30,6 @@ namespace LightningDB
 
             mdb_cursor_open(txn.Handle(), db.Handle(), out _handle);
 
-            Database = db;
             Transaction = txn;
             Transaction.Disposing += Dispose;
         }
@@ -39,16 +38,6 @@ namespace LightningDB
         {
             return _handle;
         }
-
-        /// <summary>
-        /// Cursor's environment.
-        /// </summary>
-        public LightningEnvironment Environment => Database.Environment;
-
-        /// <summary>
-        /// Cursor's database.
-        /// </summary>
-        public LightningDatabase Database { get; }
 
         /// <summary>
         /// Cursor's transaction.
@@ -383,6 +372,7 @@ namespace LightningDB
                 throw new InvalidOperationException("The LightningCursor was not disposed and cannot be reliably dealt with from the finalizer");
 
             mdb_cursor_close(_handle);
+            _handle = IntPtr.Zero;
 
             Transaction.Disposing -= Dispose;
 
