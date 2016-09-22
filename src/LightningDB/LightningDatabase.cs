@@ -10,6 +10,7 @@ namespace LightningDB
     {
         private uint _handle;
         private readonly DatabaseConfiguration _configuration;
+        private readonly IDisposable _pinnedConfig;
 
         /// <summary>
         /// Creates a LightningDatabase instance.
@@ -30,7 +31,7 @@ namespace LightningDB
             Environment = transaction.Environment;
             Environment.Disposing += Dispose;
             mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle);
-            _configuration.ConfigureDatabase(transaction, this);
+            _pinnedConfig = _configuration.ConfigureDatabase(transaction, this);
             IsOpened = true;
         }
 
@@ -96,6 +97,7 @@ namespace LightningDB
 
             Environment.Disposing -= Dispose;
             IsOpened = false;
+            _pinnedConfig.Dispose();
             mdb_dbi_close(Environment.Handle(), _handle);
             GC.SuppressFinalize(this);
             _handle = default(uint);

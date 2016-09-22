@@ -141,19 +141,28 @@ namespace LightningDB.Tests
         [Fact]
         public void TransactionShouldSupportCustomComparer()
         {
-            Func<int, int, int> comparison = (l, r) => -Math.Sign(l - r);
+            Func<int, int, int> comparison = (l, r) => l.CompareTo(r);
+            var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create};
+            Func<byte[], byte[], int> compareWith =
+                (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
+            options.CompareWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
+
+            using (var txnT = _env.BeginTransaction())
+            using (var db1 = txnT.OpenDatabase(configuration: options))
+            {
+                txnT.DropDatabase(db1);
+                txnT.Commit();
+            }
 
             var txn = _env.BeginTransaction();
-            var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create};
-            Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
-            options.CompareWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
             var db = txn.OpenDatabase(configuration: options);
 
-            var keysUnsorted = new [] { 2, 10, 5 };
+            var keysUnsorted = Enumerable.Range(1, 10000).OrderBy(x => Guid.NewGuid()).ToList();
             var keysSorted = keysUnsorted.ToArray();
             Array.Sort(keysSorted, new Comparison<int>(comparison));
 
-            for (var i = 0; i < keysUnsorted.Length; i++)
+            GC.Collect();
+            for (var i = 0; i < keysUnsorted.Count; i++)
                 txn.Put(db, BitConverter.GetBytes(keysUnsorted[i]), BitConverter.GetBytes(i));
 
             using (var c = txn.CreateCursor(db))
