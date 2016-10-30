@@ -83,7 +83,7 @@ namespace LightningDB
         /// <returns>Returns true if the key was found.</returns>
         public bool MoveToAndGet(byte[] key)
         {
-            return Get(CursorOperation.SetKey);
+            return Get(CursorOperation.SetKey, key);
         }
 
         /// <summary>
