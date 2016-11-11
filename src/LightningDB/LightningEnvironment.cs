@@ -130,7 +130,7 @@ namespace LightningDB
             if(IsOpened)
                 throw new InvalidOperationException("Environment is already opened.");
 
-            if (!Directory.Exists(Path))
+            if (!openFlags.HasFlag(EnvironmentOpenFlags.NoSubDir) && !Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
 
             try
