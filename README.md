@@ -30,7 +30,7 @@ using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
 
 More examples can be found in the unit tests.
 
-[Official LMDB API docs](http://symas.com/mdb/doc/group__mdb.html)
+<a href="http://lmdb.tech/doc" target="_blank">Official LMDB API docs</a>
 
 Library is available from NuGet: https://www.nuget.org/packages/LightningDB/
 
