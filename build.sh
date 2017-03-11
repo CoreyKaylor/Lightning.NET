@@ -7,7 +7,9 @@ make
 cd ../../../
 dotnet restore src/Lightning.Net.sln
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-mv mdb/libraries/liblmdb/liblmdb.so src/LightningDB.Tests/bin/Debug/netcoreapp1.1/lmdb.so
-ls src/LightningDB.Tests/bin/Debug/netcoreapp1.1/
-dotnet test src/LightningDB.Tests/LightningDB.Tests.csproj -f netcoreapp1.1
+cd src/LightningDB.Tests
+dotnet build -f netcoreapp1.1
+mv ../../mdb/libraries/liblmdb/liblmdb.so bin/Debug/netcoreapp1.1/liblmdb.so
+ls bin/Debug/netcoreapp1.1/
+dotnet test -f netcoreapp1.1
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
