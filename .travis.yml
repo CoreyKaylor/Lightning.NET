@@ -1,19 +1,11 @@
 language: csharp
 dist: trusty
 sudo: required
+dotnet: 1.0.1
 addons:
   apt:
     packages:
       - make
       - gcc
-      - libunwind8
-      - libssl-dev
-      - unzip
-      - gettext
-      - libcurl4-openssl-dev
-      - libicu-dev
-      - zlib1g
-mono:
-  - 4.0.5
 script:
 - ". ./build.sh"
