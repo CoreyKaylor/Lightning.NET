@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>LightningDB</Description>
+    <VersionPrefix>0.9.7</VersionPrefix>
+    <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
+    <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+    <AssemblyName>LightningDB</AssemblyName>
+    <PackageId>LightningDB</PackageId>
+    <PackageTags>lmdb;lightning;storage;persistance;key-value;nosql</PackageTags>
+    <PackageProjectUrl>https://github.com/CoreyKaylor/Lightning.NET</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="runtimes\osx\native\*">
+      <PackagePath>runtimes/osx/native/</PackagePath>
+      <Pack>true</Pack>
+    </None>
+    <None Update="runtimes\win-x86\native\*">
+      <PackagePath>runtimes/win-x86/native/</PackagePath>
+      <Pack>true</Pack>
+    </None>
+    <None Update="runtimes\win-x64\native\*">
+      <PackagePath>runtimes/win-x64/native/</PackagePath>
+      <Pack>true</Pack>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
+    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
+    <PackageReference Include="System.Runtime" Version="4.3.0" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
+    <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
+    <PackageReference Include="System.Threading" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>
