@@ -7,5 +7,6 @@ make
 cd ../../../
 dotnet restore src/Lightning.Net.sln
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-LD_LIBRARY_PATH=mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test src/LightningDB.Tests/LightningDB.Tests.csproj -f netcoreapp1.1
+cd src/LightningDB.Tests
+LD_LIBRARY_PATH=../../mdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f netcoreapp1.1
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
