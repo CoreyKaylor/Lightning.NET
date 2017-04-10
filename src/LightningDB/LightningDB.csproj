@@ -15,6 +15,7 @@
     <None Include="runtimes\win-x64\native\lmdb.dll" Pack="true" PackagePath="runtimes/win-x64/native/lmdb.dll" />
     <None Include="runtimes\win-x86\native\lmdb.dll" Pack="true" PackagePath="runtimes/win-x86/native/lmdb.dll" />
     <None Include="runtimes\osx\native\lmdb.dylib" Pack="true" PackagePath="runtimes/osx/native/lmdb.dylib" />
+    <None Include="LightningDB.targets" Pack="true" PackagePath="build" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
