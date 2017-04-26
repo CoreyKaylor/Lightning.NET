@@ -68,6 +68,29 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void DatabaseDeleteShouldRemoveAllDuplicateDataItems()
+        {
+            var fs = new SharedFileSystem();
+            using (var env = new LightningEnvironment(fs.CreateNewDirectoryForTest(), configuration: new EnvironmentConfiguration {MapSize = 1024 * 1024, MaxDatabases = 1}))
+            {
+                env.Open();
+                using (var tx = env.BeginTransaction())
+                using (var db = tx.OpenDatabase(configuration: new DatabaseConfiguration() { Flags = DatabaseOpenFlags.DuplicatesSort}))
+                {
+                    var key = "key";
+                    var value1 = "value1";
+                    var value2 = "value2";
+
+                    tx.Put(db, key, value1);
+                    tx.Put(db, key, value2);
+
+                    tx.Delete(db, key);
+                    Assert.False(tx.ContainsKey(db, key));
+                }
+            }
+        }
+
+        [Fact]
         public void ContainsKeyShouldReturnTrueIfKeyExists()
         {
             var key = "key";

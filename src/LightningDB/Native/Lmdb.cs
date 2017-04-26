@@ -224,9 +224,8 @@ namespace LightningDB.Native
 
         public static int mdb_del(IntPtr txn, uint dbi, byte[] key)
         {
-            ValueStructure val = default(ValueStructure);
             using(var marshal = new MarshalValueStructure(key))
-                return check(LmdbMethods.mdb_del(txn, dbi, ref marshal.Key, ref val));
+                return check(LmdbMethods.mdb_del(txn, dbi, ref marshal.Key, IntPtr.Zero));
         }
 
         public static int mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor)

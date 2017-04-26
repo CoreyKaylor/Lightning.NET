@@ -84,6 +84,9 @@ namespace LightningDB.Native
         public static extern int mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data);
 
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, IntPtr data);
+
+        [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
         public static extern int mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor);
 
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
