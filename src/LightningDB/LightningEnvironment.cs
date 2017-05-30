@@ -9,7 +9,7 @@ namespace LightningDB
     /// </summary>
     public class LightningEnvironment : IDisposable
     {
-        private readonly EnvironmentConfiguration _config = new EnvironmentConfiguration();
+        private readonly EnvironmentConfiguration _config;
 
         private IntPtr _handle;
 
@@ -18,7 +18,7 @@ namespace LightningDB
         /// <summary>
         /// Creates a new instance of LightningEnvironment.
         /// </summary>
-        /// <param name="path">Directory for storing database files.</param>
+        /// <param name="path">Directory for storing database files, or file path if EnvironmentOpenFlags.NoSubDir is used when opening the database.</param>
         /// <param name="configuration">Configuration for the environment.</param>
         public LightningEnvironment(string path, EnvironmentConfiguration configuration = null)
         {
@@ -29,9 +29,8 @@ namespace LightningDB
 
             Path = path;
 
-            var config = configuration ?? _config;
-            config.Configure(this);
-            _config = config;
+            _config = configuration ?? new EnvironmentConfiguration();
+            _config.Configure(this);
         }
 
         public IntPtr Handle()
@@ -62,9 +61,6 @@ namespace LightningDB
             get { return _config.MapSize; }
             set
             {
-                if (value == _config.MapSize) 
-                    return;
-
                 if (_config.AutoReduceMapSizeIn32BitProcess && IntPtr.Size == 4)
                     _config.MapSize = int.MaxValue;
                 else
@@ -107,10 +103,7 @@ namespace LightningDB
             {
                 if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxDatabases of opened environment");
-
-                if (value == _config.MaxDatabases) 
-                    return;
-
+                
                 mdb_env_set_maxdbs(_handle, (uint)value);
 
                 _config.MaxDatabases = value;
@@ -118,7 +111,7 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Directory path to store database files.
+        /// Directory path to store database files, or file path if EnvironmentOpenFlags.NoSubDir is used when opening the database.
         /// </summary>
         public string Path { get; }
 
@@ -132,6 +125,9 @@ namespace LightningDB
 
             if (!openFlags.HasFlag(EnvironmentOpenFlags.NoSubDir) && !Directory.Exists(Path))
                 Directory.CreateDirectory(Path);
+
+            if (openFlags.HasFlag(EnvironmentOpenFlags.NoSubDir) && !Directory.Exists(System.IO.Path.GetDirectoryName(Path)))
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path));
 
             try
             {
