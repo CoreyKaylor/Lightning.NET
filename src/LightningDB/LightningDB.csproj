@@ -33,4 +33,9 @@
     <PackageReference Include="System.Threading" Version="4.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="runtimes\linux-arm\native\" />
+    <Folder Include="runtimes\linux-arm\" />
+  </ItemGroup>
+
 </Project>
