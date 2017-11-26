@@ -17,7 +17,7 @@ namespace LightningDB.Tests
             _env.Open();
         }
 
-        [Fact]
+        [Fact(Skip = "Not really multi-process, reinvestigate simple way to test this")]
         public void can_load_environment_from_multiple_processes()
         {
             var secondDomain = AppDomain.CreateDomain("2nd Process");
