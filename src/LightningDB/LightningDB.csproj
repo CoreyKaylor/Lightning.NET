@@ -4,7 +4,7 @@
     <Description>LightningDB</Description>
     <VersionPrefix>0.10.0</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
-    <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>netstandard1.3;net45</TargetFrameworks>
     <AssemblyName>LightningDB</AssemblyName>
     <PackageId>LightningDB</PackageId>
     <PackageTags>lmdb;lightning;storage;persistance;key-value;nosql</PackageTags>
