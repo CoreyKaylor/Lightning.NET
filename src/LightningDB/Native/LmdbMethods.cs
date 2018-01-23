@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
 {
-    internal static class LmdbMethods
+    public static class LmdbMethods
     {
         [DllImport("lmdb", CallingConvention = CallingConvention.Cdecl)]
         public static extern int mdb_env_create(out IntPtr env);
