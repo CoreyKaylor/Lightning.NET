@@ -1,5 +1,5 @@
-﻿using System;
-using LightningDB.Native;
+﻿using LightningDB.Native;
+using System;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -57,12 +57,14 @@ namespace LightningDB
                 case LightningTransactionState.Commited:
                     Abort();
                     break;
+
                 default:
                     break;
             }
         }
 
         public event Action Disposing;
+
         private event Action<LightningTransactionState> StateChanging;
 
         /// <summary>
@@ -128,7 +130,6 @@ namespace LightningDB
             return new LightningCursor(db, this);
         }
 
-
         /// <summary>
         /// Get value from a database.
         /// </summary>
@@ -155,6 +156,34 @@ namespace LightningDB
                 throw new ArgumentNullException(nameof(db));
 
             return mdb_get(_handle, db.Handle(), key, out value) != MDB_NOTFOUND;
+        }
+
+        /// <summary>
+        /// Get value from a database.
+        /// </summary>
+        /// <param name="db">Database </param>
+        /// <param name="key">Key byte array.</param>
+        /// <returns>Requested value's byte array if exists, or null if not.</returns>
+        public ReadOnlySpan<byte> GetSpan(LightningDatabase db, byte[] key)
+        {
+            ReadOnlySpan<byte> span;
+            TryGetSpan(db, key, out span);
+            return span;
+        }
+
+        /// <summary>
+        /// Tries to get a value by its key.
+        /// </summary>
+        /// <param name="db">Database.</param>
+        /// <param name="key">Key byte array.</param>
+        /// <param name="value">Value byte array if exists.</param>
+        /// <returns>True if key exists, false if not.</returns>
+        public bool TryGetSpan(LightningDatabase db, byte[] key, out ReadOnlySpan<byte> value)
+        {
+            if (db == null)
+                throw new ArgumentNullException(nameof(db));
+
+            return mdb_get_span(_handle, db.Handle(), key, out value) != MDB_NOTFOUND;
         }
 
         /// <summary>
@@ -189,10 +218,10 @@ namespace LightningDB
 
         /// <summary>
         /// Delete items from a database.
-        /// This function removes key/data pairs from the database. 
-        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
-        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted. 
-        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted. 
+        /// This function removes key/data pairs from the database.
+        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored.
+        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted.
+        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted.
         /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
         /// </summary>
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
@@ -208,10 +237,10 @@ namespace LightningDB
 
         /// <summary>
         /// Delete items from a database.
-        /// This function removes key/data pairs from the database. 
-        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
-        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted. 
-        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted. 
+        /// This function removes key/data pairs from the database.
+        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored.
+        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted.
+        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted.
         /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
         /// </summary>
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
@@ -250,7 +279,7 @@ namespace LightningDB
 
         /// <summary>
         /// Commit all the operations of a transaction into the database.
-        /// All cursors opened within the transaction will be closed by this call. 
+        /// All cursors opened within the transaction will be closed by this call.
         /// The cursors and transaction handle will be freed and must not be used again after this call.
         /// </summary>
         public void Commit()

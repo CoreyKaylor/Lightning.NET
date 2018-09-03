@@ -9,6 +9,7 @@
     <PackageId>LightningDB</PackageId>
     <PackageTags>lmdb;lightning;storage;persistance;key-value;nosql</PackageTags>
     <PackageProjectUrl>https://github.com/CoreyKaylor/Lightning.NET</PackageProjectUrl>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,4 +40,7 @@
     <Folder Include="runtimes\linux-arm\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.1" />
+  </ItemGroup>
 </Project>

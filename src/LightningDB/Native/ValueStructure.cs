@@ -15,5 +15,10 @@ namespace LightningDB.Native
             Marshal.Copy(data, buffer, 0, buffer.Length);
             return buffer;
         }
+
+        public unsafe ReadOnlySpan<byte> GetSpan()
+        {
+            return new Span<byte>(data.ToPointer(), size.ToInt32());
+        }
     }
 }
