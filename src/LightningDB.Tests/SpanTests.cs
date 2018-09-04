@@ -44,5 +44,26 @@ namespace LightningDB.Tests
                 Assert.Equal(savedValue, value);
             }
         }
+
+        [Fact]
+        public void ResultsFromSpanAndGetShouldBeSame()
+        {
+            using (var txn = _env.BeginTransaction())
+            using (var db = txn.OpenDatabase(configuration: new DatabaseConfiguration
+            {
+                Flags = DatabaseOpenFlags.Create
+            }))
+            {
+                var value = generator.Next(int.MinValue, int.MaxValue);
+                var key = BitConverter.GetBytes(1);
+
+                txn.Put(db, key, BitConverter.GetBytes(value));
+
+                var span = txn.GetSpan(db, key);
+                var bytes = txn.Get(db, key);
+
+                Assert.Equal(span.ToArray(), bytes);
+            }
+        }
     }
 }
