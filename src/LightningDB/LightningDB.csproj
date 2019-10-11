@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <Description>LightningDB</Description>
-    <VersionPrefix>0.10.0</VersionPrefix>
+    <VersionPrefix>0.11.0</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
-    <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>LightningDB</AssemblyName>
     <PackageId>LightningDB</PackageId>
     <PackageTags>lmdb;lightning;storage;persistance;key-value;nosql</PackageTags>
@@ -12,31 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="runtimes\win-x64\native\lmdb.dll" Pack="true" PackagePath="runtimes/win-x64/native/lmdb.dll" />
-    <None Include="runtimes\win-x86\native\lmdb.dll" Pack="true" PackagePath="runtimes/win-x86/native/lmdb.dll" />
-    <None Include="runtimes\osx\native\lmdb.dylib" Pack="true" PackagePath="runtimes/osx/native/lmdb.dylib" />
-    <None Include="runtimes\linux-arm\native\liblmdb.so" Pack="true" PackagePath="runtimes/linux-arm/native/liblmdb.so" />
-    <None Include="LightningDB.targets" Pack="true" PackagePath="build" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
-    <PackageReference Include="System.Net.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Runtime" Version="4.3.0" />
-    <PackageReference Include="System.Linq" Version="4.3.0" />
-    <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
-    <PackageReference Include="System.Threading" Version="4.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="runtimes\linux-arm\native\" />
-    <Folder Include="runtimes\linux-arm\" />
+    <None Include="..\..\lib\runtimes\**\*.*">
+      <Pack>true</Pack>
+      <PackagePath>runtimes</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -5,11 +5,10 @@ type gcc >/dev/null 2>&1 || { echo >&2 "Can't find dependency 'gcc' for lmdb nat
 cd mdb/libraries/liblmdb/
 make
 cd ../../../
-dotnet restore src/Lightning.Net.sln
+dotnet restore
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
-cd src/LightningDB.Tests
-dotnet build -f netcoreapp1.1
-mv ../../mdb/libraries/liblmdb/liblmdb.so bin/Debug/netcoreapp1.1/liblmdb.so
-ls bin/Debug/netcoreapp1.1/
-dotnet test -f netcoreapp1.1
+dotnet build src/LightningDB.Tests/LightningDB.Tests.csproj -f netcoreapp3.0
+mv mdb/libraries/liblmdb/liblmdb.so src/LightningDB.Tests/bin/Debug/netcoreapp3.0/liblmdb.so
+ls src/LightningDB.Tests/bin/Debug/netcoreapp3.0/
+dotnet test src/LightningDB.Tests/LightningDB.Tests.csproj -f netcoreapp3.0
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi

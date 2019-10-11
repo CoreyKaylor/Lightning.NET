@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -114,6 +115,24 @@ namespace LightningDB
                 mdb_env_set_maxdbs(_handle, (uint)value);
 
                 _config.MaxDatabases = value;
+            }
+        }
+
+        public Stats EnvironmentStats
+        {
+            get
+            {
+                var nativeStat = new MDBStat();
+                mdb_env_stat(Handle(), out nativeStat);
+                return new Stats
+                {
+                    BranchPages = nativeStat.ms_branch_pages.ToInt64(),
+                    BTreeDepth = nativeStat.ms_depth,
+                    Entries = nativeStat.ms_entries.ToInt64(),
+                    LeafPages = nativeStat.ms_leaf_pages.ToInt64(),
+                    OverflowPages = nativeStat.ms_overflow_pages.ToInt64(),
+                    PageSize = nativeStat.ms_psize
+                };
             }
         }
 

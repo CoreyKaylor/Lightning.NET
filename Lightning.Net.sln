@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26228.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LightningDB", "LightningDB\LightningDB.csproj", "{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LightningDB", "src\LightningDB\LightningDB.csproj", "{C864E62B-5C53-479C-9A6F-6D086E1EC3DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LightningDB.Tests", "LightningDB.Tests\LightningDB.Tests.csproj", "{3A8F29FB-1110-4755-9700-4EB064BB463E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LightningDB.Tests", "src\LightningDB.Tests\LightningDB.Tests.csproj", "{3A8F29FB-1110-4755-9700-4EB064BB463E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

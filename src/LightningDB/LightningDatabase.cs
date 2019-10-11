@@ -1,4 +1,5 @@
 ﻿using System;
+using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -10,6 +11,7 @@ namespace LightningDB
     {
         private uint _handle;
         private readonly DatabaseConfiguration _configuration;
+        private readonly LightningTransaction _transaction;
         private readonly IDisposable _pinnedConfig;
 
         /// <summary>
@@ -29,6 +31,7 @@ namespace LightningDB
             Name = name;
             _configuration = configuration;
             Environment = transaction.Environment;
+            _transaction = transaction;
             Environment.Disposing += Dispose;
             mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle);
             _pinnedConfig = _configuration.ConfigureDatabase(transaction, this);
@@ -49,6 +52,24 @@ namespace LightningDB
         /// Is database opened.
         /// </summary>
         public bool IsOpened { get; private set; }
+
+        public Stats DatabaseStats
+        {
+            get
+            {
+                var nativeStat = new MDBStat();
+                mdb_stat(_transaction.Handle(), Handle(), out nativeStat);
+                return new Stats
+                {
+                    BranchPages = nativeStat.ms_branch_pages.ToInt64(),
+                    BTreeDepth = nativeStat.ms_depth,
+                    Entries = nativeStat.ms_entries.ToInt64(),
+                    LeafPages = nativeStat.ms_leaf_pages.ToInt64(),
+                    OverflowPages = nativeStat.ms_overflow_pages.ToInt64(),
+                    PageSize = nativeStat.ms_psize
+                };
+            }
+        }
 
         /// <summary>
         /// Database name.
