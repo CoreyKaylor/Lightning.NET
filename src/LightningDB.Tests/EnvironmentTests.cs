@@ -52,6 +52,18 @@ namespace LightningDB.Tests
         }
 
         [Fact]
+        public void CanGetEnvironmentInfo()
+        {
+            _env = new LightningEnvironment(_path, new EnvironmentConfiguration
+            {
+                MapSize = 1024 * 1024 * 200,
+            });
+            _env.Open();
+            var info = _env.Info;
+            Assert.Equal(_env.MapSize, info.MapSize);
+        }
+
+        [Fact]
         public void MaxDatabasesWorksThroughConfigIssue62()
         {
             var config = new EnvironmentConfiguration { MaxDatabases = 2 };

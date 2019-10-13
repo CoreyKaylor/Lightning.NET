@@ -1,62 +1,58 @@
-﻿#if NET451
-using System;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using Xunit;
 
 namespace LightningDB.Tests
 {
     [Collection("SharedFileSystem")]
-    public class MultiProcessTests : IDisposable
+    public class MultiProcessTests 
     {
-        private readonly LightningEnvironment _env;
+        private readonly SharedFileSystem _fileSystem;
 
         public MultiProcessTests(SharedFileSystem fileSystem)
         {
-            var path = fileSystem.CreateNewDirectoryForTest();
-            _env = new LightningEnvironment(path);
-            _env.Open();
+            _fileSystem = fileSystem;
         }
 
-        [Fact(Skip = "Not really multi-process, reinvestigate simple way to test this")]
+        [Fact(Skip = "Hangs on Linux only for some reason")]
         public void can_load_environment_from_multiple_processes()
         {
-            var secondDomain = AppDomain.CreateDomain("2nd Process");
-
-            var secondAppType = typeof(SecondApp);
-            var app = secondDomain.CreateInstanceAndUnwrap(
-                                     secondAppType.Assembly.FullName,
-                                     secondAppType.FullName) as SecondApp;
-
-            app.RemotePut(_env.Path);
-
-            using (var tx = _env.BeginTransaction())
-            using (var db = tx.OpenDatabase())
-            {
-                var bytes = tx.Get(db, Encoding.UTF8.GetBytes("hello"));
-                Assert.Equal("world", Encoding.UTF8.GetString(bytes));
-            }
-        }
-
-        public void Dispose()
-        {
-            _env.Dispose();
-        }
-    }
-
-    public class SecondApp : MarshalByRefObject
-    {
-        public void RemotePut(string environment)
-        {
-            var env = new LightningEnvironment(environment);
+            var name = _fileSystem.CreateNewDirectoryForTest();
+            using var env = new LightningEnvironment(name);
             env.Open();
-            using (env)
-            using(var tx = env.BeginTransaction())
-            using(var db = tx.OpenDatabase())
+            var otherProcessPath = Path.GetFullPath("../../../../SecondProcess/bin/Debug/netcoreapp3.0/SecondProcess.dll");
+            using var process = new Process
             {
-                tx.Put(db, Encoding.UTF8.GetBytes("hello"), Encoding.UTF8.GetBytes("world"));
-                tx.Commit();
-            }
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = $"{otherProcessPath} {name}",
+                    RedirectStandardError = true,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Directory.GetCurrentDirectory()
+                }
+            };
+
+            var expected = "world";
+            using var tx = env.BeginTransaction();
+            using var db = tx.OpenDatabase();
+            tx.Put(db, Encoding.UTF8.GetBytes("hello"), Encoding.UTF8.GetBytes(expected));
+            tx.Commit();
+            
+            var current = Process.GetCurrentProcess();
+            process.Start();
+            Assert.NotEqual(current.Id, process.Id);
+            
+            var result = process.StandardOutput.ReadLine();
+            process.WaitForExit();
+            Assert.Equal(expected, result);
         }
+
     }
 }
-#endif

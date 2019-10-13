@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LightningDB", "src\Lightnin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LightningDB.Tests", "src\LightningDB.Tests\LightningDB.Tests.csproj", "{3A8F29FB-1110-4755-9700-4EB064BB463E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecondProcess", "src\SecondProcess\SecondProcess.csproj", "{9621DE3C-6C1A-484F-8DE7-C8F4D6F71EA9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A8F29FB-1110-4755-9700-4EB064BB463E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9621DE3C-6C1A-484F-8DE7-C8F4D6F71EA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9621DE3C-6C1A-484F-8DE7-C8F4D6F71EA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9621DE3C-6C1A-484F-8DE7-C8F4D6F71EA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9621DE3C-6C1A-484F-8DE7-C8F4D6F71EA9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

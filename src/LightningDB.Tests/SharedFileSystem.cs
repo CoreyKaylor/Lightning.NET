@@ -10,12 +10,15 @@ namespace LightningDB.Tests
 
         public SharedFileSystem()
         {
-            _testTempDir = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName, "testrun");
+            _testTempDir = Path.Combine(Directory.GetCurrentDirectory(), "testrun");
         }
 
         public void Dispose()
         {
-            Directory.Delete(_testTempDir, true);
+            if (Directory.Exists(_testTempDir))
+            {
+                Directory.Delete(_testTempDir, true);
+            }
         }
 
         public string CreateNewDirectoryForTest()

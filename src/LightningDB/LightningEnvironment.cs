@@ -122,8 +122,7 @@ namespace LightningDB
         {
             get
             {
-                var nativeStat = new MDBStat();
-                mdb_env_stat(Handle(), out nativeStat);
+                mdb_env_stat(Handle(), out var nativeStat);
                 return new Stats
                 {
                     BranchPages = nativeStat.ms_branch_pages.ToInt64(),
@@ -132,6 +131,20 @@ namespace LightningDB
                     LeafPages = nativeStat.ms_leaf_pages.ToInt64(),
                     OverflowPages = nativeStat.ms_overflow_pages.ToInt64(),
                     PageSize = nativeStat.ms_psize
+                };
+            }
+        }
+        
+        public EnvironmentInfo Info
+        {
+            get
+            {
+                mdb_env_info(Handle(), out var nativeInfo);
+                return new EnvironmentInfo
+                {
+                    MapSize = nativeInfo.me_mapsize.ToInt32(),
+                    LastPageNumber = nativeInfo.me_last_pgno.ToInt32(),
+                    LastTransactionId = nativeInfo.me_last_txnid.ToInt32(),
                 };
             }
         }
