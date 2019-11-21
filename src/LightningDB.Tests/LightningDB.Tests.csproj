@@ -6,6 +6,7 @@
     <PackageId>LightningDB.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <IsTestProject>true</IsTestProject>
+    <LightningDBTargetRuntimeRelativePath>.\</LightningDBTargetRuntimeRelativePath>
   </PropertyGroup>
 
   <ItemGroup>
