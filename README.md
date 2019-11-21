@@ -1,9 +1,7 @@
 Lightning.NET
 =============
 
-[![Join the chat at https://gitter.im/CoreyKaylor/Lightning.NET](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/CoreyKaylor/Lightning.NET?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Linux Build Status](https://travis-ci.org/CoreyKaylor/Lightning.NET.svg?branch=master)](https://travis-ci.org/CoreyKaylor/Lightning.NET)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/u0ch8mk5lkb7dv5q?svg=true)](https://ci.appveyor.com/project/CoreyKaylor/lightning-net)
+[![Actions Status](https://github.com/CoreyKaylor/Lightning.NET/workflows/dotnetcoretest/badge.svg)](https://github.com/CoreyKaylor/Lightning.NET/actions)
 
 .NET library for OpenLDAP's LMDB key-value store.
 
