@@ -12,10 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\lib\runtimes\**\*.*">
+    <None Include="runtimes\**\*.*">
       <Pack>true</Pack>
       <PackagePath>runtimes</PackagePath>
     </None>
+    <None Include="LightningDB.targets" Pack="true" PackagePath="build" />
   </ItemGroup>
 
 </Project>
