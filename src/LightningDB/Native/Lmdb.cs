@@ -60,7 +60,7 @@ namespace LightningDB.Native
         /// </summary>
         public const int MDB_DUPFIXED = 0x10;
 
-        static int check(int statusCode)
+        private static int check(int statusCode)
         {
             if (statusCode != 0)
             {
@@ -70,7 +70,7 @@ namespace LightningDB.Native
             return statusCode;
         }
 
-        static int checkRead(int statusCode)
+        private static int checkRead(int statusCode)
         {
             return statusCode == MDB_NOTFOUND ? statusCode : check(statusCode);
         }
@@ -113,7 +113,7 @@ namespace LightningDB.Native
         public static int mdb_dbi_open(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db)
         {
             var statusCode = LmdbMethods.mdb_dbi_open(txn, name, flags, out db);
-            if(statusCode == MDB_NOTFOUND)
+            if (statusCode == MDB_NOTFOUND)
                 throw new LightningException($"Error opening database {name}: {mdb_strerror(statusCode)}", statusCode);
             return check(statusCode);
         }
@@ -210,21 +210,37 @@ namespace LightningDB.Native
             }
         }
 
+        public static int mdb_get_span(IntPtr txn, uint dbi, byte[] key, out ReadOnlySpan<byte> data)
+        {
+            using (var marshal = new MarshalValueStructure(key))
+            {
+                ValueStructure value;
+                var result = checkRead(LmdbMethods.mdb_get(txn, dbi, ref marshal.Key, out value));
+                if (result == MDB_NOTFOUND)
+                {
+                    data = null;
+                    return result;
+                }
+                data = value.GetSpan();
+                return result;
+            }
+        }
+
         public static int mdb_put(IntPtr txn, uint dbi, byte[] key, byte[] value, PutOptions flags)
         {
-            using(var marshal = new MarshalValueStructure(key, value))
+            using (var marshal = new MarshalValueStructure(key, value))
                 return check(LmdbMethods.mdb_put(txn, dbi, ref marshal.Key, ref marshal.Value, flags));
         }
 
         public static int mdb_del(IntPtr txn, uint dbi, byte[] key, byte[] value)
         {
-            using(var marshal = new MarshalValueStructure(key, value))
+            using (var marshal = new MarshalValueStructure(key, value))
                 return check(LmdbMethods.mdb_del(txn, dbi, ref marshal.Key, ref marshal.Value));
         }
 
         public static int mdb_del(IntPtr txn, uint dbi, byte[] key)
         {
-            using(var marshal = new MarshalValueStructure(key))
+            using (var marshal = new MarshalValueStructure(key))
                 return check(LmdbMethods.mdb_del(txn, dbi, ref marshal.Key, IntPtr.Zero));
         }
 
@@ -252,9 +268,10 @@ namespace LightningDB.Native
                 return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref keyStructure, ref valueStructure, op));
             }
         }
+
         public static int mdb_cursor_get(IntPtr cursor, byte[] key, byte[] value, CursorOperation op)
         {
-            using(var marshal = new MarshalValueStructure(key, value))
+            using (var marshal = new MarshalValueStructure(key, value))
                 return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref marshal.Key, ref marshal.Value, op));
         }
 
@@ -271,7 +288,7 @@ namespace LightningDB.Native
 
         public static int mdb_cursor_put(IntPtr cursor, byte[] key, byte[] value, CursorPutOptions flags)
         {
-            using(var marshal = new MarshalValueStructure(key, value))
+            using (var marshal = new MarshalValueStructure(key, value))
                 return check(LmdbMethods.mdb_cursor_put(cursor, ref marshal.Key, ref marshal.Value, flags));
         }
 
