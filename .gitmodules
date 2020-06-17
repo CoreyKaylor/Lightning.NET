@@ -1,3 +1,0 @@
-[submodule "mdb"]
-	path = mdb
-	url = https://github.com/LMDB/lmdb.git
