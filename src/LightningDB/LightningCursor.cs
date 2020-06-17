@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
@@ -9,11 +10,11 @@ namespace LightningDB
     /// <summary>
     /// Cursor to iterate over a database
     /// </summary>
-    public class LightningCursor : IEnumerator<KeyValuePair<byte[], byte[]>>, IEnumerable<KeyValuePair<byte[], byte[]>>
+    public class LightningCursor : IEnumerator<KeyValuePair<MDBValue, MDBValue>>, IEnumerable<KeyValuePair<MDBValue, MDBValue>>
     {
         private IntPtr _handle;
-        private ValueStructure _currentKeyStructure;
-        private ValueStructure _currentValueStructure;
+        private MDBValue _currentKey;
+        private MDBValue _currentValue;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -54,17 +55,8 @@ namespace LightningDB
         /// <summary>
         /// The current item the cursor is pointed to, or default KeyValuePair&lt;byte[], byte[]&gt;
         /// </summary>
-        public KeyValuePair<byte[], byte[]> Current
-        {
-            get
-            {
-                if (_currentKeyStructure.size == IntPtr.Zero)
-                    return default(KeyValuePair<byte[], byte[]>);
-
-                return new KeyValuePair<byte[], byte[]>(_currentKeyStructure.GetBytes(),
-                    _currentValueStructure.GetBytes());
-            }
-        }
+        public KeyValuePair<MDBValue, MDBValue> Current => 
+            _currentKey.size == IntPtr.Zero ? default : new KeyValuePair<MDBValue, MDBValue>(_currentKey, _currentValue);
 
         /// <summary>
         /// Position at specified key, Current will not be populated.
@@ -158,7 +150,7 @@ namespace LightningDB
         /// Return key/data at current cursor position
         /// </summary>
         /// <returns>Key/data at current cursor position</returns>
-        public KeyValuePair<byte[], byte[]> GetCurrent()
+        public KeyValuePair<MDBValue, MDBValue> GetCurrent()
         {
             Get(CursorOperation.GetCurrent);
             return Current;
@@ -230,26 +222,27 @@ namespace LightningDB
         
         private bool Get(CursorOperation operation)
         {
-            _currentKeyStructure = default(ValueStructure);
-            _currentValueStructure = default(ValueStructure);
-            
-            return mdb_cursor_get(_handle, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
+            _currentKey = _currentValue = default;
+            return mdb_cursor_get(_handle, ref _currentKey, ref _currentValue, operation) == 0;
         }
 
         private bool Get(CursorOperation operation, byte[] key)
         {
-            _currentValueStructure = default(ValueStructure);
-            return mdb_cursor_get(_handle, key, out _currentKeyStructure, out _currentValueStructure, operation) == 0;
+            _currentValue = default;
+            var findKey = new MDBValue(new Span<byte>(key));
+            return mdb_cursor_get(_handle, ref findKey, ref _currentValue, operation) == 0;
         }
 
         private bool Get(CursorOperation operation, byte[] key, byte[] value)
         {
-            return mdb_cursor_get(_handle, key, value, operation) == 0;
+            var mdbKey = new MDBValue(new Span<byte>(key));
+            var mdbValue = new MDBValue(new Span<byte>(value));
+            return mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation) == 0;
         }
 
         private bool GetMultiple(CursorOperation operation)
         {
-            return mdb_cursor_get_multiple(_handle, ref _currentKeyStructure, ref _currentValueStructure, operation) == 0;
+            return mdb_cursor_get_multiple(_handle, ref _currentKey, ref _currentValue, operation) == 0;
         }
 
         /// <summary>
@@ -272,7 +265,7 @@ namespace LightningDB
         /// </param>
         public void Put(byte[] key, byte[] value, CursorPutOptions options)
         {
-            mdb_cursor_put(_handle, key, value, options);
+            mdb_cursor_put(_handle, new MDBValue(new Span<byte>(key)), new MDBValue(new Span<byte>(value)), options);
         }
 
         /// <summary>
@@ -285,8 +278,21 @@ namespace LightningDB
         /// <param name="values">The data items operated on.</param>
         public void PutMultiple(byte[] key, byte[][] values)
         {
-            using (var marshal = new MarshalMultipleValueStructure(key, values))
-                mdb_cursor_put(_handle, ref marshal.Key, marshal.Values, CursorPutOptions.MultipleData);
+            var mdbKey = new MDBValue(new Span<byte>(key));
+            var mdbValue = new MDBValue(new Span<byte>(values.SelectMany(x => x).ToArray()), GetSize(values));
+            var mdbCount = new MDBValue
+            {
+                size = (IntPtr) values.Length
+            };
+            mdb_cursor_put(_handle, ref mdbKey, new []{ mdbValue, mdbCount }, CursorPutOptions.MultipleData);
+        }
+        
+        private int GetSize(byte[][] values)
+        {
+            if (values.Length == 0 || values[0] == null || values[0].Length == 0)
+                return 0;
+
+            return values[0].Length;
         }
 
         /// <summary>
@@ -363,7 +369,7 @@ namespace LightningDB
         /// Closes the cursor and deallocates all resources associated with it.
         /// </summary>
         /// <param name="disposing">True if called from Dispose.</param>
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (_handle == IntPtr.Zero)
                 return;
@@ -387,7 +393,7 @@ namespace LightningDB
             Dispose(true);
         }
 
-        public IEnumerator<KeyValuePair<byte[], byte[]>> GetEnumerator()
+        public IEnumerator<KeyValuePair<MDBValue, MDBValue>> GetEnumerator()
         {
             return this;
         }

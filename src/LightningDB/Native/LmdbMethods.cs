@@ -77,16 +77,16 @@ namespace LightningDB.Native
         public static extern int mdb_env_sync(IntPtr env, bool force);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_get(IntPtr txn, uint dbi, ref ValueStructure key, out ValueStructure data);
+        public static extern int mdb_get(IntPtr txn, uint dbi, ref MDBValue key, out MDBValue data);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_put(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data, PutOptions flags);
+        public static extern int mdb_put(IntPtr txn, uint dbi, ref MDBValue key, ref MDBValue data, PutOptions flags);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, ref ValueStructure data);
+        public static extern int mdb_del(IntPtr txn, uint dbi, ref MDBValue key, ref MDBValue data);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_del(IntPtr txn, uint dbi, ref ValueStructure key, IntPtr data);
+        public static extern int mdb_del(IntPtr txn, uint dbi, ref MDBValue key, IntPtr data);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern int mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor);
@@ -98,10 +98,10 @@ namespace LightningDB.Native
         public static extern int mdb_cursor_renew(IntPtr txn, IntPtr cursor);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_cursor_get(IntPtr cursor, ref ValueStructure key, ref ValueStructure data, CursorOperation op);
+        public static extern int mdb_cursor_get(IntPtr cursor, ref MDBValue key, ref MDBValue data, CursorOperation op);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ref ValueStructure value, CursorPutOptions flags);
+        public static extern int mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref MDBValue mdbValue, CursorPutOptions flags);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
@@ -113,6 +113,6 @@ namespace LightningDB.Native
         public static extern int mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ValueStructure[] value, CursorPutOptions flags);
+        public static extern int mdb_cursor_put(IntPtr cursor, ref MDBValue key, MDBValue[] value, CursorPutOptions flags);
     }
 }

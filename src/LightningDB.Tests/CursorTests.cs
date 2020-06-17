@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using LightningDB.Native;
 using Xunit;
 using static System.Text.Encoding;
 
@@ -69,8 +70,8 @@ namespace LightningDB.Tests
             {
                 Assert.True(cur.MoveToLast());
 
-                var lastKey = UTF8.GetString(cur.Current.Key);
-                var lastValue = UTF8.GetString(cur.Current.Value);
+                var lastKey = UTF8.GetString(cur.Current.Key.Span.ToArray());
+                var lastValue = UTF8.GetString(cur.Current.Value.Span.ToArray());
 
                 Assert.Equal("key5", lastKey);
                 Assert.Equal("key5", lastValue);
@@ -87,8 +88,8 @@ namespace LightningDB.Tests
             {
                 cur.MoveToFirst();
 
-                var lastKey = UTF8.GetString(cur.Current.Key);
-                var lastValue = UTF8.GetString(cur.Current.Value);
+                var lastKey = UTF8.GetString(cur.Current.Key.Span.ToArray());
+                var lastValue = UTF8.GetString(cur.Current.Value.Span.ToArray());
 
                 Assert.Equal("key1", lastKey);
                 Assert.Equal("key1", lastValue);
@@ -107,8 +108,8 @@ namespace LightningDB.Tests
 
                 while (cur.MoveNext())
                 {
-                    var key = UTF8.GetString(cur.Current.Key);
-                    var value = UTF8.GetString(cur.Current.Value);
+                    var key = UTF8.GetString(cur.Current.Key.Span.ToArray());
+                    var value = UTF8.GetString(cur.Current.Value.Span.ToArray());
 
                     var name = "key" + ++i;
 
@@ -135,7 +136,7 @@ namespace LightningDB.Tests
             }
             using(var cursor = _txn.CreateCursor(_db))
             {
-                var foundDeleted = cursor.Select(x => UTF8.GetString(x.Key))
+                var foundDeleted = cursor.Select(x => UTF8.GetString(x.Key.Span.ToArray()))
                     .Any(x => x == "key1" || x == "key2");
                 Assert.False(foundDeleted);
             }
@@ -153,8 +154,8 @@ namespace LightningDB.Tests
                 foreach (var pair in cursor)
                 {
                     var name = "key" + ++i;
-                    Assert.Equal(name, UTF8.GetString(pair.Key));
-                    Assert.Equal(name, UTF8.GetString(pair.Value));
+                    Assert.Equal(name, UTF8.GetString(pair.Key.Span.ToArray()));
+                    Assert.Equal(name, UTF8.GetString(pair.Value.Span.ToArray()));
                 }
             }
         }
@@ -168,7 +169,7 @@ namespace LightningDB.Tests
             using (var cur = _txn.CreateCursor(_db))
                 cur.PutMultiple(UTF8.GetBytes("TestKey"), values);
 
-            var pairs = new KeyValuePair<byte[], byte[]>[values.Length];
+            var pairs = new KeyValuePair<MDBValue, MDBValue>[values.Length];
 
             using (var cur = _txn.CreateCursor(_db))
             {
@@ -179,7 +180,7 @@ namespace LightningDB.Tests
                 }
             }
 
-            Assert.Equal(values, pairs.Select(x => x.Value).ToArray());
+            Assert.Equal(values, pairs.Select(x => x.Value.Span.ToArray()).ToArray());
         }
 
         [Fact]
@@ -197,8 +198,8 @@ namespace LightningDB.Tests
                 cur.MoveNext();
                 cur.GetMultiple();
                 var resultPair = cur.Current;
-                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key));
-                var result = resultPair.Value.Split(sizeof(int))
+                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.Span.ToArray()));
+                var result = resultPair.Value.Span.ToArray().Split(sizeof(int))
                     .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
                 Assert.Equal(original, result);
             }
@@ -218,8 +219,8 @@ namespace LightningDB.Tests
             {
                 cur.MoveNextMultiple();
                 var resultPair = cur.Current;
-                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key));
-                var result = resultPair.Value.Split(sizeof(int))
+                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.Span.ToArray()));
+                var result = resultPair.Value.Span.ToArray().Split(sizeof(int))
                     .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
                 Assert.Equal(original, result);
             }

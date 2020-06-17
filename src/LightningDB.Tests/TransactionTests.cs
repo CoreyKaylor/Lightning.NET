@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using LightningDB.Native;
 using Xunit;
 
 namespace LightningDB.Tests
@@ -143,9 +144,9 @@ namespace LightningDB.Tests
         {
             Func<int, int, int> comparison = (l, r) => l.CompareTo(r);
             var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create};
-            Func<byte[], byte[], int> compareWith =
-                (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
-            options.CompareWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
+            Func<MDBValue, MDBValue, int> compareWith =
+                (l, r) => comparison(BitConverter.ToInt32(l.Span.ToArray(), 0), BitConverter.ToInt32(r.Span.ToArray(), 0));
+            options.CompareWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>(compareWith)));
 
             using (var txnT = _env.BeginTransaction())
             using (var db1 = txnT.OpenDatabase(configuration: options))
@@ -169,7 +170,7 @@ namespace LightningDB.Tests
             {
                 int order = 0;
                 while (c.MoveNext())
-                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.Current.Key, 0));
+                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.Current.Key.Span.ToArray(), 0));
             }
         }
 
@@ -180,8 +181,8 @@ namespace LightningDB.Tests
 
             var txn = _env.BeginTransaction();
             var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
-            Func<byte[], byte[], int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l, 0), BitConverter.ToInt32(r, 0));
-            options.FindDuplicatesWith(Comparer<byte[]>.Create(new Comparison<byte[]>(compareWith)));
+            Func<MDBValue, MDBValue, int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l.Span.ToArray(), 0), BitConverter.ToInt32(r.Span.ToArray(), 0));
+            options.FindDuplicatesWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>(compareWith)));
             var db = txn.OpenDatabase(configuration: options);
 
             var valuesUnsorted = new [] { 2, 10, 5, 0 };
@@ -196,7 +197,7 @@ namespace LightningDB.Tests
                 int order = 0;
 
                 while (c.MoveNext())
-                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.Current.Value, 0));
+                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.Current.Value.Span.ToArray(), 0));
             }
         }
     }

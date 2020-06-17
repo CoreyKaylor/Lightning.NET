@@ -8,8 +8,8 @@ namespace LightningDB
 {
     public class DatabaseConfiguration
     {
-        private IComparer<byte[]> _comparer;
-        private IComparer<byte[]> _duplicatesComparer;
+        private IComparer<MDBValue> _comparer;
+        private IComparer<MDBValue> _duplicatesComparer;
 
         public DatabaseConfiguration()
         {
@@ -37,22 +37,22 @@ namespace LightningDB
             return pinnedComparer;
         }
 
-        private int Compare(ref ValueStructure left, ref ValueStructure right)
+        private int Compare(ref MDBValue left, ref MDBValue right)
         {
-            return _comparer.Compare(left.GetBytes(), right.GetBytes());
+            return _comparer.Compare(left, right);
         }
 
-        private int IsDuplicate(ref ValueStructure left, ref ValueStructure right)
+        private int IsDuplicate(ref MDBValue left, ref MDBValue right)
         {
-            return _duplicatesComparer.Compare(left.GetBytes(), right.GetBytes());
+            return _duplicatesComparer.Compare(left, right);
         }
 
-        public void CompareWith(IComparer<byte[]> comparer)
+        public void CompareWith(IComparer<MDBValue> comparer)
         {
             _comparer = comparer;
         }
 
-        public void FindDuplicatesWith(IComparer<byte[]> comparer)
+        public void FindDuplicatesWith(IComparer<MDBValue> comparer)
         {
             _duplicatesComparer = comparer;
         }

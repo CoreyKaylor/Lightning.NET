@@ -25,12 +25,9 @@ namespace LightningDB
         /// <param name="flags">Transaction open options.</param>
         internal LightningTransaction(LightningEnvironment environment, LightningTransaction parent, TransactionBeginFlags flags)
         {
-            if (environment == null)
-                throw new ArgumentNullException(nameof(environment));
-
-            Environment = environment;
+            Environment = environment ?? throw new ArgumentNullException(nameof(environment));
             ParentTransaction = parent;
-            IsReadOnly = (flags & TransactionBeginFlags.ReadOnly) == TransactionBeginFlags.ReadOnly;
+            IsReadOnly = flags == TransactionBeginFlags.ReadOnly;
             State = LightningTransactionState.Active;
             Environment.Disposing += Dispose;
             if (parent != null)
@@ -154,35 +151,14 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            return mdb_get(_handle, db.Handle(), key, out value) != MDB_NOTFOUND;
-        }
-
-        /// <summary>
-        /// Get value from a database.
-        /// </summary>
-        /// <param name="db">Database </param>
-        /// <param name="key">Key byte array.</param>
-        /// <returns>Requested value's byte array if exists, or null if not.</returns>
-        public ReadOnlySpan<byte> GetSpan(LightningDatabase db, byte[] key)
-        {
-            ReadOnlySpan<byte> span;
-            TryGetSpan(db, key, out span);
-            return span;
-        }
-
-        /// <summary>
-        /// Tries to get a value by its key.
-        /// </summary>
-        /// <param name="db">Database.</param>
-        /// <param name="key">Key byte array.</param>
-        /// <param name="value">Value byte array if exists.</param>
-        /// <returns>True if key exists, false if not.</returns>
-        public bool TryGetSpan(LightningDatabase db, byte[] key, out ReadOnlySpan<byte> value)
-        {
-            if (db == null)
-                throw new ArgumentNullException(nameof(db));
-
-            return mdb_get_span(_handle, db.Handle(), key, out value) != MDB_NOTFOUND;
+            var mdbKey = new MDBValue(new Span<byte>(key));
+            value = default;
+            var result = mdb_get(_handle, db.Handle(), ref mdbKey, out var newVal) != MDB_NOTFOUND;
+            if (result)
+            {
+                value = newVal.Span.ToArray();
+            }
+            return result;
         }
 
         /// <summary>
@@ -196,8 +172,7 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            byte[] value;
-            return TryGet(db, key, out value);
+            return TryGet(db, key, out _);
         }
 
         /// <summary>
@@ -212,7 +187,9 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            mdb_put(_handle, db.Handle(), key, value, options);
+            var mdbKey = new MDBValue(new Span<byte>(key));
+            var mdbValue = new MDBValue(new Span<byte>(value));
+            mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
         }
 
         /// <summary>
@@ -231,7 +208,9 @@ namespace LightningDB
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            mdb_del(_handle, db.Handle(), key, value);
+            var mdbKey = new MDBValue(new Span<byte>(key));
+            var mdbValue = new MDBValue(new Span<byte>(value));
+            mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
         }
 
         /// <summary>
@@ -246,7 +225,7 @@ namespace LightningDB
         /// <param name="key">The key to delete from the database</param>
         public void Delete(LightningDatabase db, byte[] key)
         {
-            mdb_del(_handle, db.Handle(), key);
+            mdb_del(_handle, db.Handle(), new MDBValue(new Span<byte>(key)));
         }
 
         /// <summary>

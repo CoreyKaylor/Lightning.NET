@@ -158,7 +158,7 @@ namespace LightningDB.Native
             return LmdbMethods.mdb_version(out major, out minor, out patch);
         }
 
-        public static string mdb_strerror(int err)
+        private static string mdb_strerror(int err)
         {
             var ptr = LmdbMethods.mdb_strerror(err);
             return Marshal.PtrToStringAnsi(ptr);
@@ -194,54 +194,32 @@ namespace LightningDB.Native
             return check(LmdbMethods.mdb_env_sync(env, force));
         }
 
-        public static int mdb_get(IntPtr txn, uint dbi, byte[] key, out byte[] data)
+        public static int mdb_get(IntPtr txn, uint dbi, ref MDBValue key, out MDBValue value)
         {
-            using (var marshal = new MarshalValueStructure(key))
+            var result = checkRead(LmdbMethods.mdb_get(txn, dbi, ref key, out var data));
+            if (result == MDB_NOTFOUND)
             {
-                ValueStructure value;
-                var result = checkRead(LmdbMethods.mdb_get(txn, dbi, ref marshal.Key, out value));
-                if (result == MDB_NOTFOUND)
-                {
-                    data = null;
-                    return result;
-                }
-                data = value.GetBytes();
+                value = default;
                 return result;
             }
+
+            value = data;
+            return result;
         }
 
-        public static int mdb_get_span(IntPtr txn, uint dbi, byte[] key, out ReadOnlySpan<byte> data)
+        public static int mdb_put(IntPtr txn, uint dbi, MDBValue key, MDBValue value, PutOptions flags)
         {
-            using (var marshal = new MarshalValueStructure(key))
-            {
-                ValueStructure value;
-                var result = checkRead(LmdbMethods.mdb_get(txn, dbi, ref marshal.Key, out value));
-                if (result == MDB_NOTFOUND)
-                {
-                    data = null;
-                    return result;
-                }
-                data = value.GetSpan();
-                return result;
-            }
+            return check(LmdbMethods.mdb_put(txn, dbi, ref key, ref value, flags));
         }
 
-        public static int mdb_put(IntPtr txn, uint dbi, byte[] key, byte[] value, PutOptions flags)
+        public static int mdb_del(IntPtr txn, uint dbi, MDBValue key, MDBValue value)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
-                return check(LmdbMethods.mdb_put(txn, dbi, ref marshal.Key, ref marshal.Value, flags));
+            return check(LmdbMethods.mdb_del(txn, dbi, ref key, ref value));
         }
 
-        public static int mdb_del(IntPtr txn, uint dbi, byte[] key, byte[] value)
+        public static int mdb_del(IntPtr txn, uint dbi, MDBValue key)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
-                return check(LmdbMethods.mdb_del(txn, dbi, ref marshal.Key, ref marshal.Value));
-        }
-
-        public static int mdb_del(IntPtr txn, uint dbi, byte[] key)
-        {
-            using (var marshal = new MarshalValueStructure(key))
-                return check(LmdbMethods.mdb_del(txn, dbi, ref marshal.Key, IntPtr.Zero));
+            return check(LmdbMethods.mdb_del(txn, dbi, ref key, IntPtr.Zero));
         }
 
         public static int mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor)
@@ -259,40 +237,30 @@ namespace LightningDB.Native
             return check(LmdbMethods.mdb_cursor_renew(txn, cursor));
         }
 
-        public static int mdb_cursor_get(IntPtr cursor, byte[] key, out ValueStructure keyStructure, out ValueStructure valueStructure, CursorOperation op)
+        public static int mdb_cursor_get(IntPtr cursor, byte[] key, out MDBValue newKey, out MDBValue value,
+            CursorOperation op)
         {
-            valueStructure = default(ValueStructure);
-            using (var marshal = new MarshalValueStructure(key))
-            {
-                keyStructure = marshal.Key;
-                return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref keyStructure, ref valueStructure, op));
-            }
+            value = default;
+            newKey = new MDBValue(new Span<byte>(key));
+            return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref newKey, ref value, op));
         }
 
-        public static int mdb_cursor_get(IntPtr cursor, byte[] key, byte[] value, CursorOperation op)
-        {
-            using (var marshal = new MarshalValueStructure(key, value))
-                return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref marshal.Key, ref marshal.Value, op));
-        }
-
-        public static int mdb_cursor_get(IntPtr cursor, out ValueStructure key, out ValueStructure value, CursorOperation op)
-        {
-            key = value = default(ValueStructure);
-            return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op));
-        }
-
-        public static int mdb_cursor_get_multiple(IntPtr cursor, ref ValueStructure key, ref ValueStructure value, CursorOperation op)
+        public static int mdb_cursor_get(IntPtr cursor, ref MDBValue key, ref MDBValue value, CursorOperation op)
         {
             return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op));
         }
 
-        public static int mdb_cursor_put(IntPtr cursor, byte[] key, byte[] value, CursorPutOptions flags)
+        public static int mdb_cursor_get_multiple(IntPtr cursor, ref MDBValue key, ref MDBValue value, CursorOperation op)
         {
-            using (var marshal = new MarshalValueStructure(key, value))
-                return check(LmdbMethods.mdb_cursor_put(cursor, ref marshal.Key, ref marshal.Value, flags));
+            return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op));
         }
 
-        public static int mdb_cursor_put(IntPtr cursor, ref ValueStructure key, ValueStructure[] data, CursorPutOptions flags)
+        public static int mdb_cursor_put(IntPtr cursor, MDBValue key, MDBValue value, CursorPutOptions flags)
+        {
+            return check(LmdbMethods.mdb_cursor_put(cursor, ref key, ref value, flags));
+        }
+
+        public static int mdb_cursor_put(IntPtr cursor, ref MDBValue key, MDBValue[] data, CursorPutOptions flags)
         {
             return check(LmdbMethods.mdb_cursor_put(cursor, ref key, data, flags));
         }

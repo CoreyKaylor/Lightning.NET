@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Xunit;
 using static System.Text.Encoding;
 
@@ -90,7 +89,7 @@ namespace LightningDB.Tests
                 using (var cursor = tx.CreateCursor(db))
                 {
                     cursor.MoveNext();
-                    Assert.Equal("customdb", UTF8.GetString(cursor.Current.Key));
+                    Assert.Equal("customdb", UTF8.GetString(cursor.Current.Key.Span.ToArray()));
                 }
             }
         }
