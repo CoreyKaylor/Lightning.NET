@@ -75,7 +75,7 @@ namespace LightningDB.Tests
                 tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
                 tx.Commit();
             }
-            Assert.Equal(_env.MaxDatabases, 2);
+            Assert.Equal(2, _env.MaxDatabases);
         }
 
         [Fact]
