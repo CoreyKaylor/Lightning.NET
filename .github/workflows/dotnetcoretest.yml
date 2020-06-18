@@ -7,18 +7,41 @@ on:
     branches: [ master ]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-
+  build:
     strategy:
       matrix:
-        os: [windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.101
-    - name: Run Tests
-      run: dotnet test -f netcoreapp3.1
+      - name: Checkout Lightning.NET
+        uses: actions/checkout@v2
+      - name: Checkout lmdb
+        uses: actions/checkout@v2
+        with:
+          repository: LMDB/lmdb
+          ref: mdb.master
+          path: lmdb
+        if: matrix.os == 'ubuntu-latest'
+      - name: Build lmdb native lib
+        working-directory: ${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/
+        run: make
+        if: matrix.os == 'ubuntu-latest'
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.101
+      - name: Install dependencies
+        working-directory: ${{ runner.workspace }}/Lightning.NET
+        run: dotnet restore
+      - name: Build
+        working-directory: ${{ runner.workspace }}/Lightning.NET
+        run: dotnet build --configuration Release --no-restore
+      - name: Test (Linux)
+        working-directory: ${{ runner.workspace }}/Lightning.NET
+        run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f netcoreapp3.1 --no-restore --verbosity normal
+        if: matrix.os == 'ubuntu-latest'
+      - name: Test (Windows or Mac)
+        working-directory: ${{ runner.workspace }}/Lightning.NET
+        run: dotnet test -f netcoreapp3.1 --no-restore --verbosity normal
+        if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' 
