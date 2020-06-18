@@ -1,7 +1,7 @@
 Lightning.NET
 =============
 
-[![Actions Status](https://github.com/CoreyKaylor/Lightning.NET/workflows/unit-tests/badge.svg)](https://github.com/CoreyKaylor/Lightning.NET/actions)
+![.NET Core Tests](https://github.com/CoreyKaylor/Lightning.NET/workflows/.NET%20Core%20Tests/badge.svg)
 
 .NET library for OpenLDAP's LMDB key-value store.
 
