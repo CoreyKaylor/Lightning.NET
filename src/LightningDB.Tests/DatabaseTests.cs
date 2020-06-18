@@ -49,7 +49,7 @@ namespace LightningDB.Tests
 
             db.Dispose();
 
-            Assert.Equal(false, db.IsOpened);
+            Assert.False(db.IsOpened);
         }
 
         [Fact]
@@ -112,13 +112,13 @@ namespace LightningDB.Tests
             {
                 var db = tx.OpenDatabase("custom");
                 var result = tx.Get(db, "hello");
-                Assert.Equal(result, "world");
+                Assert.Equal("world", result);
             }
             using (var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly))
             {
                 var db = tx.OpenDatabase("custom");
                 var result = tx.Get(db, "hello");
-                Assert.Equal(result, "world");
+                Assert.Equal("world", result);
             }
         }
 
