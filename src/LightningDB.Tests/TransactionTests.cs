@@ -3,10 +3,57 @@ using System.Linq;
 using System.Collections.Generic;
 using LightningDB.Native;
 using Xunit;
+using System.Runtime.InteropServices;
 
 namespace LightningDB.Tests
 {
     [Collection("SharedFileSystem")]
+    public class TransactionDupFixedTests : IDisposable
+    {
+        private LightningEnvironment _env;
+
+        public TransactionDupFixedTests(SharedFileSystem fileSystem)
+        {
+            var path = fileSystem.CreateNewDirectoryForTest();
+            _env = new LightningEnvironment(path);
+            _env.Open();
+        }
+
+        public void Dispose()
+        {
+            _env.Dispose();
+        }
+
+
+        [Fact]
+        public void CanCountTransactionEntries()
+        {
+            LightningDatabase db;
+
+            using (var openDbTxn = _env.BeginTransaction())
+            {
+                db = openDbTxn.OpenDatabase();
+            }
+
+            var key = MemoryMarshal.Cast<char, byte>("abcd");
+
+            using(var writeTxn = _env.BeginTransaction())
+            {
+                writeTxn.Put(db, key, MemoryMarshal.Cast<char,byte>("Value1"));
+                writeTxn.Put(db, key, MemoryMarshal.Cast<char, byte>("Value2"));
+                writeTxn.Commit();
+            }
+
+            using (var delTxn = _env.BeginTransaction())
+            {
+                delTxn.Delete(db, key, null);//should not throw
+                delTxn.Commit();
+            }
+        }
+    }
+
+
+        [Collection("SharedFileSystem")]
     public class TransactionTests : IDisposable
     {
         private LightningEnvironment _env;
@@ -145,7 +192,7 @@ namespace LightningDB.Tests
             Func<int, int, int> comparison = (l, r) => l.CompareTo(r);
             var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create};
             Func<MDBValue, MDBValue, int> compareWith =
-                (l, r) => comparison(BitConverter.ToInt32(l.Span.ToArray(), 0), BitConverter.ToInt32(r.Span.ToArray(), 0));
+                (l, r) => comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
             options.CompareWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>(compareWith)));
 
             using (var txnT = _env.BeginTransaction())
@@ -170,7 +217,7 @@ namespace LightningDB.Tests
             {
                 int order = 0;
                 while (c.MoveNext())
-                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.Current.Key.Span.ToArray(), 0));
+                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.Current.Key.CopyToNewArray(), 0));
             }
         }
 
@@ -181,7 +228,7 @@ namespace LightningDB.Tests
 
             var txn = _env.BeginTransaction();
             var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
-            Func<MDBValue, MDBValue, int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l.Span.ToArray(), 0), BitConverter.ToInt32(r.Span.ToArray(), 0));
+            Func<MDBValue, MDBValue, int> compareWith = (l, r) => comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
             options.FindDuplicatesWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>(compareWith)));
             var db = txn.OpenDatabase(configuration: options);
 
@@ -197,7 +244,7 @@ namespace LightningDB.Tests
                 int order = 0;
 
                 while (c.MoveNext())
-                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.Current.Value.Span.ToArray(), 0));
+                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.Current.Value.CopyToNewArray(), 0));
             }
         }
     }

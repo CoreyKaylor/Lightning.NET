@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
 using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
@@ -228,16 +231,37 @@ namespace LightningDB
 
         private bool Get(CursorOperation operation, byte[] key)
         {
+            if (key is null)
+                throw new ArgumentNullException(nameof(key));
+
+            return Get(operation, key.AsSpan());
+        }
+
+        private unsafe bool Get(CursorOperation operation, ReadOnlySpan<byte> key)
+        {
             _currentValue = default;
-            var findKey = new MDBValue(new Span<byte>(key));
-            return mdb_cursor_get(_handle, ref findKey, ref _currentValue, operation) == 0;
+#warning should this update _currentKey?
+            fixed (byte* keyPtr = key)
+            {
+                var findKey = new MDBValue(key.Length, keyPtr);
+                return mdb_cursor_get(_handle, ref findKey, ref _currentValue, operation) == 0;
+            }
         }
 
         private bool Get(CursorOperation operation, byte[] key, byte[] value)
         {
-            var mdbKey = new MDBValue(new Span<byte>(key));
-            var mdbValue = new MDBValue(new Span<byte>(value));
-            return mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation) == 0;
+            return Get(operation, key.AsSpan(), value.AsSpan());
+        }
+
+        private unsafe bool Get(CursorOperation operation, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        {
+            fixed(byte* keyPtr = key)
+            fixed(byte* valPtr = value)
+            {
+                var mdbKey = new MDBValue(key.Length, keyPtr);
+                var mdbValue = new MDBValue(value.Length, valPtr);
+                return mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation) == 0;
+            }
         }
 
         private bool GetMultiple(CursorOperation operation)
@@ -265,7 +289,38 @@ namespace LightningDB
         /// </param>
         public void Put(byte[] key, byte[] value, CursorPutOptions options)
         {
-            mdb_cursor_put(_handle, new MDBValue(new Span<byte>(key)), new MDBValue(new Span<byte>(value)), options);
+            Put(key.AsSpan(), value.AsSpan(), options);
+        }
+
+
+        /// <summary>
+        /// Store by cursor.
+        /// This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
+        /// Note: Earlier documentation incorrectly said errors would leave the state of the cursor unchanged.
+        /// If the function fails for any reason, the state of the cursor will be unchanged. 
+        /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
+        /// </summary>
+        /// <param name="key">The key operated on.</param>
+        /// <param name="value">The data operated on.</param>
+        /// <param name="options">
+        /// Options for this operation. This parameter must be set to 0 or one of the values described here.
+        ///     CursorPutOptions.Current - overwrite the data of the key/data pair to which the cursor refers with the specified data item. The key parameter is ignored.
+        ///     CursorPutOptions.NoDuplicateData - enter the new key/data pair only if it does not already appear in the database. This flag may only be specified if the database was opened with MDB_DUPSORT. The function will return MDB_KEYEXIST if the key/data pair already appears in the database.
+        ///     CursorPutOptions.NoOverwrite - enter the new key/data pair only if the key does not already appear in the database. The function will return MDB_KEYEXIST if the key already appears in the database, even if the database supports duplicates (MDB_DUPSORT).
+        ///     CursorPutOptions.ReserveSpace - reserve space for data of the given size, but don't copy the given data. Instead, return a pointer to the reserved space, which the caller can fill in later. This saves an extra memcpy if the data is being generated later.
+        ///     CursorPutOptions.AppendData - append the given key/data pair to the end of the database. No key comparisons are performed. This option allows fast bulk loading when keys are already known to be in the correct order. Loading unsorted keys with this flag will cause data corruption.
+        ///     CursorPutOptions.AppendDuplicateData - as above, but for sorted dup data.
+        /// </param>
+        public unsafe void Put(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, CursorPutOptions options)
+        {
+            fixed (byte* keyPtr = key)
+            fixed (byte* valPtr = value)
+            {
+                var mdbKey = new MDBValue(key.Length, keyPtr);
+                var mdbValue = new MDBValue(value.Length, valPtr);
+
+                mdb_cursor_put(_handle, mdbKey, mdbValue, options);
+            }
         }
 
         /// <summary>
@@ -276,24 +331,71 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">The key operated on.</param>
         /// <param name="values">The data items operated on.</param>
-        public void PutMultiple(byte[] key, byte[][] values)
+        public unsafe void PutMultiple(byte[] key, byte[][] values)
         {
-            var mdbKey = new MDBValue(new Span<byte>(key));
-            var mdbValue = new MDBValue(new Span<byte>(values.SelectMany(x => x).ToArray()), GetSize(values));
-            var mdbCount = new MDBValue
-            {
-                size = (IntPtr) values.Length
-            };
-            mdb_cursor_put(_handle, ref mdbKey, new []{ mdbValue, mdbCount }, CursorPutOptions.MultipleData);
-        }
-        
-        private int GetSize(byte[][] values)
-        {
-            if (values.Length == 0 || values[0] == null || values[0].Length == 0)
-                return 0;
+            const int StackAllocateLimit = 256;//I just made up a number, this can be much more agressive -arc
 
-            return values[0].Length;
+            int overallLength = values.Sum(arr => arr.Length);//probably allocates but boy is it handy...
+
+
+            //the idea here is to gain some perf by stackallocating the buffer to 
+            //hold the contiguous keys
+            if (overallLength < StackAllocateLimit)
+            {
+                Span<byte> contiguousValues = stackalloc byte[overallLength];
+
+                InnerPutMultiple(contiguousValues);
+            }
+            else
+            {
+                fixed (byte* contiguousValuesPtr = new byte[overallLength])
+                {
+                    Span<byte> contiguousValues = new Span<byte>(contiguousValuesPtr, overallLength);
+                    InnerPutMultiple(contiguousValues);
+                }
+            }
+
+            //these local methods could be made static, but the compiler will emit these closures
+            //as structs with very little overhead. Also static local functions isn't availible 
+            //until C# 8 so I can't use it anyway...
+            void InnerPutMultiple(Span<byte> contiguousValuesBuffer)
+            {
+                FlattenInfo(contiguousValuesBuffer);
+                var contiguousValuesPtr = (byte*)Unsafe.AsPointer(ref contiguousValuesBuffer.GetPinnableReference());
+
+                var mdbValue = new MDBValue(GetSize(), contiguousValuesPtr);
+                var mdbCount = new MDBValue(values.Length, (byte*)null);
+
+                Span<MDBValue> dataBuffer = stackalloc MDBValue[2] { mdbValue, mdbCount };
+
+                fixed (byte* keyPtr = key)
+                {
+                    var mdbKey = new MDBValue(key.Length, keyPtr);
+
+                    mdb_cursor_put(_handle, ref mdbKey, ref dataBuffer, CursorPutOptions.MultipleData);
+                }
+            }
+
+            void FlattenInfo(Span<byte> targetBuffer)
+            {
+                var cursor = targetBuffer;
+
+                foreach(var buffer in values)
+                {
+                    buffer.CopyTo(cursor);
+                    cursor = cursor.Slice(buffer.Length);
+                }
+            }
+
+            int GetSize() 
+            {
+                if (values.Length == 0 || values[0] == null || values[0].Length == 0)
+                    return 0;
+
+                return values[0].Length;
+            }
         }
+
 
         /// <summary>
         /// Return up to a page of the duplicate data items at the current cursor position. Only for MDB_DUPFIXED

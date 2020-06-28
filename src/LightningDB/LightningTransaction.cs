@@ -1,5 +1,7 @@
 ﻿using System;
+
 using LightningDB.Native;
+
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -129,11 +131,23 @@ namespace LightningDB
         /// <summary>
         /// Get value from a database.
         /// </summary>
-        /// <param name="db">Database </param>
-        /// <param name="key">Key byte array.</param>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">An array containing the key to look up.</param>
         /// <returns>Requested value's byte array if exists, or null if not.</returns>
         public byte[] Get(LightningDatabase db, byte[] key)
-        {
+        {//argument validation delegated to next call
+            
+            return Get(db, key.AsSpan());
+        }
+
+        /// <summary>
+        /// Get value from a database.
+        /// </summary>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
+        /// <returns>Requested value's byte array if exists, or null if not.</returns>
+        public byte[] Get(LightningDatabase db, ReadOnlySpan<byte> key)
+        {//argument validation delegated to next call
             byte[] value;
             TryGet(db, key, out value);
             return value;
@@ -142,38 +156,118 @@ namespace LightningDB
         /// <summary>
         /// Tries to get a value by its key.
         /// </summary>
-        /// <param name="db">Database.</param>
-        /// <param name="key">Key byte array.</param>
-        /// <param name="value">Value byte array if exists.</param>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
+        /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
         /// <returns>True if key exists, false if not.</returns>
         public bool TryGet(LightningDatabase db, byte[] key, out byte[] value)
+        {//argument validation delegated to next call
+            return TryGet(db, key.AsSpan(), out value);
+        }
+
+        /// <summary>
+        /// Tries to get a value by its key.
+        /// </summary>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
+        /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
+        /// <returns>True if key exists, false if not.</returns>
+        public unsafe bool TryGet(LightningDatabase db, ReadOnlySpan<byte> key, out byte[] value)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            var mdbKey = new MDBValue(new Span<byte>(key));
-            value = default;
-            var result = mdb_get(_handle, db.Handle(), ref mdbKey, out var newVal) != MDB_NOTFOUND;
-            if (result)
+            fixed(byte* keyBuffer = key)
             {
-                value = newVal.Span.ToArray();
+                var mdbKey = new MDBValue(key.Length, keyBuffer);
+
+                value = default;
+                var result = mdb_get(_handle, db.Handle(), ref mdbKey, out var newVal) != MDB_NOTFOUND;
+                if (result)  
+                {
+                    value = newVal.CopyToNewArray();
+                }
+                return result;
             }
-            return result;
+        }
+
+        /// <summary>
+        /// Tries to lookup a value by its key and read it into the provided buffer.
+        /// </summary>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
+        /// <param name="valueDestinationBuffer">
+        /// A buffer to receive the value data retrieved from the database
+        /// </param>
+        /// <returns>True if key exists, false if not.</returns>
+        public unsafe GetResult TryGet(LightningDatabase db, ReadOnlySpan<byte> key, byte[] valueDestinationBuffer)
+        {
+            if (db == null)
+                throw new ArgumentNullException(nameof(db));
+
+            fixed (byte* keyBuffer = key)
+            {
+                var mdbKey = new MDBValue(key.Length, keyBuffer);
+
+                if (mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDB_NOTFOUND)
+                {
+                    var valueSpan = mdbValue.AsSpan();
+
+                    if(valueSpan.TryCopyTo(valueDestinationBuffer))
+                    {
+                        return new GetResult(GetResultCode.Success, valueSpan.Length);
+                    }
+                    else
+                    {
+                        return new GetResult(GetResultCode.DestinationTooSmall, valueSpan.Length);
+                    }
+                }
+                else
+                {
+                    return new GetResult(GetResultCode.DestinationTooSmall, 0);
+                }
+            }
         }
 
         /// <summary>
         /// Check whether data exists in database.
         /// </summary>
-        /// <param name="db">Database.</param>
-        /// <param name="key">Key.</param>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
         /// <returns>True if key exists, false if not.</returns>
         public bool ContainsKey(LightningDatabase db, byte[] key)
+        {//argument validation delegated to next call
+            return ContainsKey(db, key.AsSpan());
+        }
+
+        /// <summary>
+        /// Check whether data exists in database.
+        /// </summary>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
+        /// <returns>True if key exists, false if not.</returns>
+        public bool ContainsKey(LightningDatabase db, ReadOnlySpan<byte> key)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
+#warning this copies data when it doesn't need to...
             return TryGet(db, key, out _);
         }
+
+        /// <summary>
+        /// Put data into a database.
+        /// </summary>
+        /// <param name="db">The database to query.</param>
+        /// <param name="key">A span containing the key to look up.</param>
+        /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
+        /// <param name="options">Operation options (optional).</param>
+        public void Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
+        {//argument validation delegated to next call
+
+            Put(db, key.AsSpan(), value.AsSpan(), options);
+        }
+
 
         /// <summary>
         /// Put data into a database.
@@ -182,14 +276,20 @@ namespace LightningDB
         /// <param name="key">Key byte array.</param>
         /// <param name="value">Value byte array.</param>
         /// <param name="options">Operation options (optional).</param>
-        public void Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
+        public unsafe void Put(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, PutOptions options = PutOptions.None)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            var mdbKey = new MDBValue(new Span<byte>(key));
-            var mdbValue = new MDBValue(new Span<byte>(value));
-            mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
+            fixed (byte* keyPtr = key)
+            fixed (byte* valuePtr = value)
+            {
+                var mdbKey = new MDBValue(key.Length, keyPtr);
+                var mdbValue = new MDBValue(value.Length, valuePtr);
+
+#warning surface return code?
+                mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
+            }
         }
 
         /// <summary>
@@ -204,13 +304,33 @@ namespace LightningDB
         /// <param name="key">The key to delete from the database</param>
         /// <param name="value">The data to delete (optional)</param>
         public void Delete(LightningDatabase db, byte[] key, byte[] value)
+        {//argument validation delegated to next call
+            Delete(db, key.AsSpan(), value.AsSpan());
+        }
+
+        /// <summary>
+        /// Delete items from a database.
+        /// This function removes key/data pairs from the database.
+        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored.
+        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted.
+        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted.
+        /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
+        /// </summary>
+        /// <param name="db">A database handle returned by mdb_dbi_open()</param>
+        /// <param name="key">The key to delete from the database</param>
+        /// <param name="value">The data to delete (optional)</param>
+        public unsafe void Delete(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
 
-            var mdbKey = new MDBValue(new Span<byte>(key));
-            var mdbValue = new MDBValue(new Span<byte>(value));
-            mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
+            fixed (byte* keyPtr = key)
+            fixed (byte* valuePtr = value)
+            {
+                var mdbKey = new MDBValue(key.Length, keyPtr);
+                var mdbValue = new MDBValue(value.Length, valuePtr);
+                mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
+            }
         }
 
         /// <summary>
@@ -225,7 +345,16 @@ namespace LightningDB
         /// <param name="key">The key to delete from the database</param>
         public void Delete(LightningDatabase db, byte[] key)
         {
-            mdb_del(_handle, db.Handle(), new MDBValue(new Span<byte>(key)));
+            Delete(db, key.AsSpan());
+        }
+
+        public unsafe void Delete(LightningDatabase db, ReadOnlySpan<byte> key)
+        {
+#warning Surface return code?
+            fixed(byte* ptr = key) {
+                var mdbKey = new MDBValue(key.Length, ptr);
+                mdb_del(_handle, db.Handle(), mdbKey);
+            }
         }
 
         /// <summary>

@@ -70,8 +70,8 @@ namespace LightningDB.Tests
             {
                 Assert.True(cur.MoveToLast());
 
-                var lastKey = UTF8.GetString(cur.Current.Key.Span.ToArray());
-                var lastValue = UTF8.GetString(cur.Current.Value.Span.ToArray());
+                var lastKey = UTF8.GetString(cur.Current.Key.CopyToNewArray());
+                var lastValue = UTF8.GetString(cur.Current.Value.CopyToNewArray());
 
                 Assert.Equal("key5", lastKey);
                 Assert.Equal("key5", lastValue);
@@ -88,8 +88,8 @@ namespace LightningDB.Tests
             {
                 cur.MoveToFirst();
 
-                var lastKey = UTF8.GetString(cur.Current.Key.Span.ToArray());
-                var lastValue = UTF8.GetString(cur.Current.Value.Span.ToArray());
+                var lastKey = UTF8.GetString(cur.Current.Key.CopyToNewArray());
+                var lastValue = UTF8.GetString(cur.Current.Value.CopyToNewArray());
 
                 Assert.Equal("key1", lastKey);
                 Assert.Equal("key1", lastValue);
@@ -108,8 +108,8 @@ namespace LightningDB.Tests
 
                 while (cur.MoveNext())
                 {
-                    var key = UTF8.GetString(cur.Current.Key.Span.ToArray());
-                    var value = UTF8.GetString(cur.Current.Value.Span.ToArray());
+                    var key = UTF8.GetString(cur.Current.Key.CopyToNewArray());
+                    var value = UTF8.GetString(cur.Current.Value.CopyToNewArray());
 
                     var name = "key" + ++i;
 
@@ -136,7 +136,7 @@ namespace LightningDB.Tests
             }
             using(var cursor = _txn.CreateCursor(_db))
             {
-                var foundDeleted = cursor.Select(x => UTF8.GetString(x.Key.Span.ToArray()))
+                var foundDeleted = cursor.Select(x => UTF8.GetString(x.Key.CopyToNewArray()))
                     .Any(x => x == "key1" || x == "key2");
                 Assert.False(foundDeleted);
             }
@@ -154,8 +154,8 @@ namespace LightningDB.Tests
                 foreach (var pair in cursor)
                 {
                     var name = "key" + ++i;
-                    Assert.Equal(name, UTF8.GetString(pair.Key.Span.ToArray()));
-                    Assert.Equal(name, UTF8.GetString(pair.Value.Span.ToArray()));
+                    Assert.Equal(name, UTF8.GetString(pair.Key.CopyToNewArray()));
+                    Assert.Equal(name, UTF8.GetString(pair.Value.CopyToNewArray()));
                 }
             }
         }
@@ -180,7 +180,7 @@ namespace LightningDB.Tests
                 }
             }
 
-            Assert.Equal(values, pairs.Select(x => x.Value.Span.ToArray()).ToArray());
+            Assert.Equal(values, pairs.Select(x => x.Value.CopyToNewArray()).ToArray());
         }
 
         [Fact]
@@ -198,8 +198,8 @@ namespace LightningDB.Tests
                 cur.MoveNext();
                 cur.GetMultiple();
                 var resultPair = cur.Current;
-                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.Span.ToArray()));
-                var result = resultPair.Value.Span.ToArray().Split(sizeof(int))
+                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.CopyToNewArray()));
+                var result = resultPair.Value.CopyToNewArray().Split(sizeof(int))
                     .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
                 Assert.Equal(original, result);
             }
@@ -219,8 +219,8 @@ namespace LightningDB.Tests
             {
                 cur.MoveNextMultiple();
                 var resultPair = cur.Current;
-                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.Span.ToArray()));
-                var result = resultPair.Value.Span.ToArray().Split(sizeof(int))
+                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.CopyToNewArray()));
+                var result = resultPair.Value.CopyToNewArray().Split(sizeof(int))
                     .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
                 Assert.Equal(original, result);
             }

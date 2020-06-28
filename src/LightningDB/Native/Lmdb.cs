@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace LightningDB.Native
@@ -237,12 +238,16 @@ namespace LightningDB.Native
             return check(LmdbMethods.mdb_cursor_renew(txn, cursor));
         }
 
-        public static int mdb_cursor_get(IntPtr cursor, byte[] key, out MDBValue newKey, out MDBValue value,
+        public unsafe static int mdb_cursor_get(IntPtr cursor, byte[] key, out MDBValue newKey, out MDBValue value,
             CursorOperation op)
         {
             value = default;
-            newKey = new MDBValue(new Span<byte>(key));
-            return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref newKey, ref value, op));
+
+            fixed (byte* keyPtr = key)
+            {
+                newKey = new MDBValue(key.Length, keyPtr);
+                return checkRead(LmdbMethods.mdb_cursor_get(cursor, ref newKey, ref value, op));
+            }
         }
 
         public static int mdb_cursor_get(IntPtr cursor, ref MDBValue key, ref MDBValue value, CursorOperation op)
@@ -260,9 +265,12 @@ namespace LightningDB.Native
             return check(LmdbMethods.mdb_cursor_put(cursor, ref key, ref value, flags));
         }
 
-        public static int mdb_cursor_put(IntPtr cursor, ref MDBValue key, MDBValue[] data, CursorPutOptions flags)
+
+        /// <param name="data">This span must be pinned or stackalloc memory</param>
+        public unsafe static int mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref Span<MDBValue> data, CursorPutOptions flags)
         {
-            return check(LmdbMethods.mdb_cursor_put(cursor, ref key, data, flags));
+            ref var dataRef = ref MemoryMarshal.GetReference(data);
+            return check(LmdbMethods.mdb_cursor_put(cursor, ref key, ref dataRef, flags));
         }
 
         public static int mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
