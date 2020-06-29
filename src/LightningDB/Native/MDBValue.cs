@@ -15,7 +15,6 @@ namespace LightningDB.Native
     /// </remarks>
     public unsafe struct MDBValue
     {
-#warning add details fixed performance vs GCHandle pinning
         /// <remarks>
         /// We only expose this shape constructor to basically force you to use
         /// a fixed statment to obtain the pointer. If we accepted a Span or 
@@ -23,27 +22,33 @@ namespace LightningDB.Native
         /// the buffer. Since this library is geared towards safe and easy usage,
         /// this way somewhat forces you onto the correct path.
         /// 
-        /// We could also use GCHandle.Alloc to pin
         /// </remarks>
-        /// <param name="data">A pointer to a buffer. This buffer must be pinned or allocated from 
-        /// the stack to avoid it being moved by the GC during a collection</param>
+        /// <param name="bufferSize">The length of the buffer</param>
+        /// <param name="pinnedOrStackAllocBuffer">A pointer to a buffer. 
+        /// The underlying memory may be managed(an array), unmanged or stack-allocated.
+        /// If it is managed, it **MUST** be pinned via either GCHandle.Alloc or a fixed statement
+        /// </param>
         internal MDBValue(int bufferSize, byte* pinnedOrStackAllocBuffer)
         {
             this.size = (IntPtr)bufferSize;
             this.data = pinnedOrStackAllocBuffer;
         }
-
+        //DO NOT REORDER
         internal IntPtr size;
+
+        //DO NOT REORDER
         internal byte* data;
 
+        /// <summary>
+        /// Gets a span representation of the buffer
+        /// </summary>
         public ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>(data, checked((int)size));
 
         /// <summary>
-        /// Convinence method to make intent more clear
+        /// Copies the data of the buffer to a new array
         /// </summary>
         /// <returns>A newly allocated array containing data copied from the dereferenced data pointer</returns>
+        /// <remarks>Equivilent to AsSpan().ToArray() but makes intent a little more clear</remarks>
         public byte[] CopyToNewArray() => AsSpan().ToArray();
-
-        public bool TryCopyTo(Span<byte> destinationBuffer) => AsSpan().TryCopyTo(destinationBuffer);
     }
 }

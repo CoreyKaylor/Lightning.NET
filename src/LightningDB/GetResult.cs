@@ -1,7 +1,7 @@
 ﻿namespace LightningDB
 {
     /// <summary>
-    /// The result of a get operation that uses a pre-allocated buffer
+    /// A struct describing the result of a TryGet operation
     /// </summary>
     public readonly struct GetResult
     {
@@ -27,6 +27,9 @@
         public int ValueLength { get; }
     }
 
+    /// <summary>
+    /// An enumeration describing the result of a TryGet operation
+    /// </summary>
     public enum GetResultCode
     {
         /// <summary>

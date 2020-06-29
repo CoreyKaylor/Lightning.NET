@@ -2,6 +2,9 @@
 
 namespace LightningDB.Native
 {
+    /// <summary>
+    /// Statistics for a database in the environment. 
+    /// </summary>
     public struct MDBStat
     {
         /// <summary>

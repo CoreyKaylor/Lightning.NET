@@ -265,7 +265,10 @@ namespace LightningDB.Native
             return check(LmdbMethods.mdb_cursor_put(cursor, ref key, ref value, flags));
         }
 
-
+        /// <summary>
+        /// store multiple contiguous data elements in a single request.
+        /// May only be used with MDB_DUPFIXED.
+        /// </summary>
         /// <param name="data">This span must be pinned or stackalloc memory</param>
         public unsafe static int mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref Span<MDBValue> data, CursorPutOptions flags)
         {

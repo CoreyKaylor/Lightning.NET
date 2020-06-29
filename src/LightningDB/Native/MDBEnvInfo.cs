@@ -2,6 +2,9 @@
 
 namespace LightningDB.Native
 {
+    /// <summary>
+    /// Information about the environment. 
+    /// </summary>
     public struct MDBEnvInfo
     {
         /// <summary>

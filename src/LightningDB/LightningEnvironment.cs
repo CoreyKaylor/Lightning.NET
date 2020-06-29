@@ -50,14 +50,19 @@ namespace LightningDB
         /// </summary>
         public LightningVersionInfo Version => LightningVersionInfo.Get();
 
-        /// Set the size of the memory map to use for this environment.
+
+        /// <summary>
+        /// Gets or Sets the size of the memory map to use for this environment.
+        /// The size of the memory map is also the maximum size of the database. 
         /// The size should be a multiple of the OS page size. 
         /// The default is 10485760 bytes. 
-        /// The size of the memory map is also the maximum size of the database. 
+        /// </summary>
+        /// <remarks>
         /// The value should be chosen as large as possible, to accommodate future growth of the database. 
-        /// This function may only be called before the environment is opened. 
-        /// The size may be changed by closing and reopening the environment. 
-        /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space.
+        /// This function may only be called before the environment is opened.
+        /// The size may be changed by closing and reopening the environment.  
+        /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space. 
+        /// </remarks>
         public long MapSize
         {
             get { return _config.MapSize; }
@@ -118,6 +123,9 @@ namespace LightningDB
             }
         }
 
+        /// <summary>
+        /// Get statistics about the LMDB environment. 
+        /// </summary>
         public Stats EnvironmentStats
         {
             get
@@ -134,7 +142,10 @@ namespace LightningDB
                 };
             }
         }
-        
+
+        /// <summary>
+        /// Gets information about the LMDB environment. 
+        /// </summary>
         public EnvironmentInfo Info
         {
             get

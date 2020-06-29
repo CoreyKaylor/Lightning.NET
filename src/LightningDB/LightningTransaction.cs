@@ -246,13 +246,17 @@ namespace LightningDB
         /// <param name="db">The database to query.</param>
         /// <param name="key">A span containing the key to look up.</param>
         /// <returns>True if key exists, false if not.</returns>
-        public bool ContainsKey(LightningDatabase db, ReadOnlySpan<byte> key)
+        public unsafe bool ContainsKey(LightningDatabase db, ReadOnlySpan<byte> key)
         {
-            if (db == null)
+            if (db is null)
                 throw new ArgumentNullException(nameof(db));
 
-#warning this copies data when it doesn't need to...
-            return TryGet(db, key, out _);
+            fixed (byte* keyBuffer = key)
+            {
+                var mdbKey = new MDBValue(key.Length, keyBuffer);
+
+                return mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDB_NOTFOUND;
+            }
         }
 
         /// <summary>
@@ -287,7 +291,6 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valuePtr);
 
-#warning surface return code?
                 mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
             }
         }
@@ -348,9 +351,19 @@ namespace LightningDB
             Delete(db, key.AsSpan());
         }
 
+
+        /// <summary>
+        /// Delete items from a database.
+        /// This function removes key/data pairs from the database. 
+        /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
+        /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted. 
+        /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted. 
+        /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
+        /// </summary>
+        /// <param name="db">A database handle returned by mdb_dbi_open()</param>
+        /// <param name="key">The key to delete from the database</param>
         public unsafe void Delete(LightningDatabase db, ReadOnlySpan<byte> key)
         {
-#warning Surface return code?
             fixed(byte* ptr = key) {
                 var mdbKey = new MDBValue(key.Length, ptr);
                 mdb_del(_handle, db.Handle(), mdbKey);

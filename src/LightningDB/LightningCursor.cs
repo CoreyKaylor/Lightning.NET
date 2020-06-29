@@ -38,6 +38,9 @@ namespace LightningDB
             Transaction.Disposing += Dispose;
         }
 
+        /// <summary>
+        /// Gets the the native handle of the cursor
+        /// </summary>
         public IntPtr Handle()
         {
             return _handle;
@@ -48,6 +51,9 @@ namespace LightningDB
         /// </summary>
         public LightningTransaction Transaction { get; }
 
+        /// <summary>
+        /// Equivilent to Renew
+        /// </summary>
         public void Reset()
         {
             Renew();
