@@ -7,10 +7,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>LightningDB</AssemblyName>
     <PackageId>LightningDB</PackageId>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>lmdb;lightning;storage;persistance;key-value;nosql</PackageTags>
     <PackageProjectUrl>https://github.com/CoreyKaylor/Lightning.NET</PackageProjectUrl>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="runtimes\**\*.*">
