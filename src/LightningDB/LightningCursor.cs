@@ -246,11 +246,15 @@ namespace LightningDB
         private unsafe bool Get(CursorOperation operation, ReadOnlySpan<byte> key)
         {
             _currentValue = default;
-#warning should this update _currentKey?
             fixed (byte* keyPtr = key)
             {
                 var findKey = new MDBValue(key.Length, keyPtr);
-                return mdb_cursor_get(_handle, ref findKey, ref _currentValue, operation) == 0;
+                var found = mdb_cursor_get(_handle, ref findKey, ref _currentValue, operation) == 0;
+                if (found)
+                {
+                    _currentKey = findKey;
+                }
+                return found;
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using LightningDB.Native;
 using Xunit;
 using static System.Text.Encoding;
@@ -224,6 +225,28 @@ namespace LightningDB.Tests
                     .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
                 Assert.Equal(original, result);
             }
+        }
+
+        [Fact]
+        public void ShouldAdvanceKeyToClosestWhenKeyNotFound()
+        {
+            var keys = new List<string>
+            {
+                "one",
+                "two/1",
+                "two/2",
+                "two/3"
+            };
+            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
+            foreach (var key in keys)
+            {
+                _txn.Put(_db, Encoding.UTF8.GetBytes(key), null);
+            }
+
+            using var cursor = _txn.CreateCursor(_db);
+            cursor.MoveTo(UTF8.GetBytes("two"));
+            var result = cursor.GetCurrent().Key.CopyToNewArray();
+            Assert.Equal("two/1", UTF8.GetString(result));
         }
     }
 }
