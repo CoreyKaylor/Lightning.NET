@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using LightningDB.Native;
 using Xunit;
 using System.Runtime.InteropServices;
 
@@ -53,7 +52,7 @@ namespace LightningDB.Tests
     }
 
 
-        [Collection("SharedFileSystem")]
+    [Collection("SharedFileSystem")]
     public class TransactionTests : IDisposable
     {
         private LightningEnvironment _env;
@@ -216,8 +215,8 @@ namespace LightningDB.Tests
             using (var c = txn.CreateCursor(db))
             {
                 int order = 0;
-                while (c.MoveNext())
-                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.Current.Key.CopyToNewArray(), 0));
+                while (c.MoveNext() == MDBResultCode.Success)
+                    Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.GetCurrent().key.CopyToNewArray(), 0));
             }
         }
 
@@ -243,8 +242,8 @@ namespace LightningDB.Tests
             {
                 int order = 0;
 
-                while (c.MoveNext())
-                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.Current.Value.CopyToNewArray(), 0));
+                while (c.MoveNext() == MDBResultCode.Success)
+                    Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.GetCurrent().value.CopyToNewArray(), 0));
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 namespace LightningDB.Tests
@@ -45,6 +46,16 @@ namespace LightningDB.Tests
                 .Select((x, i) => new {Index = i, Value = x})
                 .GroupBy(x => x.Index / parts)
                 .Select(x => x.Select(v => v.Value));
+        }
+
+        public static void RunCursorScenario(this LightningEnvironment env, 
+            Action<LightningTransaction, LightningDatabase, LightningCursor> scenario,
+            DatabaseOpenFlags flags = DatabaseOpenFlags.Create, TransactionBeginFlags transactionFlags = TransactionBeginFlags.None)
+        {
+            using var tx = env.BeginTransaction(transactionFlags);
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = flags });
+            using var cursor = tx.CreateCursor(db);
+            scenario(tx, db, cursor);
         }
     }
 }

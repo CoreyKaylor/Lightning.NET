@@ -39,7 +39,7 @@ namespace LightningDB
             }
 
             var parentHandle = parent?.Handle() ?? IntPtr.Zero;
-            mdb_txn_begin(environment.Handle(), parentHandle, flags, out _handle);
+            mdb_txn_begin(environment.Handle(), parentHandle, flags, out _handle).ThrowOnError();
             _originalHandle = _handle;
         }
 
@@ -182,7 +182,7 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyBuffer);
 
                 value = default;
-                var result = mdb_get(_handle, db.Handle(), ref mdbKey, out var newVal) != MDB_NOTFOUND;
+                var result = mdb_get(_handle, db.Handle(), ref mdbKey, out var newVal) != MDBResultCode.NotFound;
                 if (result)  
                 {
                     value = newVal.CopyToNewArray();
@@ -209,7 +209,7 @@ namespace LightningDB
             {
                 var mdbKey = new MDBValue(key.Length, keyBuffer);
 
-                if (mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDB_NOTFOUND)
+                if (mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDBResultCode.NotFound)
                 {
                     var valueSpan = mdbValue.AsSpan();
 
@@ -255,7 +255,7 @@ namespace LightningDB
             {
                 var mdbKey = new MDBValue(key.Length, keyBuffer);
 
-                return mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDB_NOTFOUND;
+                return mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDBResultCode.NotFound;
             }
         }
 
@@ -402,11 +402,11 @@ namespace LightningDB
         /// All cursors opened within the transaction will be closed by this call. 
         /// The cursors and transaction handle will be freed and must not be used again after this call.
         /// </summary>
-        public void Commit()
+        public MDBResultCode Commit()
         {
             State = LightningTransactionState.Commited;
             StateChanging?.Invoke(State);
-            mdb_txn_commit(_handle);
+            return mdb_txn_commit(_handle);
         }
 
         /// <summary>

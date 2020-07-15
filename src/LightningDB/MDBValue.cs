@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
-namespace LightningDB.Native
+namespace LightningDB
 {
     /// <summary>
     /// A managed version of the native MDB_val type

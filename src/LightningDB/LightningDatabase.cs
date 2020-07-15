@@ -33,7 +33,7 @@ namespace LightningDB
             Environment = transaction.Environment;
             _transaction = transaction;
             Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle);
+            mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle).ThrowOnError();
             _pinnedConfig = _configuration.ConfigureDatabase(transaction, this);
             IsOpened = true;
         }
@@ -125,7 +125,7 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Deallocates resources opeened by the database.
+        /// Deallocates resources opened by the database.
         /// </summary>
         public void Dispose()
         {

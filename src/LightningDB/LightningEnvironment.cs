@@ -26,7 +26,7 @@ namespace LightningDB
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
 
-            mdb_env_create(out _handle);
+            mdb_env_create(out _handle).ThrowOnError();
 
             Path = path;
 
@@ -76,7 +76,7 @@ namespace LightningDB
                 else
                     _config.MapSize = value;
 
-                mdb_env_set_mapsize(_handle, _config.MapSize);
+                mdb_env_set_mapsize(_handle, _config.MapSize).ThrowOnError();
             }
         }
 
@@ -94,7 +94,7 @@ namespace LightningDB
                 if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
-                mdb_env_set_maxreaders(_handle, (uint)value);
+                mdb_env_set_maxreaders(_handle, (uint)value).ThrowOnError();
 
                 _config.MaxReaders = value;
             }
@@ -117,7 +117,7 @@ namespace LightningDB
                 if (value == _config.MaxDatabases) 
                     return;
 
-                mdb_env_set_maxdbs(_handle, (uint)value);
+                mdb_env_set_maxdbs(_handle, (uint)value).ThrowOnError();
 
                 _config.MaxDatabases = value;
             }
@@ -178,7 +178,7 @@ namespace LightningDB
 
             try
             {
-                mdb_env_open(_handle, Path, openFlags, accessMode);
+                mdb_env_open(_handle, Path, openFlags, accessMode).ThrowOnError();
             }
             catch(Exception ex)
             {
@@ -206,7 +206,7 @@ namespace LightningDB
         /// <returns>
         /// New LightningTransaction
         /// </returns>
-        public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
+        public LightningTransaction BeginTransaction(LightningTransaction parent = null, TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
         {
             if (!IsOpened)
                 throw new InvalidOperationException("Environment must be opened before starting a transaction");
@@ -230,21 +230,6 @@ namespace LightningDB
         public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
         {
             return BeginTransaction(null, beginFlags);
-        }
-
-        /// <summary>
-        /// Create a transaction for use with the environment.
-        /// The transaction handle may be discarded using Abort() or Commit().
-        /// Note:
-        /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
-        /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
-        /// </summary>        
-        /// <returns>
-        /// New LightningTransaction
-        /// </returns>
-        public LightningTransaction BeginTransaction()
-        {
-            return BeginTransaction(null, LightningTransaction.DefaultTransactionBeginFlags);
         }
 
         /// <summary>

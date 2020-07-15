@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using LightningDB.Native;
 using Xunit;
 using static System.Text.Encoding;
 
@@ -11,242 +8,318 @@ namespace LightningDB.Tests
     [Collection("SharedFileSystem")]
     public class CursorTests : IDisposable
     {
-        private LightningEnvironment _env;
-        private LightningTransaction _txn;
-        private LightningDatabase _db;
+        private readonly LightningEnvironment _env;
 
         public CursorTests(SharedFileSystem fileSystem)
         {
             var path = fileSystem.CreateNewDirectoryForTest();
-            
-
             _env = new LightningEnvironment(path);
             _env.Open();
-
-            _txn = _env.BeginTransaction();            
         }
 
         public void Dispose()
         {
-            _txn.Dispose();
             _env.Dispose();
         }
 
-        private void PopulateCursorValues()
+        private static byte[][] PopulateCursorValues(LightningCursor cursor, int count = 5, string keyPrefix = "key")
         {
-            using (var cur = _txn.CreateCursor(_db))
-            {
-                var keys = Enumerable.Range(1, 5)
-                    .Select(i => UTF8.GetBytes("key" + i))
-                    .ToArray();
+            var keys = Enumerable.Range(1, count)
+                .Select(i => UTF8.GetBytes(keyPrefix + i))
+                .ToArray();
 
-                foreach (var k in keys)
-                {
-                    cur.Put(k, k, CursorPutOptions.None);
-                }
+            foreach (var k in keys)
+            {
+                var result = cursor.Put(k, k, CursorPutOptions.None);
+                Assert.Equal(MDBResultCode.Success, result);
             }
+
+            return keys;
+        }
+
+        private static byte[][] PopulateMultipleCursorValues(LightningCursor cursor, string key = "TestKey")
+        {
+            var values = Enumerable.Range(1, 5).Select(BitConverter.GetBytes).ToArray();
+            var result = cursor.PutMultiple(UTF8.GetBytes(key), values);
+            Assert.Equal(MDBResultCode.Success, result);
+            var notDuplicate = values[0];
+            result = cursor.Put(notDuplicate, notDuplicate, CursorPutOptions.NoDuplicateData);
+            Assert.Equal(MDBResultCode.Success, result);
+            return values;
         }
 
         [Fact]
         public void CursorShouldBeCreated()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            _txn.CreateCursor(_db).Dispose();
+            _env.RunCursorScenario((tx, db, c) => Assert.NotNull(c));
         }
 
         [Fact]
         public void CursorShouldPutValues()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            PopulateCursorValues();
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                PopulateCursorValues(c);
+                c.Dispose();
+                //TODO evaluate how not to require this Dispose on Linux (test only fails there)
+                var result = tx.Commit();
+                Assert.Equal(MDBResultCode.Success, result);
+            });
+        }
+
+        [Fact]
+        public void CursorShouldMoveToSpanKey()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var keys = PopulateCursorValues(c);
+                var firstKey = keys.First();
+                var result = c.MoveTo(firstKey.AsSpan());
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(firstKey, current.key.CopyToNewArray());
+            });
         }
 
         [Fact]
         public void CursorShouldMoveToLast()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            PopulateCursorValues();
-
-            using (var cur = _txn.CreateCursor(_db))
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                Assert.True(cur.MoveToLast());
-
-                var lastKey = UTF8.GetString(cur.Current.Key.CopyToNewArray());
-                var lastValue = UTF8.GetString(cur.Current.Value.CopyToNewArray());
-
-                Assert.Equal("key5", lastKey);
-                Assert.Equal("key5", lastValue);
-            }
+                var keys = PopulateCursorValues(c);
+                var lastKey = keys.Last();
+                var result = c.MoveToLast();
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(lastKey, current.key.CopyToNewArray());
+            });
         }
 
         [Fact]
         public void CursorShouldMoveToFirst()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            PopulateCursorValues();
-
-            using (var cur = _txn.CreateCursor(_db))
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                cur.MoveToFirst();
-
-                var lastKey = UTF8.GetString(cur.Current.Key.CopyToNewArray());
-                var lastValue = UTF8.GetString(cur.Current.Value.CopyToNewArray());
-
-                Assert.Equal("key1", lastKey);
-                Assert.Equal("key1", lastValue);
-            }
+                var keys = PopulateCursorValues(c);
+                var firstKey = keys.First();
+                var result = c.MoveToFirst();
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(firstKey, current.key.CopyToNewArray());
+            });
         }
 
         [Fact]
         public void ShouldIterateThroughCursor()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            PopulateCursorValues();
-                        
-            using (var cur = _txn.CreateCursor(_db))
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                var i = 0;
-
-                while (cur.MoveNext())
+                var keys = PopulateCursorValues(c);
+                using var c2 = tx.CreateCursor(db);
+                var items = c2.AsEnumerable().Select((x, i) => (x, i)).ToList();
+                foreach (var (x, i) in items)
                 {
-                    var key = UTF8.GetString(cur.Current.Key.CopyToNewArray());
-                    var value = UTF8.GetString(cur.Current.Value.CopyToNewArray());
+                    Assert.Equal(keys[i], x.Item1.CopyToNewArray());
+                }
 
-                    var name = "key" + ++i;
-
-                    Assert.Equal(name, key);
-                    Assert.Equal(name, value);
-                }                
-                Assert.NotEqual(0, i);
-            }
+                Assert.Equal(keys.Length, items.Count);
+            });
         }
 
         [Fact]
         public void CursorShouldDeleteElements()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            PopulateCursorValues();
-
-            using (var cursor = _txn.CreateCursor(_db))
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                for (int i = 0; i < 2; ++i)
+                var keys = PopulateCursorValues(c).Take(2).ToArray();
+                for (var i = 0; i < 2; ++i)
                 {
-                    cursor.MoveNext();
-                    cursor.Delete();
+                    c.MoveNext();
+                    c.Delete();
                 }
-            }
-            using(var cursor = _txn.CreateCursor(_db))
-            {
-                var foundDeleted = cursor.Select(x => UTF8.GetString(x.Key.CopyToNewArray()))
-                    .Any(x => x == "key1" || x == "key2");
-                Assert.False(foundDeleted);
-            }
-        }
 
-        [Fact]
-        public void ShouldIterateThroughCursorByEnumerator()
-        {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-            PopulateCursorValues();
-
-            var i = 0;
-            using(var cursor = _txn.CreateCursor(_db))
-            {
-                foreach (var pair in cursor)
-                {
-                    var name = "key" + ++i;
-                    Assert.Equal(name, UTF8.GetString(pair.Key.CopyToNewArray()));
-                    Assert.Equal(name, UTF8.GetString(pair.Value.CopyToNewArray()));
-                }
-            }
+                using var c2 = tx.CreateCursor(db);
+                Assert.DoesNotContain(c2.AsEnumerable(), x =>
+                    keys.Any(k => x.Item1.CopyToNewArray() == k));
+            });
         }
 
         [Fact]
         public void ShouldPutMultiple()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
-
-            var values = new[] { 1, 2, 3, 4, 5 }.Select(BitConverter.GetBytes).ToArray();
-            using (var cur = _txn.CreateCursor(_db))
-                cur.PutMultiple(UTF8.GetBytes("TestKey"), values);
-
-            var pairs = new KeyValuePair<MDBValue, MDBValue>[values.Length];
-
-            using (var cur = _txn.CreateCursor(_db))
-            {
-                for (var i = 0; i < values.Length; i++)
-                {
-                    cur.MoveNextDuplicate();
-                    pairs[i] = cur.Current;
-                }
-            }
-
-            Assert.Equal(values, pairs.Select(x => x.Value.CopyToNewArray()).ToArray());
+            _env.RunCursorScenario((tx, db, c) => { PopulateMultipleCursorValues(c); },
+                DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
         }
 
         [Fact]
         public void ShouldGetMultiple()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create});
-
-            var original = new[] { 1, 2, 3, 4, 5 };
-            var originalBytes = original.Select(BitConverter.GetBytes).ToArray();
-            using (var cur = _txn.CreateCursor(_db))
-                cur.PutMultiple(UTF8.GetBytes("TestKey"), originalBytes);
-
-            using (var cur = _txn.CreateCursor(_db))
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                cur.MoveNext();
-                cur.GetMultiple();
-                var resultPair = cur.Current;
-                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.CopyToNewArray()));
-                var result = resultPair.Value.CopyToNewArray().Split(sizeof(int))
-                    .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
-                Assert.Equal(original, result);
-            }
+                var key = UTF8.GetBytes("TestKey");
+                var keys = PopulateMultipleCursorValues(c);
+                c.MoveTo(key);
+                c.MoveNextDuplicate();
+                var (resultCode, _, value) = c.GetMultiple();
+                Assert.Equal(MDBResultCode.Success, resultCode);
+                Assert.Equal(keys, value.CopyToNewArray().Split(sizeof(int)).ToArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
         }
 
         [Fact]
-        public void ShouldMoveNextMultiple()
+        public void ShouldGetNextMultiple()
         {
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
-
-            var original = new[] { 1, 2, 3, 4, 5 };
-            var originalBytes = original.Select(BitConverter.GetBytes).ToArray();
-            using (var cur = _txn.CreateCursor(_db))
-                cur.PutMultiple(UTF8.GetBytes("TestKey"), originalBytes);
-
-            using (var cur = _txn.CreateCursor(_db))
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                cur.MoveNextMultiple();
-                var resultPair = cur.Current;
-                Assert.Equal("TestKey", UTF8.GetString(resultPair.Key.CopyToNewArray()));
-                var result = resultPair.Value.CopyToNewArray().Split(sizeof(int))
-                    .Select(x => BitConverter.ToInt32(x.ToArray(), 0)).ToArray();
-                Assert.Equal(original, result);
-            }
+                var key = UTF8.GetBytes("TestKey");
+                var keys = PopulateMultipleCursorValues(c);
+                c.MoveTo(key);
+                var (resultCode, _, value) = c.NextMultiple();
+                Assert.Equal(MDBResultCode.Success, resultCode);
+                Assert.Equal(keys, value.CopyToNewArray().Split(sizeof(int)).ToArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
         }
 
         [Fact]
         public void ShouldAdvanceKeyToClosestWhenKeyNotFound()
         {
-            var keys = new List<string>
+            _env.RunCursorScenario((tx, db, c) =>
             {
-                "one",
-                "two/1",
-                "two/2",
-                "two/3"
-            };
-            _db = _txn.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create });
-            foreach (var key in keys)
-            {
-                _txn.Put(_db, Encoding.UTF8.GetBytes(key), null);
-            }
+                var expected = PopulateCursorValues(c).First();
+                var result = c.MoveTo(UTF8.GetBytes("key"));
+                Assert.Equal(MDBResultCode.NotFound, result);
+                var (_, key, _) = c.GetCurrent();
+                Assert.Equal(expected, key.CopyToNewArray());
+            });
+        }
 
-            using var cursor = _txn.CreateCursor(_db);
-            cursor.MoveTo(UTF8.GetBytes("two"));
-            var result = cursor.GetCurrent().Key.CopyToNewArray();
-            Assert.Equal("two/1", UTF8.GetString(result));
+        [Fact]
+        public void ShouldMoveToAndGet()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var expected = PopulateCursorValues(c).ElementAt(2);
+                var result = c.MoveToAndGet(expected);
+                Assert.Equal(MDBResultCode.Success, result.resultCode);
+                Assert.Equal(expected, result.key.CopyToNewArray());
+            }); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToAndGetWithSpan()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var expected = PopulateCursorValues(c).ElementAt(2);
+                var result = c.MoveToAndGet(expected.AsSpan());
+                Assert.Equal(MDBResultCode.Success, result.resultCode);
+                Assert.Equal(expected, result.key.CopyToNewArray());
+            }); 
+        }
+        
+        [Fact]
+        public void ShouldMoveTo()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var expected = PopulateCursorValues(c).ElementAt(2);
+                var result = c.MoveTo(expected, expected);
+                Assert.Equal(MDBResultCode.Success, result);
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToWithSpan()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var expected = PopulateCursorValues(c).ElementAt(2);
+                var expectedSpan = expected.AsSpan();
+                var result = c.MoveTo(expectedSpan, expectedSpan);
+                Assert.Equal(MDBResultCode.Success, result);
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToFirstValueAfter()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var key = UTF8.GetBytes("TestKey");
+                var values = PopulateMultipleCursorValues(c);
+                var result = c.MoveToFirstValueAfter(key, values[1]);
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(values[1], current.value.CopyToNewArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToFirstValueAfterWithSpan()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var key = UTF8.GetBytes("TestKey").AsSpan();
+                var values = PopulateMultipleCursorValues(c);
+                var result = c.MoveToFirstValueAfter(key, values[1].AsSpan());
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(values[1], current.value.CopyToNewArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToFirstDuplicate()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var key = UTF8.GetBytes("TestKey");
+                var values = PopulateMultipleCursorValues(c);
+                var result = c.MoveToFirstValueAfter(key, values[1]);
+                Assert.Equal(MDBResultCode.Success, result);
+                result = c.MoveToFirstDuplicate();
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(values[0], current.value.CopyToNewArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToLastDuplicate()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var key = UTF8.GetBytes("TestKey");
+                var values = PopulateMultipleCursorValues(c);
+                c.MoveTo(key);
+                var result = c.MoveToLastDuplicate();
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(values[4], current.value.CopyToNewArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldMoveToNextNoDuplicate()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var values = PopulateMultipleCursorValues(c);
+                var result = c.MoveNextNoDuplicate();
+                Assert.Equal(MDBResultCode.Success, result);
+                var current = c.GetCurrent();
+                Assert.Equal(values[0], current.value.CopyToNewArray());
+            }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+        }
+        
+        [Fact]
+        public void ShouldRenewSameTransaction()
+        {
+            _env.RunCursorScenario((tx, db, c) =>
+            {
+                var result = c.Renew();
+                Assert.Equal(MDBResultCode.Success, result);
+            }, transactionFlags: TransactionBeginFlags.ReadOnly); 
         }
     }
 }

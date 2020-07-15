@@ -45,7 +45,7 @@
 
         /// <summary>
         /// Failure. The requested key was found, but the provided buffer was
-        /// too small to contain the full value. No data has been retrived.
+        /// too small to contain the full value. No data has been retrieved.
         /// The Get operation should be retried with a buffer at least the 
         /// length represented in GetResult.Length
         /// <para>
@@ -58,7 +58,7 @@
 
         /// <summary>
         /// Failure. The requested key was not found in the database. No data has 
-        /// been retrived.
+        /// been retrieved.
         /// <para>
         ///     GetResult.Length has no meaning for this result. It's value
         ///     is set to zero.
