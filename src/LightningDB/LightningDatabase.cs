@@ -1,5 +1,4 @@
 ﻿using System;
-using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -7,7 +6,7 @@ namespace LightningDB
     /// <summary>
     /// Lightning database.
     /// </summary>
-    public class LightningDatabase : IDisposable
+    public sealed class LightningDatabase : IDisposable
     {
         private uint _handle;
         private readonly DatabaseConfiguration _configuration;
@@ -25,11 +24,8 @@ namespace LightningDB
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
-            if (configuration == null)
-                throw new ArgumentNullException(nameof(configuration));
-
             Name = name;
-            _configuration = configuration;
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             Environment = transaction.Environment;
             _transaction = transaction;
             Environment.Disposing += Dispose;
@@ -46,7 +42,7 @@ namespace LightningDB
         /// <summary>
         /// Whether the database handle has been release from Dispose, or from unsuccessful OpenDatabase call.
         /// </summary>
-        public bool IsReleased => _handle == default(uint);
+        public bool IsReleased => _handle == default;
 
         /// <summary>
         /// Is database opened.
@@ -57,8 +53,7 @@ namespace LightningDB
         {
             get
             {
-                var nativeStat = new MDBStat();
-                mdb_stat(_transaction.Handle(), Handle(), out nativeStat);
+                mdb_stat(_transaction.Handle(), Handle(), out var nativeStat).ThrowOnError();
                 return new Stats
                 {
                     BranchPages = nativeStat.ms_branch_pages.ToInt64(),
@@ -82,35 +77,31 @@ namespace LightningDB
         public LightningEnvironment Environment { get; }
 
         /// <summary>
-        /// Flags with which the database was opened.
-        /// </summary>
-        public DatabaseOpenFlags OpenFlags { get; private set; }
-
-        /// <summary>
         /// Drops the database.
         /// </summary>
-        public void Drop(LightningTransaction transaction)
+        public MDBResultCode Drop(LightningTransaction transaction)
         {
-            mdb_drop(transaction.Handle(), _handle, true);
+            var result = mdb_drop(transaction.Handle(), _handle, true);
             IsOpened = false;
-            _handle = default(uint);
+            _handle = default;
+            return result;
         }
 
         /// <summary>
         /// Truncates all data from the database.
         /// </summary>
-        public void Truncate(LightningTransaction transaction)
+        public MDBResultCode Truncate(LightningTransaction transaction)
         {
-            mdb_drop(transaction.Handle(), _handle, false);
+            return mdb_drop(transaction.Handle(), _handle, false);
         }
 
         /// <summary>
         /// Deallocates resources opened by the database.
         /// </summary>
         /// <param name="disposing">true if called from Dispose.</param>
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
-            if (_handle == default(uint))
+            if (_handle == default)
                 return;
 
             if(!disposing)
@@ -121,7 +112,7 @@ namespace LightningDB
             _pinnedConfig.Dispose();
             mdb_dbi_close(Environment.Handle(), _handle);
             GC.SuppressFinalize(this);
-            _handle = default(uint);
+            _handle = default;
         }
 
         /// <summary>

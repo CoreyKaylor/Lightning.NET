@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -8,7 +7,7 @@ namespace LightningDB
     /// <summary>
     /// LMDB Environment.
     /// </summary>
-    public class LightningEnvironment : IDisposable
+    public sealed class LightningEnvironment : IDisposable
     {
         private readonly EnvironmentConfiguration _config = new EnvironmentConfiguration();
 
@@ -87,7 +86,8 @@ namespace LightningDB
         {
             get
             {
-                return _config.MaxReaders;
+                mdb_env_get_maxreaders(_handle, out var readers).ThrowOnError();
+                return (int) readers;
             }
             set
             {
@@ -256,9 +256,9 @@ namespace LightningDB
         /// MDB always flushes the OS buffers upon commit as well, unless the environment was opened with EnvironmentOpenFlags.NoSync or in part EnvironmentOpenFlags.NoMetaSync.
         /// </summary>
         /// <param name="force">If true, force a synchronous flush. Otherwise if the environment has the EnvironmentOpenFlags.NoSync flag set the flushes will be omitted, and with MDB_MAPASYNC they will be asynchronous.</param>
-        public void Flush(bool force)
+        public MDBResultCode Flush(bool force)
         {
-            mdb_env_sync(_handle, force);
+            return mdb_env_sync(_handle, force);
         }
 
         private void EnsureOpened()
@@ -271,7 +271,7 @@ namespace LightningDB
         /// Disposes the environment and deallocates all resources associated with it.
         /// </summary>
         /// <param name="disposing">True if called from Dispose.</param>
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (_handle == IntPtr.Zero)
                 return;

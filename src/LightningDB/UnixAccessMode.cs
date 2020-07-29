@@ -3,7 +3,7 @@
 namespace LightningDB
 {
     /// <summary>
-    /// Unix file access privilegies
+    /// Unix file access privileges
     /// </summary>
     [Flags]
     public enum UnixAccessMode : uint

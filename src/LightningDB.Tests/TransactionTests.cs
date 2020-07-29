@@ -7,55 +7,9 @@ using System.Runtime.InteropServices;
 namespace LightningDB.Tests
 {
     [Collection("SharedFileSystem")]
-    public class TransactionDupFixedTests : IDisposable
-    {
-        private LightningEnvironment _env;
-
-        public TransactionDupFixedTests(SharedFileSystem fileSystem)
-        {
-            var path = fileSystem.CreateNewDirectoryForTest();
-            _env = new LightningEnvironment(path);
-            _env.Open();
-        }
-
-        public void Dispose()
-        {
-            _env.Dispose();
-        }
-
-
-        [Fact]
-        public void CanCountTransactionEntries()
-        {
-            LightningDatabase db;
-
-            using (var openDbTxn = _env.BeginTransaction())
-            {
-                db = openDbTxn.OpenDatabase();
-            }
-
-            var key = MemoryMarshal.Cast<char, byte>("abcd");
-
-            using(var writeTxn = _env.BeginTransaction())
-            {
-                writeTxn.Put(db, key, MemoryMarshal.Cast<char,byte>("Value1"));
-                writeTxn.Put(db, key, MemoryMarshal.Cast<char, byte>("Value2"));
-                writeTxn.Commit();
-            }
-
-            using (var delTxn = _env.BeginTransaction())
-            {
-                delTxn.Delete(db, key, null);//should not throw
-                delTxn.Commit();
-            }
-        }
-    }
-
-
-    [Collection("SharedFileSystem")]
     public class TransactionTests : IDisposable
     {
-        private LightningEnvironment _env;
+        private readonly LightningEnvironment _env;
 
         public TransactionTests(SharedFileSystem fileSystem)
         {
@@ -68,121 +22,143 @@ namespace LightningDB.Tests
         {
             _env.Dispose();
         }
+        
+        [Fact]
+        public void CanDeletePreviouslyCommittedWithMultipleValuesByPassingNullForValue()
+        {
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                var key = MemoryMarshal.Cast<char, byte>("abcd");
+
+                tx.Put(db, key, MemoryMarshal.Cast<char, byte>("Value1"));
+                tx.Put(db, key, MemoryMarshal.Cast<char, byte>("Value2"), PutOptions.AppendData);
+                tx.Commit();
+                tx.Dispose();
+                
+                using var delTxn = _env.BeginTransaction();
+                var result = delTxn.Delete(db, key, null);
+                Assert.Equal(MDBResultCode.Success, result);
+                result = delTxn.Commit();
+                Assert.Equal(MDBResultCode.Success, result);
+            }, DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed);
+        }
 
         [Fact]
         public void TransactionShouldBeCreated()
         {
-            var txn = _env.BeginTransaction();
-
-            Assert.Equal(LightningTransactionState.Active, txn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                Assert.Equal(LightningTransactionState.Active, tx.State);
+            });
         }
 
         [Fact]
         public void TransactionShouldBeAbortedIfEnvironmentCloses()
         {
-            var txn = _env.BeginTransaction();
-
-            _env.Dispose();
-
-            Assert.Equal(LightningTransactionState.Aborted, txn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                _env.Dispose();
+                Assert.Equal(LightningTransactionState.Aborted, tx.State);
+            });
         }
 
         [Fact]
         public void TransactionShouldChangeStateOnCommit()
         {
-            var txn = _env.BeginTransaction();
-
-            txn.Commit();
-
-            Assert.Equal(LightningTransactionState.Commited, txn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                tx.Commit();
+                Assert.Equal(LightningTransactionState.Commited, tx.State);
+            });
         }
 
         [Fact]
         public void ChildTransactionShouldBeCreated()
         {
-            var txn = _env.BeginTransaction();
-
-            var subTxn = txn.BeginTransaction();
-
-            Assert.Equal(LightningTransactionState.Active, subTxn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                var subTxn = tx.BeginTransaction();
+                Assert.Equal(LightningTransactionState.Active, subTxn.State);
+            });
         }
 
         [Fact]
         public void ResetTransactionAbortedOnDispose()
         {
-            var txn = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-            txn.Reset();
-            txn.Dispose();
-            Assert.Equal(LightningTransactionState.Aborted, txn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                tx.Reset();
+                tx.Dispose();
+                Assert.Equal(LightningTransactionState.Aborted, tx.State);
+            }, transactionFlags: TransactionBeginFlags.ReadOnly);
         }
 
         [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsAborted()
         {
-            var txn = _env.BeginTransaction();
-            var child = txn.BeginTransaction();
-
-            txn.Abort();
-
-            Assert.Equal(LightningTransactionState.Aborted, child.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                var child = tx.BeginTransaction();
+                tx.Abort();
+                Assert.Equal(LightningTransactionState.Aborted, child.State);
+            });
         }
 
         [Fact]
         public void ChildTransactionShouldBeAbortedIfParentIsCommited()
         {
-            var txn = _env.BeginTransaction();
-            var child = txn.BeginTransaction();
-
-            txn.Commit();
-
-            Assert.Equal(LightningTransactionState.Aborted, child.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                var child = tx.BeginTransaction();
+                tx.Commit();
+                Assert.Equal(LightningTransactionState.Aborted, child.State);
+            });
         }
 
         [Fact]
         public void ChildTransactionShouldBeAbortedIfEnvironmentIsClosed()
         {
-            var txn = _env.BeginTransaction();
-            var child = txn.BeginTransaction();
-
-            _env.Dispose();
-
-            Assert.Equal(LightningTransactionState.Aborted, child.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                var child = tx.BeginTransaction();
+                _env.Dispose();
+                Assert.Equal(LightningTransactionState.Aborted, child.State);
+            });
         }
 
         [Fact]
         public void ReadOnlyTransactionShouldChangeStateOnReset()
         {
-            var txn = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-
-            txn.Reset();
-
-            Assert.Equal(LightningTransactionState.Reseted, txn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                tx.Reset();
+                Assert.Equal(LightningTransactionState.Reseted, tx.State);
+            }, transactionFlags: TransactionBeginFlags.ReadOnly);
         }
 
         [Fact]
         public void ReadOnlyTransactionShouldChangeStateOnRenew()
         {
-            var txn = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-            txn.Reset();
-
-            txn.Renew();
-
-            Assert.Equal(LightningTransactionState.Active, txn.State);
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                tx.Reset();
+                tx.Renew();
+                Assert.Equal(LightningTransactionState.Active, tx.State);
+            }, transactionFlags: TransactionBeginFlags.ReadOnly);
         }
 
         [Fact]
         public void CanCountTransactionEntries()
         {
-            var txn = _env.BeginTransaction();
-            var db = txn.OpenDatabase();
+            _env.RunTransactionScenario((tx, db) =>
+            {
+                const int entriesCount = 10;
+                for (var i = 0; i < entriesCount; i++)
+                    tx.Put(db, i.ToString(), i.ToString());
 
-            const int entriesCount = 10;
-            for (var i = 0; i < entriesCount; i++)
-                txn.Put(db, i.ToString(), i.ToString());
-
-            var count = txn.GetEntriesCount(db);
-
-            Assert.Equal(entriesCount, count);
+                var count = tx.GetEntriesCount(db);
+                Assert.Equal(entriesCount, count);
+            });
         }
 
         [Fact]

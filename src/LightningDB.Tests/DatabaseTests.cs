@@ -166,7 +166,7 @@ namespace LightningDB.Tests
             db = _txn.OpenDatabase();
             var result = _txn.Get(db, UTF8.GetBytes("hello"));
 
-            Assert.Null(result);
+            Assert.Equal(MDBResultCode.NotFound, result.resultCode);
         }
     }
 }

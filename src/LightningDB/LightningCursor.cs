@@ -26,7 +26,7 @@ namespace LightningDB
             if (txn == null)
                 throw new ArgumentNullException(nameof(txn));
 
-            mdb_cursor_open(txn.Handle(), db.Handle(), out _handle);
+            mdb_cursor_open(txn.Handle(), db.Handle(), out _handle).ThrowOnError();
 
             Transaction = txn;
             Transaction.Disposing += Dispose;
@@ -429,7 +429,6 @@ namespace LightningDB
             }
         }
 
-
         /// <summary>
         /// Return up to a page of the duplicate data items at the current cursor position. Only for MDB_DUPFIXED
         /// It is assumed you know the array size to break up a single byte[] into byte[][].
@@ -446,27 +445,27 @@ namespace LightningDB
         /// </summary>
         /// <param name="option">Options for this operation. This parameter must be set to 0 or one of the values described here.
         ///     MDB_NODUPDATA - delete all of the data items for the current key. This flag may only be specified if the database was opened with MDB_DUPSORT.</param>
-        private void Delete(CursorDeleteOption option)
+        private MDBResultCode Delete(CursorDeleteOption option)
         {
-            mdb_cursor_del(_handle, option);
+            return mdb_cursor_del(_handle, option);
         }
 
         /// <summary>
         /// Delete current key/data pair.
         /// This function deletes the key/data range for which duplicates are found.
         /// </summary>
-        public void DeleteDuplicateData()
+        public MDBResultCode DeleteDuplicateData()
         {
-            Delete(CursorDeleteOption.NoDuplicateData);
+            return Delete(CursorDeleteOption.NoDuplicateData);
         }
 
         /// <summary>
         /// Delete current key/data pair.
         /// This function deletes the key/data pair to which the cursor refers.
         /// </summary>
-        public void Delete()
+        public MDBResultCode Delete()
         {
-            Delete(CursorDeleteOption.None);
+            return Delete(CursorDeleteOption.None);
         }
 
         /// <summary>

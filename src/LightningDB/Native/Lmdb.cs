@@ -127,15 +127,7 @@ namespace LightningDB.Native
 
         public static MDBResultCode mdb_get(IntPtr txn, uint dbi, ref MDBValue key, out MDBValue value)
         {
-            var result = LmdbMethods.mdb_get(txn, dbi, ref key, out var data);
-            if (result == MDBResultCode.NotFound)
-            {
-                value = default;
-                return result;
-            }
-
-            value = data;
-            return result;
+            return LmdbMethods.mdb_get(txn, dbi, ref key, out value);
         }
 
         public static MDBResultCode mdb_put(IntPtr txn, uint dbi, MDBValue key, MDBValue value, PutOptions flags)
@@ -168,18 +160,6 @@ namespace LightningDB.Native
             return LmdbMethods.mdb_cursor_renew(txn, cursor);
         }
 
-        public unsafe static MDBResultCode mdb_cursor_get(IntPtr cursor, byte[] key, out MDBValue newKey, out MDBValue value,
-            CursorOperation op)
-        {
-            value = default;
-
-            fixed (byte* keyPtr = key)
-            {
-                newKey = new MDBValue(key.Length, keyPtr);
-                return LmdbMethods.mdb_cursor_get(cursor, ref newKey, ref value, op);
-            }
-        }
-
         public static MDBResultCode mdb_cursor_get(IntPtr cursor, ref MDBValue key, ref MDBValue value, CursorOperation op)
         {
             return LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op);
@@ -195,7 +175,7 @@ namespace LightningDB.Native
         /// May only be used with MDB_DUPFIXED.
         /// </summary>
         /// <param name="data">This span must be pinned or stackalloc memory</param>
-        public unsafe static MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref Span<MDBValue> data, CursorPutOptions flags)
+        public static MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref Span<MDBValue> data, CursorPutOptions flags)
         {
             ref var dataRef = ref MemoryMarshal.GetReference(data);
             return LmdbMethods.mdb_cursor_put(cursor, ref key, ref dataRef, flags);

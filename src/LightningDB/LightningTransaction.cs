@@ -1,7 +1,5 @@
 ﻿using System;
 
-using LightningDB.Native;
-
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -9,7 +7,7 @@ namespace LightningDB
     /// <summary>
     /// Represents a transaction.
     /// </summary>
-    public class LightningTransaction : IDisposable
+    public sealed class LightningTransaction : IDisposable
     {
         /// <summary>
         /// Default options used to begin new transactions.
@@ -67,25 +65,16 @@ namespace LightningDB
         /// <summary>
         /// Current transaction state.
         /// </summary>
-        public LightningTransactionState State { get; internal set; }
+        public LightningTransactionState State { get; private set; }
 
         /// <summary>
         /// Begin a child transaction.
         /// </summary>
         /// <param name="beginFlags">Options for a new transaction.</param>
         /// <returns>New child transaction.</returns>
-        public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
+        public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags = DefaultTransactionBeginFlags)
         {
             return new LightningTransaction(Environment, this, beginFlags);
-        }
-
-        /// <summary>
-        /// Begins a child transaction.
-        /// </summary>
-        /// <returns>New child transaction with default options.</returns>
-        public LightningTransaction BeginTransaction()
-        {
-            return BeginTransaction(DefaultTransactionBeginFlags);
         }
 
         /// <summary>
@@ -104,17 +93,17 @@ namespace LightningDB
         /// <summary>
         /// Drops the database.
         /// </summary>
-        public void DropDatabase(LightningDatabase database)
+        public MDBResultCode DropDatabase(LightningDatabase database)
         {
-            database.Drop(this);
+            return database.Drop(this);
         }
 
         /// <summary>
         /// Truncates all data from the database.
         /// </summary>
-        public void TruncateDatabase(LightningDatabase database)
+        public MDBResultCode TruncateDatabase(LightningDatabase database)
         {
-            database.Truncate(this);
+            return database.Truncate(this);
         }
 
         /// <summary>
@@ -127,14 +116,13 @@ namespace LightningDB
             return new LightningCursor(db, this);
         }
 
-
         /// <summary>
         /// Get value from a database.
         /// </summary>
         /// <param name="db">The database to query.</param>
         /// <param name="key">An array containing the key to look up.</param>
         /// <returns>Requested value's byte array if exists, or null if not.</returns>
-        public byte[] Get(LightningDatabase db, byte[] key)
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(LightningDatabase db, byte[] key)
         {//argument validation delegated to next call
             
             return Get(db, key.AsSpan());
@@ -146,33 +134,7 @@ namespace LightningDB
         /// <param name="db">The database to query.</param>
         /// <param name="key">A span containing the key to look up.</param>
         /// <returns>Requested value's byte array if exists, or null if not.</returns>
-        public byte[] Get(LightningDatabase db, ReadOnlySpan<byte> key)
-        {//argument validation delegated to next call
-            byte[] value;
-            TryGet(db, key, out value);
-            return value;
-        }
-
-        /// <summary>
-        /// Tries to get a value by its key.
-        /// </summary>
-        /// <param name="db">The database to query.</param>
-        /// <param name="key">A span containing the key to look up.</param>
-        /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
-        /// <returns>True if key exists, false if not.</returns>
-        public bool TryGet(LightningDatabase db, byte[] key, out byte[] value)
-        {//argument validation delegated to next call
-            return TryGet(db, key.AsSpan(), out value);
-        }
-
-        /// <summary>
-        /// Tries to get a value by its key.
-        /// </summary>
-        /// <param name="db">The database to query.</param>
-        /// <param name="key">A span containing the key to look up.</param>
-        /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
-        /// <returns>True if key exists, false if not.</returns>
-        public unsafe bool TryGet(LightningDatabase db, ReadOnlySpan<byte> key, out byte[] value)
+        public unsafe (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(LightningDatabase db, ReadOnlySpan<byte> key)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
@@ -181,81 +143,7 @@ namespace LightningDB
             {
                 var mdbKey = new MDBValue(key.Length, keyBuffer);
 
-                value = default;
-                var result = mdb_get(_handle, db.Handle(), ref mdbKey, out var newVal) != MDBResultCode.NotFound;
-                if (result)  
-                {
-                    value = newVal.CopyToNewArray();
-                }
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// Tries to lookup a value by its key and read it into the provided buffer.
-        /// </summary>
-        /// <param name="db">The database to query.</param>
-        /// <param name="key">A span containing the key to look up.</param>
-        /// <param name="valueDestinationBuffer">
-        /// A buffer to receive the value data retrieved from the database
-        /// </param>
-        /// <returns>True if key exists, false if not.</returns>
-        public unsafe GetResult TryGet(LightningDatabase db, ReadOnlySpan<byte> key, byte[] valueDestinationBuffer)
-        {
-            if (db == null)
-                throw new ArgumentNullException(nameof(db));
-
-            fixed (byte* keyBuffer = key)
-            {
-                var mdbKey = new MDBValue(key.Length, keyBuffer);
-
-                if (mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDBResultCode.NotFound)
-                {
-                    var valueSpan = mdbValue.AsSpan();
-
-                    if(valueSpan.TryCopyTo(valueDestinationBuffer))
-                    {
-                        return new GetResult(GetResultCode.Success, valueSpan.Length);
-                    }
-                    else
-                    {
-                        return new GetResult(GetResultCode.DestinationTooSmall, valueSpan.Length);
-                    }
-                }
-                else
-                {
-                    return new GetResult(GetResultCode.DestinationTooSmall, 0);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Check whether data exists in database.
-        /// </summary>
-        /// <param name="db">The database to query.</param>
-        /// <param name="key">A span containing the key to look up.</param>
-        /// <returns>True if key exists, false if not.</returns>
-        public bool ContainsKey(LightningDatabase db, byte[] key)
-        {//argument validation delegated to next call
-            return ContainsKey(db, key.AsSpan());
-        }
-
-        /// <summary>
-        /// Check whether data exists in database.
-        /// </summary>
-        /// <param name="db">The database to query.</param>
-        /// <param name="key">A span containing the key to look up.</param>
-        /// <returns>True if key exists, false if not.</returns>
-        public unsafe bool ContainsKey(LightningDatabase db, ReadOnlySpan<byte> key)
-        {
-            if (db is null)
-                throw new ArgumentNullException(nameof(db));
-
-            fixed (byte* keyBuffer = key)
-            {
-                var mdbKey = new MDBValue(key.Length, keyBuffer);
-
-                return mdb_get(_handle, db.Handle(), ref mdbKey, out MDBValue mdbValue) != MDBResultCode.NotFound;
+                return (mdb_get(_handle, db.Handle(), ref mdbKey, out var mdbValue), mdbKey, mdbValue);
             }
         }
 
@@ -266,12 +154,10 @@ namespace LightningDB
         /// <param name="key">A span containing the key to look up.</param>
         /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
         /// <param name="options">Operation options (optional).</param>
-        public void Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
+        public MDBResultCode Put(LightningDatabase db, byte[] key, byte[] value, PutOptions options = PutOptions.None)
         {//argument validation delegated to next call
-
-            Put(db, key.AsSpan(), value.AsSpan(), options);
+            return Put(db, key.AsSpan(), value.AsSpan(), options);
         }
-
 
         /// <summary>
         /// Put data into a database.
@@ -280,7 +166,7 @@ namespace LightningDB
         /// <param name="key">Key byte array.</param>
         /// <param name="value">Value byte array.</param>
         /// <param name="options">Operation options (optional).</param>
-        public unsafe void Put(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, PutOptions options = PutOptions.None)
+        public unsafe MDBResultCode Put(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, PutOptions options = PutOptions.None)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
@@ -291,7 +177,7 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valuePtr);
 
-                mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
+                return mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
             }
         }
 
@@ -306,9 +192,9 @@ namespace LightningDB
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
         /// <param name="key">The key to delete from the database</param>
         /// <param name="value">The data to delete (optional)</param>
-        public void Delete(LightningDatabase db, byte[] key, byte[] value)
+        public MDBResultCode Delete(LightningDatabase db, byte[] key, byte[] value)
         {//argument validation delegated to next call
-            Delete(db, key.AsSpan(), value.AsSpan());
+            return Delete(db, key.AsSpan(), value.AsSpan());
         }
 
         /// <summary>
@@ -322,7 +208,7 @@ namespace LightningDB
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
         /// <param name="key">The key to delete from the database</param>
         /// <param name="value">The data to delete (optional)</param>
-        public unsafe void Delete(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        public unsafe MDBResultCode Delete(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
         {
             if (db == null)
                 throw new ArgumentNullException(nameof(db));
@@ -331,8 +217,12 @@ namespace LightningDB
             fixed (byte* valuePtr = value)
             {
                 var mdbKey = new MDBValue(key.Length, keyPtr);
+                if (value == null)
+                {
+                    return mdb_del(_handle, db.Handle(), mdbKey);
+                }
                 var mdbValue = new MDBValue(value.Length, valuePtr);
-                mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
+                return mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
             }
         }
 
@@ -346,9 +236,9 @@ namespace LightningDB
         /// </summary>
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
         /// <param name="key">The key to delete from the database</param>
-        public void Delete(LightningDatabase db, byte[] key)
+        public MDBResultCode Delete(LightningDatabase db, byte[] key)
         {
-            Delete(db, key.AsSpan());
+            return Delete(db, key.AsSpan());
         }
 
 
@@ -362,11 +252,11 @@ namespace LightningDB
         /// </summary>
         /// <param name="db">A database handle returned by mdb_dbi_open()</param>
         /// <param name="key">The key to delete from the database</param>
-        public unsafe void Delete(LightningDatabase db, ReadOnlySpan<byte> key)
+        public unsafe MDBResultCode Delete(LightningDatabase db, ReadOnlySpan<byte> key)
         {
             fixed(byte* ptr = key) {
                 var mdbKey = new MDBValue(key.Length, ptr);
-                mdb_del(_handle, db.Handle(), mdbKey);
+                return mdb_del(_handle, db.Handle(), mdbKey);
             }
         }
 
@@ -385,16 +275,17 @@ namespace LightningDB
         /// <summary>
         /// Renew current transaction.
         /// </summary>
-        public void Renew()
+        public MDBResultCode Renew()
         {
             if (!IsReadOnly)
                 throw new InvalidOperationException("Can't renew non-readonly transaction");
 
             if (State != LightningTransactionState.Reseted)
-                throw new InvalidOperationException("Transaction should be reseted first");
+                throw new InvalidOperationException("Transaction should be reset first");
 
-            mdb_txn_renew(_handle);
+            var result = mdb_txn_renew(_handle);
             State = LightningTransactionState.Active;
+            return result;
         }
 
         /// <summary>
@@ -428,8 +319,7 @@ namespace LightningDB
         /// <returns>The number of items.</returns>
         public long GetEntriesCount(LightningDatabase db)
         {
-            MDBStat stat;
-            mdb_stat(_handle, db.Handle(), out stat);
+            mdb_stat(_handle, db.Handle(), out var stat).ThrowOnError();
 
             return stat.ms_entries.ToInt64();
         }
@@ -453,7 +343,7 @@ namespace LightningDB
         /// Abort this transaction and deallocate all resources associated with it (including databases).
         /// </summary>
         /// <param name="disposing">True if called from Dispose.</param>
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (_handle == IntPtr.Zero)
                 return;
