@@ -215,7 +215,7 @@ namespace LightningDB.Tests
             using (var c = txn.CreateCursor(db))
             {
                 int order = 0;
-                while (c.MoveNext() == MDBResultCode.Success)
+                while (c.Next() == MDBResultCode.Success)
                     Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.GetCurrent().key.CopyToNewArray(), 0));
             }
         }
@@ -236,13 +236,13 @@ namespace LightningDB.Tests
             Array.Sort(valuesSorted, new Comparison<int>(comparison));
 
             using (var c = txn.CreateCursor(db))
-                c.PutMultiple(BitConverter.GetBytes(123), valuesUnsorted.Select(BitConverter.GetBytes).ToArray());
+                c.Put(BitConverter.GetBytes(123), valuesUnsorted.Select(BitConverter.GetBytes).ToArray());
 
             using (var c = txn.CreateCursor(db))
             {
                 int order = 0;
 
-                while (c.MoveNext() == MDBResultCode.Success)
+                while (c.Next() == MDBResultCode.Success)
                     Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.GetCurrent().value.CopyToNewArray(), 0));
             }
         }

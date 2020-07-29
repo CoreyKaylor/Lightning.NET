@@ -44,7 +44,7 @@ namespace LightningDB
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<ValueTuple<MDBValue, MDBValue>> AsEnumerable(this LightningCursor cursor)
         {
-            while (cursor.MoveNext() == MDBResultCode.Success)
+            while (cursor.Next() == MDBResultCode.Success)
             {
                 var current = cursor.GetCurrent();
                 yield return (current.key, current.value);

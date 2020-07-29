@@ -50,7 +50,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveTo(byte[] key)
+        public MDBResultCode Set(byte[] key)
         {
             return Get(CursorOperation.Set, key).resultCode;
         }
@@ -60,7 +60,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveTo(ReadOnlySpan<byte> key)
+        public MDBResultCode Set(ReadOnlySpan<byte> key)
         {
             return Get(CursorOperation.Set, key).resultCode;
         }
@@ -70,7 +70,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
-        public (MDBResultCode resultCode, MDBValue key, MDBValue value) MoveToAndGet(byte[] key)
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) SetKey(byte[] key)
         {
             return Get(CursorOperation.SetKey, key);
         }
@@ -80,7 +80,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
-        public (MDBResultCode resultCode, MDBValue key, MDBValue value) MoveToAndGet(ReadOnlySpan<byte> key)
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) SetKey(ReadOnlySpan<byte> key)
         {
             return Get(CursorOperation.SetKey, key);
         }
@@ -91,7 +91,7 @@ namespace LightningDB
         /// <param name="key">Key.</param>
         /// <param name="value">Value</param>
         /// <returns>Returns true if the key/value pair was found.</returns>
-        public MDBResultCode MoveTo(byte[] key, byte[] value)
+        public MDBResultCode GetBoth(byte[] key, byte[] value)
         {
             return Get(CursorOperation.GetBoth, key, value).resultCode;
         }
@@ -102,7 +102,7 @@ namespace LightningDB
         /// <param name="key">Key.</param>
         /// <param name="value">Value</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveTo(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        public MDBResultCode GetBoth(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
         {
             return Get(CursorOperation.GetBoth, key, value).resultCode;
         }
@@ -113,7 +113,7 @@ namespace LightningDB
         /// <param name="key">Key</param>
         /// <param name="value">Value</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToFirstValueAfter(byte[] key, byte[] value)
+        public MDBResultCode GetBothRange(byte[] key, byte[] value)
         {
             return Get(CursorOperation.GetBothRange, key, value).resultCode;
         }
@@ -124,7 +124,7 @@ namespace LightningDB
         /// <param name="key">Key</param>
         /// <param name="value">Value</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToFirstValueAfter(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        public MDBResultCode GetBothRange(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
         {
             return Get(CursorOperation.GetBothRange, key, value).resultCode;
         }
@@ -134,7 +134,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToFirstAfter(byte[] key)
+        public MDBResultCode SetRange(byte[] key)
         {
             return Get(CursorOperation.SetRange, key).resultCode;
         }
@@ -144,7 +144,7 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToFirstAfter(ReadOnlySpan<byte> key)
+        public MDBResultCode SetRange(ReadOnlySpan<byte> key)
         {
             return Get(CursorOperation.SetRange, key).resultCode;
         }
@@ -153,7 +153,7 @@ namespace LightningDB
         /// Position at first key/data item
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToFirst()
+        public MDBResultCode First()
         {
             return Get(CursorOperation.First).resultCode;
         }
@@ -162,7 +162,7 @@ namespace LightningDB
         /// Position at first data item of current key. Only for MDB_DUPSORT
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToFirstDuplicate()
+        public MDBResultCode FirstDuplicate()
         {
             return Get(CursorOperation.FirstDuplicate).resultCode;
         }
@@ -171,7 +171,7 @@ namespace LightningDB
         /// Position at last key/data item
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToLast()
+        public MDBResultCode Last()
         {
             return Get(CursorOperation.Last).resultCode;
         }
@@ -180,7 +180,7 @@ namespace LightningDB
         /// Position at last data item of current key. Only for MDB_DUPSORT
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveToLastDuplicate()
+        public MDBResultCode LastDuplicate()
         {
             return Get(CursorOperation.LastDuplicate).resultCode;
         }
@@ -198,7 +198,7 @@ namespace LightningDB
         /// Position at next data item
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveNext()
+        public MDBResultCode Next()
         {
             return Get(CursorOperation.Next).resultCode;
         }
@@ -207,7 +207,7 @@ namespace LightningDB
         /// Position at next data item of current key. Only for MDB_DUPSORT
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveNextDuplicate()
+        public MDBResultCode NextDuplicate()
         {
             return Get(CursorOperation.NextDuplicate).resultCode;
         }
@@ -216,7 +216,7 @@ namespace LightningDB
         /// Position at first data item of next key. Only for MDB_DUPSORT.
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MoveNextNoDuplicate()
+        public MDBResultCode NextNoDuplicate()
         {
             return Get(CursorOperation.NextNoDuplicate).resultCode;
         }
@@ -235,7 +235,7 @@ namespace LightningDB
         /// Position at previous data item.
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MovePrev()
+        public MDBResultCode Previous()
         {
             return Get(CursorOperation.Previous).resultCode;
         }
@@ -244,7 +244,7 @@ namespace LightningDB
         /// Position at previous data item of current key. Only for MDB_DUPSORT.
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MovePrevDuplicate()
+        public MDBResultCode PreviousDuplicate()
         {
             return Get(CursorOperation.PreviousDuplicate).resultCode;
         }
@@ -253,7 +253,7 @@ namespace LightningDB
         /// Position at last data item of previous key. Only for MDB_DUPSORT.
         /// </summary>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public MDBResultCode MovePrevNoDuplicate()
+        public MDBResultCode PreviousNoDuplicate()
         {
             return Get(CursorOperation.PreviousNoDuplicate).resultCode;
         }
@@ -364,7 +364,7 @@ namespace LightningDB
         /// <param name="key">The key operated on.</param>
         /// <param name="values">The data items operated on.</param>
         /// <returns>Returns <see cref="MDBResultCode"/></returns>
-        public unsafe MDBResultCode PutMultiple(byte[] key, byte[][] values)
+        public unsafe MDBResultCode Put(byte[] key, byte[][] values)
         {
             const int StackAllocateLimit = 256;//I just made up a number, this can be much more aggressive -arc
 
@@ -455,7 +455,7 @@ namespace LightningDB
         /// Delete current key/data pair.
         /// This function deletes the key/data range for which duplicates are found.
         /// </summary>
-        public void DeleteDuplicates()
+        public void DeleteDuplicateData()
         {
             Delete(CursorDeleteOption.NoDuplicateData);
         }
