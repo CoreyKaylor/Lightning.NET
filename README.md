@@ -22,8 +22,8 @@ using (var env = new LightningEnvironment("pathtofolder"))
 	using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
 	using (var db = tx.OpenDatabase("custom"))
 	{
-		var result = tx.Get(db, Encoding.UTF8.GetBytes("hello"));
-		Assert.Equal(result, Encoding.UTF8.GetBytes("world"));
+		var (resultCode, key, value) = tx.Get(db, Encoding.UTF8.GetBytes("hello"));
+		Assert.Equal(value.CopyToNewArray(), Encoding.UTF8.GetBytes("world"));
 	}
 }
 ```
