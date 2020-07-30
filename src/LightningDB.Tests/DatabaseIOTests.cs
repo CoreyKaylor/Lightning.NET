@@ -44,7 +44,7 @@ namespace LightningDB.Tests
         }
 
         [Fact]
-        public void DatabaseInsertedValueShouldBeRetrivedThen()
+        public void DatabaseInsertedValueShouldBeRetrievedThen()
         {
             var key = "key";
             var value = "value";

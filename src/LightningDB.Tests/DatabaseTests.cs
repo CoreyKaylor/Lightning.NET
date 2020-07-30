@@ -88,8 +88,8 @@ namespace LightningDB.Tests
                 var db = tx.OpenDatabase();
                 using (var cursor = tx.CreateCursor(db))
                 {
-                    cursor.MoveNext();
-                    Assert.Equal("customdb", UTF8.GetString(cursor.Current.Key.CopyToNewArray()));
+                    cursor.Next();
+                    Assert.Equal("customdb", UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()));
                 }
             }
         }
@@ -166,7 +166,7 @@ namespace LightningDB.Tests
             db = _txn.OpenDatabase();
             var result = _txn.Get(db, UTF8.GetBytes("hello"));
 
-            Assert.Null(result);
+            Assert.Equal(MDBResultCode.NotFound, result.resultCode);
         }
     }
 }

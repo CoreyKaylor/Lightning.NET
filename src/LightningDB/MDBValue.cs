@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
-namespace LightningDB.Native
+namespace LightningDB
 {
     /// <summary>
     /// A managed version of the native MDB_val type
@@ -17,7 +14,7 @@ namespace LightningDB.Native
     {
         /// <remarks>
         /// We only expose this shape constructor to basically force you to use
-        /// a fixed statment to obtain the pointer. If we accepted a Span or 
+        /// a fixed statement to obtain the pointer. If we accepted a Span or 
         /// ReadOnlySpan here, we would have to do scarier things to pin/unpin
         /// the buffer. Since this library is geared towards safe and easy usage,
         /// this way somewhat forces you onto the correct path.
@@ -25,7 +22,7 @@ namespace LightningDB.Native
         /// </remarks>
         /// <param name="bufferSize">The length of the buffer</param>
         /// <param name="pinnedOrStackAllocBuffer">A pointer to a buffer. 
-        /// The underlying memory may be managed(an array), unmanged or stack-allocated.
+        /// The underlying memory may be managed(an array), unmanaged or stack-allocated.
         /// If it is managed, it **MUST** be pinned via either GCHandle.Alloc or a fixed statement
         /// </param>
         internal MDBValue(int bufferSize, byte* pinnedOrStackAllocBuffer)
@@ -47,8 +44,8 @@ namespace LightningDB.Native
         /// <summary>
         /// Copies the data of the buffer to a new array
         /// </summary>
-        /// <returns>A newly allocated array containing data copied from the dereferenced data pointer</returns>
-        /// <remarks>Equivilent to AsSpan().ToArray() but makes intent a little more clear</remarks>
+        /// <returns>A newly allocated array containing data copied from the de-referenced data pointer</returns>
+        /// <remarks>Equivalent to AsSpan().ToArray() but makes intent a little more clear</remarks>
         public byte[] CopyToNewArray() => AsSpan().ToArray();
     }
 }

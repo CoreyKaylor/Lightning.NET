@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -8,7 +7,7 @@ namespace LightningDB
     /// <summary>
     /// LMDB Environment.
     /// </summary>
-    public class LightningEnvironment : IDisposable
+    public sealed class LightningEnvironment : IDisposable
     {
         private readonly EnvironmentConfiguration _config = new EnvironmentConfiguration();
 
@@ -26,7 +25,7 @@ namespace LightningDB
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
 
-            mdb_env_create(out _handle);
+            mdb_env_create(out _handle).ThrowOnError();
 
             Path = path;
 
@@ -76,7 +75,7 @@ namespace LightningDB
                 else
                     _config.MapSize = value;
 
-                mdb_env_set_mapsize(_handle, _config.MapSize);
+                mdb_env_set_mapsize(_handle, _config.MapSize).ThrowOnError();
             }
         }
 
@@ -87,14 +86,15 @@ namespace LightningDB
         {
             get
             {
-                return _config.MaxReaders;
+                mdb_env_get_maxreaders(_handle, out var readers).ThrowOnError();
+                return (int) readers;
             }
             set
             {
                 if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
-                mdb_env_set_maxreaders(_handle, (uint)value);
+                mdb_env_set_maxreaders(_handle, (uint)value).ThrowOnError();
 
                 _config.MaxReaders = value;
             }
@@ -117,7 +117,7 @@ namespace LightningDB
                 if (value == _config.MaxDatabases) 
                     return;
 
-                mdb_env_set_maxdbs(_handle, (uint)value);
+                mdb_env_set_maxdbs(_handle, (uint)value).ThrowOnError();
 
                 _config.MaxDatabases = value;
             }
@@ -178,7 +178,7 @@ namespace LightningDB
 
             try
             {
-                mdb_env_open(_handle, Path, openFlags, accessMode);
+                mdb_env_open(_handle, Path, openFlags, accessMode).ThrowOnError();
             }
             catch(Exception ex)
             {
@@ -206,7 +206,7 @@ namespace LightningDB
         /// <returns>
         /// New LightningTransaction
         /// </returns>
-        public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags)
+        public LightningTransaction BeginTransaction(LightningTransaction parent = null, TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
         {
             if (!IsOpened)
                 throw new InvalidOperationException("Environment must be opened before starting a transaction");
@@ -233,21 +233,6 @@ namespace LightningDB
         }
 
         /// <summary>
-        /// Create a transaction for use with the environment.
-        /// The transaction handle may be discarded using Abort() or Commit().
-        /// Note:
-        /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
-        /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
-        /// </summary>        
-        /// <returns>
-        /// New LightningTransaction
-        /// </returns>
-        public LightningTransaction BeginTransaction()
-        {
-            return BeginTransaction(null, LightningTransaction.DefaultTransactionBeginFlags);
-        }
-
-        /// <summary>
         /// Copy an MDB environment to the specified path.
         /// This function may be used to make a backup of an existing environment.
         /// </summary>
@@ -271,9 +256,9 @@ namespace LightningDB
         /// MDB always flushes the OS buffers upon commit as well, unless the environment was opened with EnvironmentOpenFlags.NoSync or in part EnvironmentOpenFlags.NoMetaSync.
         /// </summary>
         /// <param name="force">If true, force a synchronous flush. Otherwise if the environment has the EnvironmentOpenFlags.NoSync flag set the flushes will be omitted, and with MDB_MAPASYNC they will be asynchronous.</param>
-        public void Flush(bool force)
+        public MDBResultCode Flush(bool force)
         {
-            mdb_env_sync(_handle, force);
+            return mdb_env_sync(_handle, force);
         }
 
         private void EnsureOpened()
@@ -286,7 +271,7 @@ namespace LightningDB
         /// Disposes the environment and deallocates all resources associated with it.
         /// </summary>
         /// <param name="disposing">True if called from Dispose.</param>
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (_handle == IntPtr.Zero)
                 return;

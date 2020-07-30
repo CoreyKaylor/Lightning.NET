@@ -16,7 +16,8 @@ namespace SecondProcess
             using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
             {
                 using var db = tx.OpenDatabase();
-                results = tx.Get(db, Encoding.UTF8.GetBytes("hello"));
+                var result = tx.Get(db, Encoding.UTF8.GetBytes("hello"));
+                results = result.value.CopyToNewArray();
                 tx.Commit();
             }
 

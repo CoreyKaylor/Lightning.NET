@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
-using LightningDB.Native;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
@@ -13,11 +9,9 @@ namespace LightningDB
     /// <summary>
     /// Cursor to iterate over a database
     /// </summary>
-    public class LightningCursor : IEnumerator<KeyValuePair<MDBValue, MDBValue>>, IEnumerable<KeyValuePair<MDBValue, MDBValue>>
+    public class LightningCursor : IDisposable
     {
         private IntPtr _handle;
-        private MDBValue _currentKey;
-        private MDBValue _currentValue;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -32,7 +26,7 @@ namespace LightningDB
             if (txn == null)
                 throw new ArgumentNullException(nameof(txn));
 
-            mdb_cursor_open(txn.Handle(), db.Handle(), out _handle);
+            mdb_cursor_open(txn.Handle(), db.Handle(), out _handle).ThrowOnError();
 
             Transaction = txn;
             Transaction.Disposing += Dispose;
@@ -52,37 +46,41 @@ namespace LightningDB
         public LightningTransaction Transaction { get; }
 
         /// <summary>
-        /// Equivilent to Renew
-        /// </summary>
-        public void Reset()
-        {
-            Renew();
-        }
-
-        object IEnumerator.Current => Current;
-
-        /// <summary>
-        /// The current item the cursor is pointed to, or default KeyValuePair&lt;byte[], byte[]&gt;
-        /// </summary>
-        public KeyValuePair<MDBValue, MDBValue> Current => 
-            _currentKey.size == IntPtr.Zero ? default : new KeyValuePair<MDBValue, MDBValue>(_currentKey, _currentValue);
-
-        /// <summary>
-        /// Position at specified key, Current will not be populated.
+        /// Position at specified key, if key is not found index will be positioned to closest match.
         /// </summary>
         /// <param name="key">Key</param>
-        /// <returns>Returns true if the key was found.</returns>
-        public bool MoveTo(byte[] key)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Set(byte[] key)
         {
-            return Get(CursorOperation.Set, key);
+            return Get(CursorOperation.Set, key).resultCode;
+        }
+        
+        /// <summary>
+        /// Position at specified key, if key is not found index will be positioned to closest match.
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Set(ReadOnlySpan<byte> key)
+        {
+            return Get(CursorOperation.Set, key).resultCode;
         }
 
         /// <summary>
         /// Moves to the key and populates Current with the values stored.
         /// </summary>
         /// <param name="key">Key</param>
-        /// <returns>Returns true if the key was found.</returns>
-        public bool MoveToAndGet(byte[] key)
+        /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) SetKey(byte[] key)
+        {
+            return Get(CursorOperation.SetKey, key);
+        }
+        
+        /// <summary>
+        /// Moves to the key and populates Current with the values stored.
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) SetKey(ReadOnlySpan<byte> key)
         {
             return Get(CursorOperation.SetKey, key);
         }
@@ -93,9 +91,20 @@ namespace LightningDB
         /// <param name="key">Key.</param>
         /// <param name="value">Value</param>
         /// <returns>Returns true if the key/value pair was found.</returns>
-        public bool MoveTo(byte[] key, byte[] value)
+        public MDBResultCode GetBoth(byte[] key, byte[] value)
         {
-            return Get(CursorOperation.GetBoth, key, value);
+            return Get(CursorOperation.GetBoth, key, value).resultCode;
+        }
+        
+        /// <summary>
+        /// Position at key/data pair. Only for MDB_DUPSORT
+        /// </summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value</param>
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode GetBoth(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        {
+            return Get(CursorOperation.GetBoth, key, value).resultCode;
         }
 
         /// <summary>
@@ -103,139 +112,160 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">Key</param>
         /// <param name="value">Value</param>
-        /// <returns>Returns true if the key/value pair is found.</returns>
-        public bool MoveToFirstValueAfter(byte[] key, byte[] value)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode GetBothRange(byte[] key, byte[] value)
         {
-            return Get(CursorOperation.GetBothRange, key, value);
+            return Get(CursorOperation.GetBothRange, key, value).resultCode;
+        }
+        
+        /// <summary>
+        /// position at key, nearest data. Only for MDB_DUPSORT
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <param name="value">Value</param>
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode GetBothRange(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        {
+            return Get(CursorOperation.GetBothRange, key, value).resultCode;
         }
 
         /// <summary>
         /// Position at first key greater than or equal to specified key.
         /// </summary>
         /// <param name="key">Key</param>
-        /// <returns>Returns true if the key is found and had one more item after it to advance to.</returns>
-        public bool MoveToFirstAfter(byte[] key)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode SetRange(byte[] key)
         {
-            return Get(CursorOperation.SetRange, key);
+            return Get(CursorOperation.SetRange, key).resultCode;
+        }
+        
+        /// <summary>
+        /// Position at first key greater than or equal to specified key.
+        /// </summary>
+        /// <param name="key">Key</param>
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode SetRange(ReadOnlySpan<byte> key)
+        {
+            return Get(CursorOperation.SetRange, key).resultCode;
         }
 
         /// <summary>
         /// Position at first key/data item
         /// </summary>
-        /// <returns>True if first pair is found.</returns>
-        public bool MoveToFirst()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode First()
         {
-            return Get(CursorOperation.First);
+            return Get(CursorOperation.First).resultCode;
         }
 
         /// <summary>
         /// Position at first data item of current key. Only for MDB_DUPSORT
         /// </summary>
-        /// <returns>True if first duplicate is found.</returns>
-        public bool MoveToFirstDuplicate()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode FirstDuplicate()
         {
-            return Get(CursorOperation.FirstDuplicate);
+            return Get(CursorOperation.FirstDuplicate).resultCode;
         }
 
         /// <summary>
         /// Position at last key/data item
         /// </summary>
-        /// <returns>True if last pair is found.</returns>
-        public bool MoveToLast()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Last()
         {
-            return Get(CursorOperation.Last);
+            return Get(CursorOperation.Last).resultCode;
         }
 
         /// <summary>
         /// Position at last data item of current key. Only for MDB_DUPSORT
         /// </summary>
-        /// <returns>True if last duplicate is found.</returns>
-        public bool MoveToLastDuplicate()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode LastDuplicate()
         {
-            return Get(CursorOperation.LastDuplicate);
+            return Get(CursorOperation.LastDuplicate).resultCode;
         }
 
         /// <summary>
         /// Return key/data at current cursor position
         /// </summary>
         /// <returns>Key/data at current cursor position</returns>
-        public KeyValuePair<MDBValue, MDBValue> GetCurrent()
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) GetCurrent()
         {
-            Get(CursorOperation.GetCurrent);
-            return Current;
+            return Get(CursorOperation.GetCurrent);
         }
 
         /// <summary>
         /// Position at next data item
         /// </summary>
-        /// <returns>True if next item exists.</returns>
-        public bool MoveNext()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Next()
         {
-            return Get(CursorOperation.Next);
+            return Get(CursorOperation.Next).resultCode;
         }
 
         /// <summary>
         /// Position at next data item of current key. Only for MDB_DUPSORT
         /// </summary>
-        /// <returns>True if next duplicate exists.</returns>
-        public bool MoveNextDuplicate()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode NextDuplicate()
         {
-            return Get(CursorOperation.NextDuplicate);
+            return Get(CursorOperation.NextDuplicate).resultCode;
         }
 
         /// <summary>
         /// Position at first data item of next key. Only for MDB_DUPSORT.
         /// </summary>
-        /// <returns>True if items exists without duplicates.</returns>
-        public bool MoveNextNoDuplicate()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode NextNoDuplicate()
         {
-            return Get(CursorOperation.NextNoDuplicate);
+            return Get(CursorOperation.NextNoDuplicate).resultCode;
         }
 
         /// <summary>
         /// Return up to a page of duplicate data items at the next cursor position. Only for MDB_DUPFIXED
         /// It is assumed you know the array size to break up a single byte[] into byte[][].
         /// </summary>
-        /// <returns>Returns true if duplicates are found.</returns>
-        public bool MoveNextMultiple()
+        /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key will be empty here, values are 2D array</returns>
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) NextMultiple()
         {
-            return GetMultiple(CursorOperation.NextMultiple);
+            return Get(CursorOperation.NextMultiple);
         }
 
         /// <summary>
         /// Position at previous data item.
         /// </summary>
-        /// <returns>Returns true if previous item is found.</returns>
-        public bool MovePrev()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Previous()
         {
-            return Get(CursorOperation.Previous);
+            return Get(CursorOperation.Previous).resultCode;
         }
 
         /// <summary>
         /// Position at previous data item of current key. Only for MDB_DUPSORT.
         /// </summary>
-        /// <returns>Previous data item of current key.</returns>
-        public bool MovePrevDuplicate()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode PreviousDuplicate()
         {
-            return Get(CursorOperation.PreviousDuplicate);
+            return Get(CursorOperation.PreviousDuplicate).resultCode;
         }
 
         /// <summary>
         /// Position at last data item of previous key. Only for MDB_DUPSORT.
         /// </summary>
-        /// <returns>True if previous entry without duplicate is found.</returns>
-        public bool MovePrevNoDuplicate()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode PreviousNoDuplicate()
         {
-            return Get(CursorOperation.PreviousNoDuplicate);
+            return Get(CursorOperation.PreviousNoDuplicate).resultCode;
         }
         
-        private bool Get(CursorOperation operation)
+        private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation)
         {
-            _currentKey = _currentValue = default;
-            return mdb_cursor_get(_handle, ref _currentKey, ref _currentValue, operation) == 0;
+            var mdbKey = new MDBValue();
+            var mdbValue = new MDBValue();
+            return (mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
         }
 
-        private bool Get(CursorOperation operation, byte[] key)
+        private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation, byte[] key)
         {
             if (key is null)
                 throw new ArgumentNullException(nameof(key));
@@ -243,42 +273,32 @@ namespace LightningDB
             return Get(operation, key.AsSpan());
         }
 
-        private unsafe bool Get(CursorOperation operation, ReadOnlySpan<byte> key)
+        private unsafe (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation, ReadOnlySpan<byte> key)
         {
-            _currentValue = default;
             fixed (byte* keyPtr = key)
             {
-                var findKey = new MDBValue(key.Length, keyPtr);
-                var found = mdb_cursor_get(_handle, ref findKey, ref _currentValue, operation) == 0;
-                if (found)
-                {
-                    _currentKey = findKey;
-                }
-                return found;
+                var mdbKey = new MDBValue(key.Length, keyPtr);
+                var mdbValue = new MDBValue();
+                return (mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
             }
         }
 
-        private bool Get(CursorOperation operation, byte[] key, byte[] value)
+        private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation, byte[] key, byte[] value)
         {
             return Get(operation, key.AsSpan(), value.AsSpan());
         }
 
-        private unsafe bool Get(CursorOperation operation, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
+        private unsafe (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
         {
             fixed(byte* keyPtr = key)
             fixed(byte* valPtr = value)
             {
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valPtr);
-                return mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation) == 0;
+                return (mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
             }
         }
 
-        private bool GetMultiple(CursorOperation operation)
-        {
-            return mdb_cursor_get_multiple(_handle, ref _currentKey, ref _currentValue, operation) == 0;
-        }
-
         /// <summary>
         /// Store by cursor.
         /// This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
@@ -297,9 +317,10 @@ namespace LightningDB
         ///     CursorPutOptions.AppendData - append the given key/data pair to the end of the database. No key comparisons are performed. This option allows fast bulk loading when keys are already known to be in the correct order. Loading unsorted keys with this flag will cause data corruption.
         ///     CursorPutOptions.AppendDuplicateData - as above, but for sorted dup data.
         /// </param>
-        public void Put(byte[] key, byte[] value, CursorPutOptions options)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Put(byte[] key, byte[] value, CursorPutOptions options)
         {
-            Put(key.AsSpan(), value.AsSpan(), options);
+            return Put(key.AsSpan(), value.AsSpan(), options);
         }
 
 
@@ -321,7 +342,8 @@ namespace LightningDB
         ///     CursorPutOptions.AppendData - append the given key/data pair to the end of the database. No key comparisons are performed. This option allows fast bulk loading when keys are already known to be in the correct order. Loading unsorted keys with this flag will cause data corruption.
         ///     CursorPutOptions.AppendDuplicateData - as above, but for sorted dup data.
         /// </param>
-        public unsafe void Put(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, CursorPutOptions options)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public unsafe MDBResultCode Put(ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, CursorPutOptions options)
         {
             fixed (byte* keyPtr = key)
             fixed (byte* valPtr = value)
@@ -329,7 +351,7 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valPtr);
 
-                mdb_cursor_put(_handle, mdbKey, mdbValue, options);
+                return mdb_cursor_put(_handle, mdbKey, mdbValue, options);
             }
         }
 
@@ -341,9 +363,10 @@ namespace LightningDB
         /// </summary>
         /// <param name="key">The key operated on.</param>
         /// <param name="values">The data items operated on.</param>
-        public unsafe void PutMultiple(byte[] key, byte[][] values)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public unsafe MDBResultCode Put(byte[] key, byte[][] values)
         {
-            const int StackAllocateLimit = 256;//I just made up a number, this can be much more agressive -arc
+            const int StackAllocateLimit = 256;//I just made up a number, this can be much more aggressive -arc
 
             int overallLength = values.Sum(arr => arr.Length);//probably allocates but boy is it handy...
 
@@ -354,21 +377,21 @@ namespace LightningDB
             {
                 Span<byte> contiguousValues = stackalloc byte[overallLength];
 
-                InnerPutMultiple(contiguousValues);
+                return InnerPutMultiple(contiguousValues);
             }
             else
             {
                 fixed (byte* contiguousValuesPtr = new byte[overallLength])
                 {
                     Span<byte> contiguousValues = new Span<byte>(contiguousValuesPtr, overallLength);
-                    InnerPutMultiple(contiguousValues);
+                    return InnerPutMultiple(contiguousValues);
                 }
             }
 
             //these local methods could be made static, but the compiler will emit these closures
-            //as structs with very little overhead. Also static local functions isn't availible 
+            //as structs with very little overhead. Also static local functions isn't available 
             //until C# 8 so I can't use it anyway...
-            void InnerPutMultiple(Span<byte> contiguousValuesBuffer)
+            MDBResultCode InnerPutMultiple(Span<byte> contiguousValuesBuffer)
             {
                 FlattenInfo(contiguousValuesBuffer);
                 var contiguousValuesPtr = (byte*)Unsafe.AsPointer(ref contiguousValuesBuffer.GetPinnableReference());
@@ -382,7 +405,7 @@ namespace LightningDB
                 {
                     var mdbKey = new MDBValue(key.Length, keyPtr);
 
-                    mdb_cursor_put(_handle, ref mdbKey, ref dataBuffer, CursorPutOptions.MultipleData);
+                    return mdb_cursor_put(_handle, ref mdbKey, ref dataBuffer, CursorPutOptions.MultipleData);
                 }
             }
 
@@ -406,15 +429,14 @@ namespace LightningDB
             }
         }
 
-
         /// <summary>
         /// Return up to a page of the duplicate data items at the current cursor position. Only for MDB_DUPFIXED
         /// It is assumed you know the array size to break up a single byte[] into byte[][].
         /// </summary>
-        /// <returns>True if key and multiple items are found.</returns>
-        public bool GetMultiple()
+        /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key will be empty here, values are 2D array</returns>
+        public (MDBResultCode resultCode, MDBValue key, MDBValue value) GetMultiple()
         {
-            return GetMultiple(CursorOperation.GetMultiple);
+            return Get(CursorOperation.GetMultiple);
         }
 
         /// <summary>
@@ -423,42 +445,41 @@ namespace LightningDB
         /// </summary>
         /// <param name="option">Options for this operation. This parameter must be set to 0 or one of the values described here.
         ///     MDB_NODUPDATA - delete all of the data items for the current key. This flag may only be specified if the database was opened with MDB_DUPSORT.</param>
-        private void Delete(CursorDeleteOption option)
+        private MDBResultCode Delete(CursorDeleteOption option)
         {
-            mdb_cursor_del(_handle, option);
+            return mdb_cursor_del(_handle, option);
         }
 
         /// <summary>
         /// Delete current key/data pair.
         /// This function deletes the key/data range for which duplicates are found.
         /// </summary>
-        public void DeleteDuplicates()
+        public MDBResultCode DeleteDuplicateData()
         {
-            Delete(CursorDeleteOption.NoDuplicateData);
+            return Delete(CursorDeleteOption.NoDuplicateData);
         }
 
         /// <summary>
         /// Delete current key/data pair.
         /// This function deletes the key/data pair to which the cursor refers.
         /// </summary>
-        public void Delete()
+        public MDBResultCode Delete()
         {
-            Delete(CursorDeleteOption.None);
+            return Delete(CursorDeleteOption.None);
         }
 
-        //TODO: tests
         /// <summary>
         /// Renew a cursor handle.
         /// Cursors are associated with a specific transaction and database and may not span threads. 
         /// Cursors that are only used in read-only transactions may be re-used, to avoid unnecessary malloc/free overhead. 
         /// The cursor may be associated with a new read-only transaction, and referencing the same database handle as it was created with.
         /// </summary>
-        public void Renew()
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Renew()
         {
-            Renew(Transaction);
+            return Renew(Transaction);
         }
 
-        //TODO: tests
         /// <summary>
         /// Renew a cursor handle.
         /// Cursors are associated with a specific transaction and database and may not span threads. 
@@ -466,7 +487,8 @@ namespace LightningDB
         /// The cursor may be associated with a new read-only transaction, and referencing the same database handle as it was created with.
         /// </summary>
         /// <param name="txn">Transaction to renew in.</param>
-        public void Renew(LightningTransaction txn)
+        /// <returns>Returns <see cref="MDBResultCode"/></returns>
+        public MDBResultCode Renew(LightningTransaction txn)
         {
             if(txn == null)
                 throw new ArgumentNullException(nameof(txn));
@@ -474,7 +496,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            mdb_cursor_renew(txn.Handle(), _handle);
+            return mdb_cursor_renew(txn.Handle(), _handle);
         }
 
         /// <summary>
@@ -503,16 +525,6 @@ namespace LightningDB
         public void Dispose()
         {
             Dispose(true);
-        }
-
-        public IEnumerator<KeyValuePair<MDBValue, MDBValue>> GetEnumerator()
-        {
-            return this;
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
         }
 
         ~LightningCursor()

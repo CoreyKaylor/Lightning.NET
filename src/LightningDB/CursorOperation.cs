@@ -93,6 +93,6 @@
         /// <summary>
         /// Position at first key greater than or equal to specified key.
         /// </summary>
-        SetRange
+        SetRange,
     }
 }
