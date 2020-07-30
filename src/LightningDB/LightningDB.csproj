@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>LightningDB</Description>
-    <VersionPrefix>0.12.0</VersionPrefix>
+    <VersionPrefix>0.13.0</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>LightningDB</AssemblyName>
