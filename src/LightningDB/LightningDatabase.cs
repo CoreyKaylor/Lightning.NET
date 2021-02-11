@@ -10,6 +10,7 @@ namespace LightningDB
     {
         private uint _handle;
         private readonly DatabaseConfiguration _configuration;
+        private readonly bool _closeOnDispose;
         private readonly LightningTransaction _transaction;
         private readonly IDisposable _pinnedConfig;
 
@@ -19,13 +20,16 @@ namespace LightningDB
         /// <param name="name">Database name.</param>
         /// <param name="transaction">Active transaction.</param>
         /// <param name="configuration">Options for the database, like encoding, option flags, and comparison logic.</param>
-        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseConfiguration configuration)
+        /// <param name="closeOnDispose">Close database handle on dispose</param>
+        internal LightningDatabase(string name, LightningTransaction transaction, DatabaseConfiguration configuration,
+            bool closeOnDispose)
         {
             if (transaction == null)
                 throw new ArgumentNullException(nameof(transaction));
 
             Name = name;
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _closeOnDispose = closeOnDispose;
             Environment = transaction.Environment;
             _transaction = transaction;
             Environment.Disposing += Dispose;
@@ -110,7 +114,10 @@ namespace LightningDB
             Environment.Disposing -= Dispose;
             IsOpened = false;
             _pinnedConfig.Dispose();
-            mdb_dbi_close(Environment.Handle(), _handle);
+
+            if (_closeOnDispose)
+                mdb_dbi_close(Environment.Handle(), _handle);
+
             GC.SuppressFinalize(this);
             _handle = default;
         }

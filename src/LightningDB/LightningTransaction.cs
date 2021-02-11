@@ -82,11 +82,12 @@ namespace LightningDB
         /// </summary>
         /// <param name="name">Database name (optional). If null then the default name is used.</param>
         /// <param name="configuration">Database open options.</param>
+        /// <param name="closeOnDispose">Close database handle on dispose</param>
         /// <returns>Created database wrapper.</returns>
-        public LightningDatabase OpenDatabase(string name = null, DatabaseConfiguration configuration = null)
+        public LightningDatabase OpenDatabase(string name = null, DatabaseConfiguration configuration = null, bool closeOnDispose = true)
         {
             configuration = configuration ?? new DatabaseConfiguration();
-            var db = new LightningDatabase(name, this, configuration);
+            var db = new LightningDatabase(name, this, configuration, closeOnDispose);
             return db;
         }
 
