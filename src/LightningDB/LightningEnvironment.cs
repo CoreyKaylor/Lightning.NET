@@ -153,9 +153,9 @@ namespace LightningDB
                 mdb_env_info(Handle(), out var nativeInfo);
                 return new EnvironmentInfo
                 {
-                    MapSize = nativeInfo.me_mapsize.ToInt32(),
-                    LastPageNumber = nativeInfo.me_last_pgno.ToInt32(),
-                    LastTransactionId = nativeInfo.me_last_txnid.ToInt32(),
+                    MapSize = nativeInfo.me_mapsize.ToInt64(),
+                    LastPageNumber = nativeInfo.me_last_pgno.ToInt64(),
+                    LastTransactionId = nativeInfo.me_last_txnid.ToInt64(),
                 };
             }
         }
