@@ -51,12 +51,14 @@ namespace LightningDB.Tests
             Assert.Throws<InvalidOperationException>(() => _env.BeginTransaction());
         }
 
-        [Fact]
-        public void CanGetEnvironmentInfo()
+        [Theory]
+        [InlineData(1024 * 1024 * 200)]
+        [InlineData(1024 * 1024 * 1024 * 3L)]
+        public void CanGetEnvironmentInfo(long mapSize)
         {
             _env = new LightningEnvironment(_path, new EnvironmentConfiguration
             {
-                MapSize = 1024 * 1024 * 200,
+                MapSize = mapSize,
             });
             _env.Open();
             var info = _env.Info;
