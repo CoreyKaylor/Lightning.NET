@@ -26,13 +26,13 @@ namespace LightningDB
             {
                 CompareFunction compare = Compare;
                 pinnedComparer.AddComparer(compare);
-                mdb_set_compare(tx.Handle(), db.Handle(), compare);
+                tx.Environment.Lmdb.mdb_set_compare(tx.Handle(), db.Handle(), compare);
             }
             if (_duplicatesComparer != null)
             {
                 CompareFunction dupCompare = IsDuplicate;
                 pinnedComparer.AddComparer(dupCompare);
-                mdb_set_dupsort(tx.Handle(), db.Handle(), dupCompare);
+                tx.Environment.Lmdb.mdb_set_dupsort(tx.Handle(), db.Handle(), dupCompare);
             }
             return pinnedComparer;
         }

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using LightningDB.Native;
+using System;
 
-using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -16,6 +16,7 @@ namespace LightningDB
 
         private IntPtr _handle;
         private readonly IntPtr _originalHandle;
+        private ILmdb _lmdb;
 
         /// <summary>
         /// Created new instance of LightningTransaction
@@ -35,9 +36,10 @@ namespace LightningDB
                 parent.Disposing += Dispose;
                 parent.StateChanging += OnParentStateChanging;
             }
+            _lmdb = environment.Lmdb;
 
             var parentHandle = parent?.Handle() ?? IntPtr.Zero;
-            mdb_txn_begin(environment.Handle(), parentHandle, flags, out _handle).ThrowOnError();
+            _lmdb.mdb_txn_begin(environment.Handle(), parentHandle, flags, out _handle).ThrowOnError();
             _originalHandle = _handle;
         }
 
@@ -144,7 +146,7 @@ namespace LightningDB
             {
                 var mdbKey = new MDBValue(key.Length, keyBuffer);
 
-                return (mdb_get(_handle, db.Handle(), ref mdbKey, out var mdbValue), mdbKey, mdbValue);
+                return (_lmdb.mdb_get(_handle, db.Handle(), ref mdbKey, out var mdbValue), mdbKey, mdbValue);
             }
         }
 
@@ -178,7 +180,7 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valuePtr);
 
-                return mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
+                return _lmdb.mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
             }
         }
 
@@ -220,10 +222,10 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 if (value == null)
                 {
-                    return mdb_del(_handle, db.Handle(), mdbKey);
+                    return _lmdb.mdb_del(_handle, db.Handle(), mdbKey);
                 }
                 var mdbValue = new MDBValue(value.Length, valuePtr);
-                return mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
+                return _lmdb.mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
             }
         }
 
@@ -257,7 +259,7 @@ namespace LightningDB
         {
             fixed(byte* ptr = key) {
                 var mdbKey = new MDBValue(key.Length, ptr);
-                return mdb_del(_handle, db.Handle(), mdbKey);
+                return _lmdb.mdb_del(_handle, db.Handle(), mdbKey);
             }
         }
 
@@ -269,7 +271,7 @@ namespace LightningDB
             if (!IsReadOnly)
                 throw new InvalidOperationException("Can't reset non-readonly transaction");
 
-            mdb_txn_reset(_handle);
+            _lmdb.mdb_txn_reset(_handle);
             State = LightningTransactionState.Reseted;
         }
 
@@ -284,7 +286,7 @@ namespace LightningDB
             if (State != LightningTransactionState.Reseted)
                 throw new InvalidOperationException("Transaction should be reset first");
 
-            var result = mdb_txn_renew(_handle);
+            var result = _lmdb.mdb_txn_renew(_handle);
             State = LightningTransactionState.Active;
             return result;
         }
@@ -298,7 +300,7 @@ namespace LightningDB
         {
             State = LightningTransactionState.Commited;
             StateChanging?.Invoke(State);
-            return mdb_txn_commit(_handle);
+            return _lmdb.mdb_txn_commit(_handle);
         }
 
         /// <summary>
@@ -310,7 +312,7 @@ namespace LightningDB
         {
             State = LightningTransactionState.Aborted;
             StateChanging?.Invoke(State);
-            mdb_txn_abort(_handle);
+            _lmdb.mdb_txn_abort(_handle);
         }
 
         /// <summary>
@@ -320,7 +322,7 @@ namespace LightningDB
         /// <returns>The number of items.</returns>
         public long GetEntriesCount(LightningDatabase db)
         {
-            mdb_stat(_handle, db.Handle(), out var stat).ThrowOnError();
+            _lmdb.mdb_stat(_handle, db.Handle(), out var stat).ThrowOnError();
 
             return stat.ms_entries.ToInt64();
         }

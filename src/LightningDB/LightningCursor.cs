@@ -1,8 +1,7 @@
-﻿using System;
+﻿using LightningDB.Native;
+using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
-
-using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -12,6 +11,7 @@ namespace LightningDB
     public class LightningCursor : IDisposable
     {
         private IntPtr _handle;
+        private ILmdb _lmdb;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -26,7 +26,8 @@ namespace LightningDB
             if (txn == null)
                 throw new ArgumentNullException(nameof(txn));
 
-            mdb_cursor_open(txn.Handle(), db.Handle(), out _handle).ThrowOnError();
+            _lmdb = txn.Environment.Lmdb;
+            _lmdb.mdb_cursor_open(txn.Handle(), db.Handle(), out _handle).ThrowOnError();
 
             Transaction = txn;
             Transaction.Disposing += Dispose;
@@ -262,7 +263,7 @@ namespace LightningDB
         {
             var mdbKey = new MDBValue();
             var mdbValue = new MDBValue();
-            return (mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
+            return (_lmdb.mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
         }
 
         private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation, byte[] key)
@@ -279,7 +280,7 @@ namespace LightningDB
             {
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue();
-                return (mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
+                return (_lmdb.mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
             }
         }
 
@@ -295,7 +296,7 @@ namespace LightningDB
             {
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valPtr);
-                return (mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
+                return (_lmdb.mdb_cursor_get(_handle, ref mdbKey, ref mdbValue, operation), mdbKey, mdbValue);
             }
         }
 
@@ -351,7 +352,7 @@ namespace LightningDB
                 var mdbKey = new MDBValue(key.Length, keyPtr);
                 var mdbValue = new MDBValue(value.Length, valPtr);
 
-                return mdb_cursor_put(_handle, mdbKey, mdbValue, options);
+                return _lmdb.mdb_cursor_put(_handle, mdbKey, mdbValue, options);
             }
         }
 
@@ -405,7 +406,7 @@ namespace LightningDB
                 {
                     var mdbKey = new MDBValue(key.Length, keyPtr);
 
-                    return mdb_cursor_put(_handle, ref mdbKey, ref dataBuffer, CursorPutOptions.MultipleData);
+                    return _lmdb.mdb_cursor_put(_handle, ref mdbKey, ref dataBuffer, CursorPutOptions.MultipleData);
                 }
             }
 
@@ -447,7 +448,7 @@ namespace LightningDB
         ///     MDB_NODUPDATA - delete all of the data items for the current key. This flag may only be specified if the database was opened with MDB_DUPSORT.</param>
         private MDBResultCode Delete(CursorDeleteOption option)
         {
-            return mdb_cursor_del(_handle, option);
+            return _lmdb.mdb_cursor_del(_handle, option);
         }
 
         /// <summary>
@@ -496,7 +497,7 @@ namespace LightningDB
             if (!txn.IsReadOnly)
                 throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-            return mdb_cursor_renew(txn.Handle(), _handle);
+            return _lmdb.mdb_cursor_renew(txn.Handle(), _handle);
         }
 
         /// <summary>
@@ -511,7 +512,7 @@ namespace LightningDB
             if (!disposing)
                 throw new InvalidOperationException("The LightningCursor was not disposed and cannot be reliably dealt with from the finalizer");
 
-            mdb_cursor_close(_handle);
+            _lmdb.mdb_cursor_close(_handle);
             _handle = IntPtr.Zero;
 
             Transaction.Disposing -= Dispose;

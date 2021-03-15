@@ -1,6 +1,6 @@
-﻿using System;
+﻿using LightningDB.Native;
+using System;
 using System.IO;
-using static LightningDB.Native.Lmdb;
 
 namespace LightningDB
 {
@@ -11,6 +11,7 @@ namespace LightningDB
     {
         private readonly EnvironmentConfiguration _config = new EnvironmentConfiguration();
 
+        private ILmdb _lmdb;
         private IntPtr _handle;
 
         public event Action Disposing;
@@ -25,11 +26,16 @@ namespace LightningDB
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
 
-            mdb_env_create(out _handle).ThrowOnError();
-
             Path = path;
 
             var config = configuration ?? _config;
+
+            _lmdb = new Lmdb();
+            if (config.AutoResizeWindows)
+                _lmdb = new Lmdb2();
+
+            _lmdb.mdb_env_create(out _handle).ThrowOnError();
+
             config.Configure(this);
             _config = config;
         }
@@ -47,8 +53,7 @@ namespace LightningDB
         /// <summary>
         /// Current lmdb version.
         /// </summary>
-        public LightningVersionInfo Version => LightningVersionInfo.Get();
-
+        public LightningVersionInfo Version => LightningVersionInfo.Get(_lmdb);
 
         /// <summary>
         /// Gets or Sets the size of the memory map to use for this environment.
@@ -75,7 +80,7 @@ namespace LightningDB
                 else
                     _config.MapSize = value;
 
-                mdb_env_set_mapsize(_handle, _config.MapSize).ThrowOnError();
+                _lmdb.mdb_env_set_mapsize(_handle, _config.MapSize).ThrowOnError();
             }
         }
 
@@ -86,7 +91,7 @@ namespace LightningDB
         {
             get
             {
-                mdb_env_get_maxreaders(_handle, out var readers).ThrowOnError();
+                _lmdb.mdb_env_get_maxreaders(_handle, out var readers).ThrowOnError();
                 return (int) readers;
             }
             set
@@ -94,7 +99,7 @@ namespace LightningDB
                 if (IsOpened)
                     throw new InvalidOperationException("Can't change MaxReaders of opened environment");
 
-                mdb_env_set_maxreaders(_handle, (uint)value).ThrowOnError();
+                _lmdb.mdb_env_set_maxreaders(_handle, (uint)value).ThrowOnError();
 
                 _config.MaxReaders = value;
             }
@@ -117,7 +122,7 @@ namespace LightningDB
                 if (value == _config.MaxDatabases) 
                     return;
 
-                mdb_env_set_maxdbs(_handle, (uint)value).ThrowOnError();
+                _lmdb.mdb_env_set_maxdbs(_handle, (uint)value).ThrowOnError();
 
                 _config.MaxDatabases = value;
             }
@@ -130,7 +135,7 @@ namespace LightningDB
         {
             get
             {
-                mdb_env_stat(Handle(), out var nativeStat);
+                _lmdb.mdb_env_stat(Handle(), out var nativeStat);
                 return new Stats
                 {
                     BranchPages = nativeStat.ms_branch_pages.ToInt64(),
@@ -150,7 +155,7 @@ namespace LightningDB
         {
             get
             {
-                mdb_env_info(Handle(), out var nativeInfo);
+                _lmdb.mdb_env_info(Handle(), out var nativeInfo);
                 return new EnvironmentInfo
                 {
                     MapSize = nativeInfo.me_mapsize.ToInt64(),
@@ -178,7 +183,7 @@ namespace LightningDB
 
             try
             {
-                mdb_env_open(_handle, Path, openFlags, accessMode).ThrowOnError();
+                _lmdb.mdb_env_open(_handle, Path, openFlags, accessMode).ThrowOnError();
             }
             catch(Exception ex)
             {
@@ -245,8 +250,8 @@ namespace LightningDB
             var flags = compact 
                 ? EnvironmentCopyFlags.Compact 
                 : EnvironmentCopyFlags.None;
-            
-            mdb_env_copy2(_handle, path, flags);
+
+            _lmdb.mdb_env_copy2(_handle, path, flags);
         }
 
         //TODO: tests
@@ -258,8 +263,10 @@ namespace LightningDB
         /// <param name="force">If true, force a synchronous flush. Otherwise if the environment has the EnvironmentOpenFlags.NoSync flag set the flushes will be omitted, and with MDB_MAPASYNC they will be asynchronous.</param>
         public MDBResultCode Flush(bool force)
         {
-            return mdb_env_sync(_handle, force);
+            return _lmdb.mdb_env_sync(_handle, force);
         }
+
+        internal ILmdb Lmdb => _lmdb;
 
         private void EnsureOpened()
         {
@@ -284,7 +291,7 @@ namespace LightningDB
 
             if (IsOpened)
             {
-                mdb_env_close(_handle);
+                _lmdb.mdb_env_close(_handle);
                 IsOpened = false;
             }
 

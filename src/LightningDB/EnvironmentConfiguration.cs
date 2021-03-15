@@ -29,6 +29,8 @@
 
         public bool AutoReduceMapSizeIn32BitProcess { get; set; }
 
+        public bool AutoResizeWindows { get; set; }
+
         internal void Configure(LightningEnvironment env)
         {
             if (_mapSize.HasValue)

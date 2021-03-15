@@ -1,5 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using static LightningDB.Native.Lmdb;
+﻿using LightningDB.Native;
+using System.Runtime.InteropServices;
 
 namespace LightningDB
 {
@@ -8,9 +8,9 @@ namespace LightningDB
     /// </summary>
     public class LightningVersionInfo
     {
-        internal static LightningVersionInfo Get()
+        internal static LightningVersionInfo Get(ILmdb lmdb)
         {
-            var version = mdb_version(out var major, out var minor, out var patch);
+            var version = lmdb.mdb_version(out var major, out var minor, out var patch);
             return new LightningVersionInfo
             {
                 Version = Marshal.PtrToStringAnsi(version),

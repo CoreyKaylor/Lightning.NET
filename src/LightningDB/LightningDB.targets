@@ -9,11 +9,21 @@
       <Link>lmdb.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x64\native\lmdb2.dll">
+      <Visible>false</Visible>
+      <Link>lmdb2.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup Condition="'$([MSBuild]::IsOsPlatform(Windows))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X86'">
     <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\lmdb.dll">
       <Visible>false</Visible>
       <Link>lmdb.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\lmdb2.dll">
+      <Visible>false</Visible>
+      <Link>lmdb2.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

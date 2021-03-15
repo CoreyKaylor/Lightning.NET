@@ -1,5 +1,5 @@
-﻿using System;
-using static LightningDB.Native.Lmdb;
+﻿using LightningDB.Native;
+using System;
 
 namespace LightningDB
 {
@@ -13,6 +13,7 @@ namespace LightningDB
         private readonly bool _closeOnDispose;
         private readonly LightningTransaction _transaction;
         private readonly IDisposable _pinnedConfig;
+        private ILmdb _lmdb;
 
         /// <summary>
         /// Creates a LightningDatabase instance.
@@ -32,8 +33,9 @@ namespace LightningDB
             _closeOnDispose = closeOnDispose;
             Environment = transaction.Environment;
             _transaction = transaction;
+            _lmdb = transaction.Environment.Lmdb;
             Environment.Disposing += Dispose;
-            mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle).ThrowOnError();
+            _lmdb.mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle).ThrowOnError();
             _pinnedConfig = _configuration.ConfigureDatabase(transaction, this);
             IsOpened = true;
         }
@@ -57,7 +59,7 @@ namespace LightningDB
         {
             get
             {
-                mdb_stat(_transaction.Handle(), Handle(), out var nativeStat).ThrowOnError();
+                _lmdb.mdb_stat(_transaction.Handle(), Handle(), out var nativeStat).ThrowOnError();
                 return new Stats
                 {
                     BranchPages = nativeStat.ms_branch_pages.ToInt64(),
@@ -85,7 +87,7 @@ namespace LightningDB
         /// </summary>
         public MDBResultCode Drop(LightningTransaction transaction)
         {
-            var result = mdb_drop(transaction.Handle(), _handle, true);
+            var result = _lmdb.mdb_drop(transaction.Handle(), _handle, true);
             IsOpened = false;
             _handle = default;
             return result;
@@ -96,7 +98,7 @@ namespace LightningDB
         /// </summary>
         public MDBResultCode Truncate(LightningTransaction transaction)
         {
-            return mdb_drop(transaction.Handle(), _handle, false);
+            return _lmdb.mdb_drop(transaction.Handle(), _handle, false);
         }
 
         /// <summary>
@@ -116,7 +118,7 @@ namespace LightningDB
             _pinnedConfig.Dispose();
 
             if (_closeOnDispose)
-                mdb_dbi_close(Environment.Handle(), _handle);
+                _lmdb.mdb_dbi_close(Environment.Handle(), _handle);
 
             GC.SuppressFinalize(this);
             _handle = default;

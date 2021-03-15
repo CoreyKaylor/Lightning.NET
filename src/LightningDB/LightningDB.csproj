@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Description>LightningDB</Description>
@@ -24,6 +24,7 @@
     </None>
     <None Include="LightningDB.targets" Pack="true" PackagePath="build" />
   </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.5.4" />

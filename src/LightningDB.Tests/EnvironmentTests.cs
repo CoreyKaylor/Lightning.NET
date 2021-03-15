@@ -7,7 +7,7 @@ namespace LightningDB.Tests
     [Collection("SharedFileSystem")]
     public class EnvironmentTests : IDisposable
     {
-        private string _path,  _pathCopy;
+        private string _path, _pathCopy;
         private LightningEnvironment _env;
 
         public EnvironmentTests(SharedFileSystem fileSystem)
@@ -34,10 +34,10 @@ namespace LightningDB.Tests
         [Fact]
         public void EnvironmentCreatedFromConfig()
         {
-            var mapExpected = 1024*1024*20;
+            var mapExpected = 1024 * 1024 * 20;
             var maxDatabaseExpected = 2;
             var maxReadersExpected = 3;
-            var config = new EnvironmentConfiguration {MapSize = mapExpected, MaxDatabases = maxDatabaseExpected, MaxReaders = maxReadersExpected};
+            var config = new EnvironmentConfiguration { MapSize = mapExpected, MaxDatabases = maxDatabaseExpected, MaxReaders = maxReadersExpected };
             _env = new LightningEnvironment(_path, config);
             Assert.Equal(_env.MapSize, mapExpected);
             Assert.Equal(_env.MaxDatabases, maxDatabaseExpected);
@@ -73,8 +73,8 @@ namespace LightningDB.Tests
             _env.Open();
             using (var tx = _env.BeginTransaction())
             {
-                tx.OpenDatabase("db1", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
-                tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+                tx.OpenDatabase("db1", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+                tx.OpenDatabase("db2", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
                 tx.Commit();
             }
             Assert.Equal(2, _env.MaxDatabases);
@@ -124,7 +124,7 @@ namespace LightningDB.Tests
         public void EnvironmentShouldBeCopied(bool compact)
         {
             _env = new LightningEnvironment(_path);
-            _env.Open(); 
+            _env.Open();
 
             _env.CopyTo(_pathCopy, compact);
 
@@ -142,5 +142,24 @@ namespace LightningDB.Tests
 
             _env.Open();
         }
+
+        [Fact]
+        public void CreateEnvironmentWithAutoResize()
+        {
+            using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
+            {
+                MapSize = 10 * 1024 * 1024,
+                AutoResizeWindows = true,
+            }))
+            {
+                env.Open();
+            }
+
+            using (var dbFile = File.OpenRead(Path.Combine(_path, "data.mdb")))
+            {
+                Assert.Equal(8192, dbFile.Length);
+            }
+        }
     }
 }
+
