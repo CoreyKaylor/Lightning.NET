@@ -31,4 +31,18 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup Condition="'$([MSBuild]::IsOsPlatform(Linux))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64'">
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\linux-arm64\native\liblmdb.so">
+      <Visible>false</Visible>
+      <Link>liblmdb.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition="'$([MSBuild]::IsOsPlatform(Linux))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64'">
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\linux-x64\native\liblmdb.so">
+      <Visible>false</Visible>
+      <Link>liblmdb.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
