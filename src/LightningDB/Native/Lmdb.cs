@@ -5,7 +5,7 @@ namespace LightningDB.Native
 {
     public static class Lmdb
     {
-        private const string MDB_DLL_NAME = nameof(Lmdb);
+        private const string MDB_DLL_NAME = "lmdb";
         /// <summary>
         /// Duplicate keys may be used in the database. (Or, from another perspective, keys may have multiple data items, stored in sorted order.) By default keys must be unique and may have only a single data item.
         /// </summary>
