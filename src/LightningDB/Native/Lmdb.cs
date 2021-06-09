@@ -5,6 +5,7 @@ namespace LightningDB.Native
 {
     public static class Lmdb
     {
+        private const string MDB_DLL_NAME = nameof(Lmdb);
         /// <summary>
         /// Duplicate keys may be used in the database. (Or, from another perspective, keys may have multiple data items, stored in sorted order.) By default keys must be unique and may have only a single data item.
         /// </summary>
@@ -15,159 +16,29 @@ namespace LightningDB.Native
         /// </summary>
         public const int MDB_DUPFIXED = 0x10;
 
-        public static MDBResultCode mdb_env_create(out IntPtr env)
-        {
-            return LmdbMethods.mdb_env_create(out env);
-        }
-
-        public static void mdb_env_close(IntPtr env)
-        {
-            LmdbMethods.mdb_env_close(env);
-        }
-
-        public static MDBResultCode mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags, UnixAccessMode mode)
-        {
-            return LmdbMethods.mdb_env_open(env, path, flags, mode);
-        }
-
         public static MDBResultCode mdb_env_set_mapsize(IntPtr env, long size)
         {
-            return LmdbMethods.mdb_env_set_mapsize(env, new IntPtr(size));
-        }
-
-        public static MDBResultCode mdb_env_get_maxreaders(IntPtr env, out uint readers)
-        {
-            return LmdbMethods.mdb_env_get_maxreaders(env, out readers);
-        }
-
-        public static MDBResultCode mdb_env_set_maxreaders(IntPtr env, uint readers)
-        {
-            return LmdbMethods.mdb_env_set_maxreaders(env, readers);
-        }
-
-        public static MDBResultCode mdb_env_set_maxdbs(IntPtr env, uint dbs)
-        {
-            return LmdbMethods.mdb_env_set_maxdbs(env, dbs);
-        }
-
-        public static MDBResultCode mdb_dbi_open(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db)
-        {
-            return LmdbMethods.mdb_dbi_open(txn, name, flags, out db);
-        }
-
-        public static void mdb_dbi_close(IntPtr env, uint dbi)
-        {
-            LmdbMethods.mdb_dbi_close(env, dbi);
-        }
-
-        public static MDBResultCode mdb_drop(IntPtr txn, uint dbi, bool del)
-        {
-            return LmdbMethods.mdb_drop(txn, dbi, del);
-        }
-
-        public static MDBResultCode mdb_txn_begin(IntPtr env, IntPtr parent, TransactionBeginFlags flags, out IntPtr txn)
-        {
-            return LmdbMethods.mdb_txn_begin(env, parent, flags, out txn);
-        }
-
-        public static MDBResultCode mdb_txn_commit(IntPtr txn)
-        {
-            return LmdbMethods.mdb_txn_commit(txn);
-        }
-
-        public static void mdb_txn_abort(IntPtr txn)
-        {
-            LmdbMethods.mdb_txn_abort(txn);
-        }
-
-        public static void mdb_txn_reset(IntPtr txn)
-        {
-            LmdbMethods.mdb_txn_reset(txn);
-        }
-
-        public static MDBResultCode mdb_txn_renew(IntPtr txn)
-        {
-            return LmdbMethods.mdb_txn_renew(txn);
-        }
-
-        public static IntPtr mdb_version(out int major, out int minor, out int patch)
-        {
-            return LmdbMethods.mdb_version(out major, out minor, out patch);
-        }
-
-        public static MDBResultCode mdb_stat(IntPtr txn, uint dbi, out MDBStat stat)
-        {
-            return LmdbMethods.mdb_stat(txn, dbi, out stat);
-        }
-
-        public static MDBResultCode mdb_env_copy(IntPtr env, string path)
-        {
-            return LmdbMethods.mdb_env_copy(env, path);
-        }
-
-        public static MDBResultCode mdb_env_copy2(IntPtr env, string path, EnvironmentCopyFlags copyFlags)
-        {
-            return LmdbMethods.mdb_env_copy2(env, path, copyFlags);
-        }
-
-        public static MDBResultCode mdb_env_info(IntPtr env, out MDBEnvInfo stat)
-        {
-            return LmdbMethods.mdb_env_info(env, out stat);
-        }
-
-        public static MDBResultCode mdb_env_stat(IntPtr env, out MDBStat stat)
-        {
-            return LmdbMethods.mdb_env_stat(env, out stat);
-        }
-
-        public static MDBResultCode mdb_env_sync(IntPtr env, bool force)
-        {
-            return LmdbMethods.mdb_env_sync(env, force);
-        }
-
-        public static MDBResultCode mdb_get(IntPtr txn, uint dbi, ref MDBValue key, out MDBValue value)
-        {
-            return LmdbMethods.mdb_get(txn, dbi, ref key, out value);
+            return mdb_env_set_mapsize(env, new IntPtr(size));
         }
 
         public static MDBResultCode mdb_put(IntPtr txn, uint dbi, MDBValue key, MDBValue value, PutOptions flags)
         {
-            return LmdbMethods.mdb_put(txn, dbi, ref key, ref value, flags);
+            return mdb_put(txn, dbi, ref key, ref value, flags);
         }
 
         public static MDBResultCode mdb_del(IntPtr txn, uint dbi, MDBValue key, MDBValue value)
         {
-            return LmdbMethods.mdb_del(txn, dbi, ref key, ref value);
+            return mdb_del(txn, dbi, ref key, ref value);
         }
 
         public static MDBResultCode mdb_del(IntPtr txn, uint dbi, MDBValue key)
         {
-            return LmdbMethods.mdb_del(txn, dbi, ref key, IntPtr.Zero);
-        }
-
-        public static MDBResultCode mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor)
-        {
-            return LmdbMethods.mdb_cursor_open(txn, dbi, out cursor);
-        }
-
-        public static void mdb_cursor_close(IntPtr cursor)
-        {
-            LmdbMethods.mdb_cursor_close(cursor);
-        }
-
-        public static MDBResultCode mdb_cursor_renew(IntPtr txn, IntPtr cursor)
-        {
-            return LmdbMethods.mdb_cursor_renew(txn, cursor);
-        }
-
-        public static MDBResultCode mdb_cursor_get(IntPtr cursor, ref MDBValue key, ref MDBValue value, CursorOperation op)
-        {
-            return LmdbMethods.mdb_cursor_get(cursor, ref key, ref value, op);
+            return mdb_del(txn, dbi, ref key, IntPtr.Zero);
         }
 
         public static MDBResultCode mdb_cursor_put(IntPtr cursor, MDBValue key, MDBValue value, CursorPutOptions flags)
         {
-            return LmdbMethods.mdb_cursor_put(cursor, ref key, ref value, flags);
+            return mdb_cursor_put(cursor, ref key, ref value, flags);
         }
 
         /// <summary>
@@ -175,25 +46,137 @@ namespace LightningDB.Native
         /// May only be used with MDB_DUPFIXED.
         /// </summary>
         /// <param name="data">This span must be pinned or stackalloc memory</param>
-        public static MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref Span<MDBValue> data, CursorPutOptions flags)
+        public static MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref Span<MDBValue> data,
+            CursorPutOptions flags)
         {
             ref var dataRef = ref MemoryMarshal.GetReference(data);
-            return LmdbMethods.mdb_cursor_put(cursor, ref key, ref dataRef, flags);
+            return mdb_cursor_put(cursor, ref key, ref dataRef, flags);
         }
 
-        public static MDBResultCode mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags)
-        {
-            return LmdbMethods.mdb_cursor_del(cursor, flags);
-        }
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_create(out IntPtr env);
 
-        public static MDBResultCode mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp)
-        {
-            return LmdbMethods.mdb_set_compare(txn, dbi, cmp);
-        }
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mdb_env_close(IntPtr env);
 
-        public static MDBResultCode mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp)
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern MDBResultCode mdb_env_open(IntPtr env, string path, EnvironmentOpenFlags flags,
+            UnixAccessMode mode);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_set_mapsize(IntPtr env, IntPtr size);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_get_maxreaders(IntPtr env, out uint readers);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_set_maxreaders(IntPtr env, uint readers);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_set_maxdbs(IntPtr env, uint dbs);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_dbi_open(IntPtr txn, string name, DatabaseOpenFlags flags, out uint db);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mdb_dbi_close(IntPtr env, uint dbi);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_drop(IntPtr txn, uint dbi, bool del);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_txn_begin(IntPtr env, IntPtr parent, TransactionBeginFlags flags, out IntPtr txn);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_txn_commit(IntPtr txn);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mdb_txn_abort(IntPtr txn);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mdb_txn_reset(IntPtr txn);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_txn_renew(IntPtr txn);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr mdb_version(out int major, out int minor, out int patch);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr mdb_strerror(int err);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_stat(IntPtr txn, uint dbi, out MDBStat stat);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_copy(IntPtr env, string path);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_copy2(IntPtr env, string path, EnvironmentCopyFlags copyFlags);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_info(IntPtr env, out MDBEnvInfo stat);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_stat(IntPtr env, out MDBStat stat);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_sync(IntPtr env, bool force);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_get(IntPtr txn, uint dbi, ref MDBValue key, out MDBValue data);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_put(IntPtr txn, uint dbi, ref MDBValue key, ref MDBValue data, PutOptions flags);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_del(IntPtr txn, uint dbi, ref MDBValue key, ref MDBValue data);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_del(IntPtr txn, uint dbi, ref MDBValue key, IntPtr data);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_cursor_open(IntPtr txn, uint dbi, out IntPtr cursor);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void mdb_cursor_close(IntPtr cursor);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_cursor_renew(IntPtr txn, IntPtr cursor);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_cursor_get(IntPtr cursor, ref MDBValue key, ref MDBValue data, CursorOperation op);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, ref MDBValue mdbValue, CursorPutOptions flags);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_cursor_del(IntPtr cursor, CursorDeleteOption flags);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_set_compare(IntPtr txn, uint dbi, CompareFunction cmp);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_set_dupsort(IntPtr txn, uint dbi, CompareFunction cmp);
+
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, MDBValue[] value, CursorPutOptions flags);
+
+#if NETCOREAPP3_1 || NET5_0
+
+        public static void LoadWindowsAutoResizeLibrary()
         {
-            return LmdbMethods.mdb_set_dupsort(txn, dbi, cmp);
+            NativeLibrary.SetDllImportResolver(System.Reflection.Assembly.GetExecutingAssembly(), DllImportResolver);
         }
+        
+        private static IntPtr DllImportResolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName == MDB_DLL_NAME)
+            {
+                return NativeLibrary.Load($"{MDB_DLL_NAME}autoresize", assembly, searchPath);
+            }
+            return IntPtr.Zero;
+        }
+#endif
     }
 }

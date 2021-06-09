@@ -8,6 +8,16 @@
         private long? _mapSize;
         private int? _maxReaders;
         private int? _maxDatabases;
+        
+#if NETCOREAPP3_1 || NET5_0
+        private bool? _autoResizeWindows;
+        
+        public bool AutoResizeWindows
+        {
+            get { return _autoResizeWindows ?? false; }
+            set { _autoResizeWindows = value; }
+        }
+#endif
 
         public long MapSize
         {
