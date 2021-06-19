@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace LightningDB.Tests
@@ -142,5 +143,29 @@ namespace LightningDB.Tests
 
             _env.Open();
         }
+        
+        
+#if (NETCOREAPP3_1 || NET5_0)
+        [Fact(Skip = "Run manually, behavior will override all tests with auto resize")]
+        public void CreateEnvironmentWithAutoResize()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
+                {
+                    MapSize = 10 * 1024 * 1024,
+                    AutoResizeWindows = true,
+                }))
+                {
+                    env.Open();
+                }
+
+                using (var dbFile = File.OpenRead(Path.Combine(_path, "data.mdb")))
+                {
+                    Assert.Equal(8192, dbFile.Length);
+                }
+            }
+        }
+#endif
     }
 }

@@ -28,9 +28,9 @@ jobs:
         run: make
         if: matrix.os == 'ubuntu-latest'
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v1.8.0
         with:
-          dotnet-version: 3.1.101
+          dotnet-version: 5.0.301
       - name: Install dependencies
         working-directory: ${{ runner.workspace }}/Lightning.NET
         run: dotnet restore
@@ -39,9 +39,9 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test (Linux)
         working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f netcoreapp3.1 --no-restore --verbosity normal
+        run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f net5.0 --no-restore --verbosity normal
         if: matrix.os == 'ubuntu-latest'
       - name: Test (Windows or Mac)
         working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: dotnet test -f netcoreapp3.1 --no-restore --verbosity normal
+        run: dotnet test -f net5.0 --no-restore --verbosity normal
         if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' 

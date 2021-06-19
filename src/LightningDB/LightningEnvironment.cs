@@ -24,14 +24,21 @@ namespace LightningDB
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Invalid directory name");
+            
+            var config = configuration ?? _config;
+#if NETCOREAPP3_1 || NET5_0
+            if (config.AutoResizeWindows)
+            {
+                LoadWindowsAutoResizeLibrary();
+            }
+#endif
 
             mdb_env_create(out _handle).ThrowOnError();
+            config.Configure(this);
+            _config = config;
 
             Path = path;
 
-            var config = configuration ?? _config;
-            config.Configure(this);
-            _config = config;
         }
 
         public IntPtr Handle()

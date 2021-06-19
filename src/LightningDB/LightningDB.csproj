@@ -4,7 +4,7 @@
     <Description>LightningDB</Description>
     <VersionPrefix>0.13.0</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net5.0</TargetFrameworks>
     <AssemblyName>LightningDB</AssemblyName>
     <PackageId>LightningDB</PackageId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
