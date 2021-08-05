@@ -11,6 +11,7 @@
     <PackageTags>lmdb;lightning;storage;persistance;key-value;nosql</PackageTags>
     <PackageProjectUrl>https://github.com/CoreyKaylor/Lightning.NET</PackageProjectUrl>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   
   <ItemGroup>
