@@ -64,14 +64,12 @@ namespace LightningDB
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IEnumerable<ValueTuple<MDBValue, MDBValue>> AsEnumerable(this LightningCursor cursor)
         {
-            do
+            while(cursor.Next() == MDBResultCode.Success)
             {
                 var (resultCode, key, value) = cursor.GetCurrent();
-                if (resultCode == MDBResultCode.Success)
-                {
-                    yield return (key, value);
-                }
-            } while (cursor.Next() == MDBResultCode.Success);
+                resultCode.ThrowOnError();
+                yield return (key, value);
+            }
         }
 
         /// <summary>
