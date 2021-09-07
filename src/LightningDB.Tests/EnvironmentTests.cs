@@ -153,7 +153,16 @@ namespace LightningDB.Tests
             {
                 using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
                 {
-                    MapSize = 10 * 1024 * 1024,
+                    MapSize = 1048576,
+                    AutoResizeWindows = true,
+                }))
+                {
+                    env.Open();
+                }
+
+                using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
+                {
+                    MapSize = 1048576,
                     AutoResizeWindows = true,
                 }))
                 {

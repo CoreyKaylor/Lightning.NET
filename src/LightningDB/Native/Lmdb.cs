@@ -164,11 +164,24 @@ namespace LightningDB.Native
 
 #if NETCOREAPP3_1 || NET5_0
 
+        static bool _shouldSetDllImportResolver = true;
+        static object _syncRoot = new object();
+
         public static void LoadWindowsAutoResizeLibrary()
         {
-            NativeLibrary.SetDllImportResolver(System.Reflection.Assembly.GetExecutingAssembly(), DllImportResolver);
+            if (_shouldSetDllImportResolver)
+            {
+                lock (_syncRoot)
+                {
+                    if (_shouldSetDllImportResolver)
+                    {
+                        NativeLibrary.SetDllImportResolver(System.Reflection.Assembly.GetExecutingAssembly(), DllImportResolver);
+                        _shouldSetDllImportResolver = false;
+                    }
+                }
+            }
         }
-        
+
         private static IntPtr DllImportResolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
         {
             if (libraryName == MDB_DLL_NAME)
