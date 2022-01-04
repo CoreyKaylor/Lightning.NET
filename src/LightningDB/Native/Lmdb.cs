@@ -162,7 +162,7 @@ namespace LightningDB.Native
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern MDBResultCode mdb_cursor_put(IntPtr cursor, ref MDBValue key, MDBValue[] value, CursorPutOptions flags);
 
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1 || NET5_0 || NET6_0
 
         static bool _shouldSetDllImportResolver = true;
         static object _syncRoot = new object();
