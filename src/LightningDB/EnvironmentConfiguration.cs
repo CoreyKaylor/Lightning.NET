@@ -9,7 +9,7 @@
         private int? _maxReaders;
         private int? _maxDatabases;
         
-#if NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_1 || NET5_0 || NET6_0
         private bool? _autoResizeWindows;
         
         public bool AutoResizeWindows
