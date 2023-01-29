@@ -16,17 +16,6 @@ jobs:
     steps:
       - name: Checkout Lightning.NET
         uses: actions/checkout@v3
-      - name: Checkout lmdb
-        uses: actions/checkout@v3
-        with:
-          repository: LMDB/lmdb
-          ref: mdb.master
-          path: lmdb
-        if: matrix.os == 'ubuntu-latest'
-      - name: Build lmdb native lib
-        working-directory: ${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/
-        run: make
-        if: matrix.os == 'ubuntu-latest'
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v3
         with:
@@ -39,11 +28,6 @@ jobs:
       - name: Build
         working-directory: ${{ runner.workspace }}/Lightning.NET
         run: dotnet build --no-restore
-      - name: Test (Linux)
-        working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test --no-build --no-restore --verbosity normal
-        if: matrix.os == 'ubuntu-latest'
-      - name: Test (Windows or Mac)
+      - name: Test
         working-directory: ${{ runner.workspace }}/Lightning.NET
         run: dotnet test --no-build --no-restore --verbosity normal
-        if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' 
