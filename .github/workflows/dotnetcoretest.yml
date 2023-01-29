@@ -38,7 +38,7 @@ jobs:
         run: dotnet restore
       - name: Build
         working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build --no-restore
       - name: Test (Linux)
         working-directory: ${{ runner.workspace }}/Lightning.NET
         run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test --no-build --no-restore --verbosity normal
