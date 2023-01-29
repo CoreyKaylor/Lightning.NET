@@ -5,6 +5,7 @@ bin
 artifacts/
 results/
 logs/
+lmdb/lmdb/
 testrun/
 buildlog
 packages

@@ -15,6 +15,19 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <!-- This simply makes it easier to test for Mac M1 -> Parallels but needs -arch x64 explicitly set -->
+  <ItemGroup Condition="'$([MSBuild]::IsOsPlatform(Windows))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64'">
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x64\native\lmdb.dll">
+      <Visible>false</Visible>
+      <Link>lmdb.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x64\native\lmdbautoresize.dll">
+      <Visible>false</Visible>
+      <Link>lmdbautoresize.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <ItemGroup Condition="'$([MSBuild]::IsOsPlatform(Windows))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X86'">
     <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\lmdb.dll">
       <Visible>false</Visible>
@@ -27,7 +40,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup Condition=" '$([MSBuild]::IsOsPlatform(OSX))' ">
+  <ItemGroup Condition=" '$([MSBuild]::IsOsPlatform(OSX))'  And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64'">
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\osx-arm64\native\lmdb.dylib">
+      <Visible>false</Visible>
+      <Link>lmdb.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup Condition=" '$([MSBuild]::IsOsPlatform(OSX))'  And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64'">
     <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\osx\native\lmdb.dylib">
       <Visible>false</Visible>
       <Link>lmdb.dylib</Link>
