@@ -15,9 +15,9 @@ jobs:
 
     steps:
       - name: Checkout Lightning.NET
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Checkout lmdb
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: LMDB/lmdb
           ref: mdb.master
@@ -28,9 +28,9 @@ jobs:
         run: make
         if: matrix.os == 'ubuntu-latest'
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@3
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.x
       - name: Install dependencies
         working-directory: ${{ runner.workspace }}/Lightning.NET
         run: dotnet restore
@@ -39,9 +39,9 @@ jobs:
         run: dotnet build --configuration Release --no-restore
       - name: Test (Linux)
         working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f net6.0 --no-restore --verbosity normal
+        run: LD_LIBRARY_PATH=${{ runner.workspace}}/Lightning.NET/lmdb/libraries/liblmdb/:$LD_LIBRARY_PATH dotnet test -f net7.0 --no-restore --verbosity normal
         if: matrix.os == 'ubuntu-latest'
       - name: Test (Windows or Mac)
         working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: dotnet test -f net6.0 --no-restore --verbosity normal
+        run: dotnet test -f net7.0 --no-restore --verbosity normal
         if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' 

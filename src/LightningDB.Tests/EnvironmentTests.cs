@@ -52,11 +52,23 @@ namespace LightningDB.Tests
             Assert.Throws<InvalidOperationException>(() => _env.BeginTransaction());
         }
 
-        [Theory]
-        [InlineData(1024 * 1024 * 200)]
-        [InlineData(1024 * 1024 * 1024 * 3L)]
-        public void CanGetEnvironmentInfo(long mapSize)
+        [Fact]
+        public void CanGetEnvironmentInfo()
         {
+            long mapSize = 1024 * 1024 * 200;
+            _env = new LightningEnvironment(_path, new EnvironmentConfiguration
+            {
+                MapSize = mapSize,
+            });
+            _env.Open();
+            var info = _env.Info;
+            Assert.Equal(_env.MapSize, info.MapSize);
+        }
+
+        [Not32BitFact]
+        public void CanGetLargeEnvironmentInfo()
+        {
+            long mapSize = 1024 * 1024 * 1024 * 3L;
             _env = new LightningEnvironment(_path, new EnvironmentConfiguration
             {
                 MapSize = mapSize,
@@ -145,34 +157,31 @@ namespace LightningDB.Tests
         }
         
         
-#if NETCOREAPP3_1 || NET5_0 || NET6_0
-        [Fact(Skip = "Run manually, behavior will override all tests with auto resize")]
+#if NET6_0 || NET7_0
+        [WindowsOnlyFact]
         public void CreateEnvironmentWithAutoResize()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
+                   {
+                       MapSize = 1048576,
+                       AutoResizeWindows = true,
+                   }))
             {
-                using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
-                {
-                    MapSize = 1048576,
-                    AutoResizeWindows = true,
-                }))
-                {
-                    env.Open();
-                }
+                env.Open();
+            }
 
-                using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
-                {
-                    MapSize = 1048576,
-                    AutoResizeWindows = true,
-                }))
-                {
-                    env.Open();
-                }
+            using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
+                   {
+                       MapSize = 1048576,
+                       AutoResizeWindows = true,
+                   }))
+            {
+                env.Open();
+            }
 
-                using (var dbFile = File.OpenRead(Path.Combine(_path, "data.mdb")))
-                {
-                    Assert.Equal(8192, dbFile.Length);
-                }
+            using (var dbFile = File.OpenRead(Path.Combine(_path, "data.mdb")))
+            {
+                Assert.Equal(8192, dbFile.Length);
             }
         }
 #endif
