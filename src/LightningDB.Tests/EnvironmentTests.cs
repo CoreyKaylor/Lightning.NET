@@ -157,7 +157,7 @@ namespace LightningDB.Tests
         }
         
         
-#if NET6_0 || NET7_0
+#if NETCOREAPP3_1_OR_GREATER
         [WindowsOnlyFact]
         public void CreateEnvironmentWithAutoResize()
         {

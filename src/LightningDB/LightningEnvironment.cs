@@ -26,7 +26,7 @@ namespace LightningDB
                 throw new ArgumentException("Invalid directory name");
             
             var config = configuration ?? _config;
-#if NETCOREAPP3_1 || NET5_0 || NET6_0
+#if NETCOREAPP3_1_OR_GREATER
             if (config.AutoResizeWindows)
             {
                 LoadWindowsAutoResizeLibrary();
