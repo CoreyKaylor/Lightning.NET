@@ -13,10 +13,4 @@ Install mingw64 build tools for targeting Windows from a Mac
 `brew bundle install`
 
 Docker has been used to deal with the various linux targets and the script assumes
-you have followed the below steps prior to running it.
-
-```bash
-docker buildx build --platform linux/amd64 -t amd64-gcc . --load
-docker buildx build --platform linux/arm64 -t arm64-gcc . --load
-docker buildx build --platform linux/arm/7 -t arm-gcc . --load
-```
+you have a version of docker that supports multi-platform runs with --platform.
