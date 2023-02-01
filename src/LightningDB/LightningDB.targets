@@ -7,7 +7,7 @@
     <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\*" 
           CopyToOutputDirectory="PreserveNewest" 
           Condition="'$([MSBuild]::IsOsPlatform(Windows))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X86'" />
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\*"
+    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x64\native\*"
           CopyToOutputDirectory="PreserveNewest"
           Condition="'$([MSBuild]::IsOsPlatform(Windows))' And ('$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64' OR '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64')" />
           <!-- ^^ This simply makes it easier to test for Mac M1 -> Parallels but needs -arch x64 explicitly set, currently there is no cross compile toolset for Win ARM for GCC -->
