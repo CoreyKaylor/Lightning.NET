@@ -144,7 +144,7 @@ namespace LightningDB.Tests
 
             var ex = Assert.Throws<LightningException>(() => _txn.OpenDatabase("notmaster"));
 
-            Assert.Equal(ex.StatusCode, -30798);
+            Assert.Equal(-30798, ex.StatusCode);
         }
 
         [Fact]
