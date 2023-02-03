@@ -11,7 +11,7 @@ namespace LightningDB
     {
         private readonly EnvironmentConfiguration _config = new EnvironmentConfiguration();
 
-        private IntPtr _handle;
+        private nint _handle;
 
         public event Action Disposing;
 
@@ -41,7 +41,7 @@ namespace LightningDB
 
         }
 
-        public IntPtr Handle()
+        public nint Handle()
         {
             return _handle;
         }
@@ -140,11 +140,11 @@ namespace LightningDB
                 mdb_env_stat(Handle(), out var nativeStat);
                 return new Stats
                 {
-                    BranchPages = nativeStat.ms_branch_pages.ToInt64(),
+                    BranchPages = nativeStat.ms_branch_pages,
                     BTreeDepth = nativeStat.ms_depth,
-                    Entries = nativeStat.ms_entries.ToInt64(),
-                    LeafPages = nativeStat.ms_leaf_pages.ToInt64(),
-                    OverflowPages = nativeStat.ms_overflow_pages.ToInt64(),
+                    Entries = nativeStat.ms_entries,
+                    LeafPages = nativeStat.ms_leaf_pages,
+                    OverflowPages = nativeStat.ms_overflow_pages,
                     PageSize = nativeStat.ms_psize
                 };
             }
@@ -160,9 +160,9 @@ namespace LightningDB
                 mdb_env_info(Handle(), out var nativeInfo);
                 return new EnvironmentInfo
                 {
-                    MapSize = nativeInfo.me_mapsize.ToInt64(),
-                    LastPageNumber = nativeInfo.me_last_pgno.ToInt64(),
-                    LastTransactionId = nativeInfo.me_last_txnid.ToInt64(),
+                    MapSize = nativeInfo.me_mapsize,
+                    LastPageNumber = nativeInfo.me_last_pgno,
+                    LastTransactionId = nativeInfo.me_last_txnid,
                 };
             }
         }

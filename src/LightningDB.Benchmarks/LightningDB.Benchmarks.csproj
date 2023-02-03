@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <LangVersion>11</LangVersion>
+    <LightningDBTargetRuntimeRelativePath>.\</LightningDBTargetRuntimeRelativePath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,16 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LightningDB\LightningDB.csproj" />
   </ItemGroup>
-
-<ItemGroup Condition=" '$(OS)' == 'Unix' ">
-  <None Include="../LightningDB/runtimes/osx/native/lmdb.dylib" CopyToOutputDirectory="PreserveNewest" />
-</ItemGroup>
-<ItemGroup Condition=" '$(Platform)' == 'x86' AND '$(OS)' != 'Unix' ">
-  <None Include="../LightningDB/runtimes/win-x86/native/lmdb.dll" CopyToOutputDirectory="PreserveNewest" />
-</ItemGroup>
-<ItemGroup Condition=" ('$(Platform)' == 'x64' OR '$(Platform)' == 'AnyCPU') AND '$(OS)' == 'Windows_NT' ">
-  <None Include="../LightningDB/runtimes/win-x64/native/lmdb.dll" CopyToOutputDirectory="PreserveNewest" />
-</ItemGroup>
-
+  
+  <Import Project="..\LightningDB\LightningDB.targets" />
 
 </Project>

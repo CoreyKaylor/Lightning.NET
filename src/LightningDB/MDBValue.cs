@@ -27,11 +27,11 @@ namespace LightningDB
         /// </param>
         internal MDBValue(int bufferSize, byte* pinnedOrStackAllocBuffer)
         {
-            this.size = (IntPtr)bufferSize;
-            this.data = pinnedOrStackAllocBuffer;
+            size = bufferSize;
+            data = pinnedOrStackAllocBuffer;
         }
         //DO NOT REORDER
-        internal IntPtr size;
+        internal nint size;
 
         //DO NOT REORDER
         internal byte* data;
@@ -39,7 +39,7 @@ namespace LightningDB
         /// <summary>
         /// Gets a span representation of the buffer
         /// </summary>
-        public ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>(data, checked((int)size));
+        public ReadOnlySpan<byte> AsSpan() => new (data, checked((int)size));
 
         /// <summary>
         /// Copies the data of the buffer to a new array

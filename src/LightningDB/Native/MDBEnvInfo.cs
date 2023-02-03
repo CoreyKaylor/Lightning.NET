@@ -10,22 +10,22 @@ namespace LightningDB.Native
         /// <summary>
         /// Address of map, if fixed
         /// </summary>
-        public IntPtr me_mapaddr;
+        public nint me_mapaddr;
 
         /// <summary>
         /// Size of the data memory map
         /// </summary>
-        public IntPtr me_mapsize;
+        public nint me_mapsize;
 
         /// <summary>
         /// ID of the last used page
         /// </summary>
-        public IntPtr me_last_pgno;
+        public nint me_last_pgno;
 
         /// <summary>
         /// ID of the last committed transaction
         /// </summary>
-        public IntPtr me_last_txnid;
+        public nint me_last_txnid;
 
         /// <summary>
         /// max reader slots in the environment

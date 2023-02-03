@@ -14,8 +14,8 @@ namespace LightningDB
         /// </summary>
         public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
-        private IntPtr _handle;
-        private readonly IntPtr _originalHandle;
+        private nint _handle;
+        private readonly nint _originalHandle;
 
         /// <summary>
         /// Created new instance of LightningTransaction
@@ -41,7 +41,7 @@ namespace LightningDB
             _originalHandle = _handle;
         }
 
-        public IntPtr Handle()
+        public nint Handle()
         {
             return _handle;
         }
@@ -322,7 +322,7 @@ namespace LightningDB
         {
             mdb_stat(_handle, db.Handle(), out var stat).ThrowOnError();
 
-            return stat.ms_entries.ToInt64();
+            return stat.ms_entries;
         }
 
         /// <summary>

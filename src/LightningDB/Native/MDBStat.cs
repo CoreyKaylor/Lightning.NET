@@ -20,21 +20,21 @@ namespace LightningDB.Native
         /// <summary>
         /// Number of internal (non-leaf) pages
         /// </summary>
-        public IntPtr ms_branch_pages;
+        public nint ms_branch_pages;
 
         /// <summary>
         /// Number of leaf pages
         /// </summary>
-        public IntPtr ms_leaf_pages;
+        public nint ms_leaf_pages;
 
         /// <summary>
         /// Number of overflow pages
         /// </summary>
-        public IntPtr ms_overflow_pages;
+        public nint ms_overflow_pages;
 
         /// <summary>
         /// Number of data items
         /// </summary>
-        public IntPtr ms_entries;
+        public nint ms_entries;
     }
 }

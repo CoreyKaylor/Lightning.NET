@@ -60,11 +60,11 @@ namespace LightningDB
                 mdb_stat(_transaction.Handle(), Handle(), out var nativeStat).ThrowOnError();
                 return new Stats
                 {
-                    BranchPages = nativeStat.ms_branch_pages.ToInt64(),
+                    BranchPages = nativeStat.ms_branch_pages,
                     BTreeDepth = nativeStat.ms_depth,
-                    Entries = nativeStat.ms_entries.ToInt64(),
-                    LeafPages = nativeStat.ms_leaf_pages.ToInt64(),
-                    OverflowPages = nativeStat.ms_overflow_pages.ToInt64(),
+                    Entries = nativeStat.ms_entries,
+                    LeafPages = nativeStat.ms_leaf_pages,
+                    OverflowPages = nativeStat.ms_overflow_pages,
                     PageSize = nativeStat.ms_psize
                 };
             }

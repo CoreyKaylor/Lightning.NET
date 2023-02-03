@@ -11,7 +11,7 @@ namespace LightningDB
     /// </summary>
     public class LightningCursor : IDisposable
     {
-        private IntPtr _handle;
+        private nint _handle;
 
         /// <summary>
         /// Creates new instance of LightningCursor
@@ -35,7 +35,7 @@ namespace LightningDB
         /// <summary>
         /// Gets the the native handle of the cursor
         /// </summary>
-        public IntPtr Handle()
+        public nint Handle()
         {
             return _handle;
         }
