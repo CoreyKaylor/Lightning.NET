@@ -17,13 +17,13 @@ namespace LightningDB.Tests
             _fileSystem = fileSystem;
         }
 
-        [Fact(Skip = "Hangs on Linux only for some reason")]
+        [Fact]
         public void can_load_environment_from_multiple_processes()
         {
             var name = _fileSystem.CreateNewDirectoryForTest();
             using var env = new LightningEnvironment(name);
             env.Open();
-            var otherProcessPath = Path.GetFullPath("../../../../SecondProcess/bin/Debug/netcoreapp3.0/SecondProcess.dll");
+            var otherProcessPath = Path.GetFullPath("../../../../SecondProcess/bin/Debug/net7.0/SecondProcess.dll");
             using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
