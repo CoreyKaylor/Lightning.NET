@@ -60,6 +60,8 @@ public class CursorTests : IDisposable
         _env.RunCursorScenario((tx, _, c) =>
         {
             PopulateCursorValues(c);
+            c.Dispose();
+            //TODO evaluate how not to require this Dispose likely due to #155
             var result = tx.Commit();
             Assert.Equal(MDBResultCode.Success, result);
         });
