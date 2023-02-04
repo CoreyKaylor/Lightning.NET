@@ -59,6 +59,8 @@ public sealed class LightningTransaction : IDisposable
 
     public event Action Disposing;
     private event Action<LightningTransactionState> StateChanging;
+    
+    internal bool ShouldCloseCursor { get; set; }
 
     /// <summary>
     /// Current transaction state.
@@ -295,6 +297,7 @@ public sealed class LightningTransaction : IDisposable
     public MDBResultCode Commit()
     {
         State = LightningTransactionState.Committed;
+        ShouldCloseCursor = false;
         StateChanging?.Invoke(State);
         return mdb_txn_commit(_handle);
     }

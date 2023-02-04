@@ -86,6 +86,7 @@ public sealed class LightningDatabase : IDisposable
     public MDBResultCode Drop(LightningTransaction transaction)
     {
         var result = mdb_drop(transaction.Handle(), _handle, true);
+        _transaction.ShouldCloseCursor = false;
         IsOpened = false;
         _handle = default;
         return result;

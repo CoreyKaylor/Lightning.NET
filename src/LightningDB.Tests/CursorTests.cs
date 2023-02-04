@@ -60,8 +60,6 @@ public class CursorTests : IDisposable
         _env.RunCursorScenario((tx, _, c) =>
         {
             PopulateCursorValues(c);
-            c.Dispose();
-            //TODO evaluate how not to require this Dispose likely due to #155
             var result = tx.Commit();
             Assert.Equal(MDBResultCode.Success, result);
         });
@@ -361,5 +359,42 @@ public class CursorTests : IDisposable
             var result = c.Set(key);
             Assert.Equal(MDBResultCode.NotFound, result);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);  
+    }
+
+    [Fact]
+    public void CanPutBatchesViaCursorIssue155()
+    {
+        static LightningDatabase OpenDatabase(LightningEnvironment environment)
+        {
+            using var tx = environment.BeginTransaction();
+            var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            tx.Commit();
+            return db;
+        }
+
+        void ReproduceCoreIteration(LightningEnvironment environment, LightningDatabase db)
+        {
+            using var tx = environment.BeginTransaction(); //auto-disposed at end of scope
+            using var cursor = tx.CreateCursor(db); //auto-disposed at end of scope
+
+            var guid = Guid.NewGuid().ToString();
+            var guidBytes = UTF8.GetBytes(guid);
+
+            _ = cursor.Put(
+                guidBytes,
+                guidBytes,
+                CursorPutOptions.None
+            );
+
+            tx.Commit().ThrowOnError();
+        }
+
+        using var db = OpenDatabase(_env);
+
+        for (var i = 0; i < 5000; i++)
+        {
+            ReproduceCoreIteration(_env, db);
+        }
+        Assert.True(true, "Code would be unreachable otherwise.");
     }
 }

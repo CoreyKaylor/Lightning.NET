@@ -29,6 +29,7 @@ public class LightningCursor : IDisposable
         mdb_cursor_open(txn.Handle(), db.Handle(), out _handle).ThrowOnError();
 
         Transaction = txn;
+        Transaction.ShouldCloseCursor = true;
         Transaction.Disposing += Dispose;
     }
 
@@ -503,14 +504,17 @@ public class LightningCursor : IDisposable
     /// <param name="disposing">True if called from Dispose.</param>
     private void Dispose(bool disposing)
     {
-        if (_handle == 0)
+        if (_handle == default)
             return;
 
         if (!disposing)
             throw new InvalidOperationException("The LightningCursor was not disposed and cannot be reliably dealt with from the finalizer");
 
-        mdb_cursor_close(_handle);
-        _handle = 0;
+        if (Transaction.ShouldCloseCursor)
+        {
+            mdb_cursor_close(_handle);
+        }
+        _handle = default;
 
         Transaction.Disposing -= Dispose;
 
