@@ -9,7 +9,7 @@ public class WindowsOnlyFactAttribute : FactAttribute
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Skip = $"Skipped for for non-Windows OS";
+            Skip = "Skipped for for non-Windows OS";
         }
     }
 }
