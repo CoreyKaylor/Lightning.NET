@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace LightningDB.Native;
 
-#if NET7_0
+#if NET7_0_OR_GREATER
 using System.Runtime.CompilerServices;
 public static partial class Lmdb
 {
@@ -153,7 +153,6 @@ public static partial class Lmdb
 }
 #endif
     
-#region DllImport
 public static partial class Lmdb
 {
     private const string MDB_DLL_NAME = "lmdb";
@@ -207,7 +206,7 @@ public static partial class Lmdb
         return mdb_cursor_put(cursor, ref key, ref dataRef, flags);
     }
 
-#if !NET7_0
+#if !NET7_0_OR_GREATER
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern MDBResultCode mdb_env_create(out nint env);
 
@@ -341,4 +340,3 @@ public static partial class Lmdb
     }
 #endif
 }
-#endregion

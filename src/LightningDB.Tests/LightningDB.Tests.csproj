@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LightningDB\LightningDB.csproj" />
+    <ProjectReference Include="..\SecondProcess\SecondProcess.csproj" />
   </ItemGroup>
 
   <ItemGroup>

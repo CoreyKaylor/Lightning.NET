@@ -21,7 +21,7 @@ public class MultiProcessTests
         var name = _fileSystem.CreateNewDirectoryForTest();
         using var env = new LightningEnvironment(name);
         env.Open();
-        var otherProcessPath = Path.GetFullPath("../../../../SecondProcess/bin/Debug/net7.0/SecondProcess.dll");
+        var otherProcessPath = Path.GetFullPath("SecondProcess.dll");
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
