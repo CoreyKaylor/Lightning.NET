@@ -8,23 +8,23 @@ Lightning.NET
 The API is easy to use and extremely fast.
 
 ```cs
-using (var env = new LightningEnvironment("pathtofolder"))
-{
-	env.MaxDatabases = 2;
-	env.Open();
+using System.Text;
+using LightningDB;
 
-	using (var tx = env.BeginTransaction())
-	using (var db = tx.OpenDatabase("custom", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
-	{
-		tx.Put(db, Encoding.UTF8.GetBytes("hello"), Encoding.UTF8.GetBytes("world"));
-		tx.Commit();
-	}
-	using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
-	using (var db = tx.OpenDatabase("custom"))
-	{
-		var (resultCode, key, value) = tx.Get(db, Encoding.UTF8.GetBytes("hello"));
-		Assert.Equal(value.CopyToNewArray(), Encoding.UTF8.GetBytes("world"));
-	}
+using var env = new LightningEnvironment("pathtofolder");
+env.Open();
+
+using (var tx = env.BeginTransaction())
+using (var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+{
+    tx.Put(db, "hello"u8.ToArray(), "world"u8.ToArray());
+    tx.Commit();
+}
+using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+using (var db = tx.OpenDatabase())
+{
+    var (resultCode, key, value) = tx.Get(db, "hello"u8.ToArray());
+    Console.WriteLine($"{Encoding.UTF8.GetString(key.AsSpan())} {Encoding.UTF8.GetString(value.AsSpan())}");
 }
 ```
 
@@ -33,5 +33,3 @@ More examples can be found in the unit tests.
 <a href="http://lmdb.tech/doc" target="_blank">Official LMDB API docs</a>
 
 Library is available from NuGet: https://www.nuget.org/packages/LightningDB/
-
-The library is published under MIT license.
