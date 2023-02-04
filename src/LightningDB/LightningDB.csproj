@@ -4,7 +4,8 @@
     <Description>LightningDB</Description>
     <VersionPrefix>0.14.1</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net7.0</TargetFrameworks>
+    <LangVersion>11</LangVersion>
     <AssemblyName>LightningDB</AssemblyName>
     <PackageId>LightningDB</PackageId>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -28,6 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Memory" Version="4.5.5" />
   </ItemGroup>
 </Project>

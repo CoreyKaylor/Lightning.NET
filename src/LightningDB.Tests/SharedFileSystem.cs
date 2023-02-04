@@ -2,35 +2,34 @@
 using System.IO;
 using Xunit;
 
-namespace LightningDB.Tests
+namespace LightningDB.Tests;
+
+public class SharedFileSystem : IDisposable
 {
-    public class SharedFileSystem : IDisposable
+    private readonly string _testTempDir;
+
+    public SharedFileSystem()
     {
-        private readonly string _testTempDir;
+        _testTempDir = Path.Combine(Path.GetTempPath(), "ldbtest");
+    }
 
-        public SharedFileSystem()
+    public void Dispose()
+    {
+        if (Directory.Exists(_testTempDir))
         {
-            _testTempDir = Path.Combine(Path.GetTempPath(), "ldbtest");
-        }
-
-        public void Dispose()
-        {
-            if (Directory.Exists(_testTempDir))
-            {
-                Directory.Delete(_testTempDir, true);
-            }
-        }
-
-        public string CreateNewDirectoryForTest()
-        {
-            var path = Path.Combine(_testTempDir, "TestDb", Guid.NewGuid().ToString());
-            Directory.CreateDirectory(path);
-            return path;
+            Directory.Delete(_testTempDir, true);
         }
     }
 
-    [CollectionDefinition("SharedFileSystem")]
-    public class SharedFileSystemCollection : ICollectionFixture<SharedFileSystem>
+    public string CreateNewDirectoryForTest()
     {
+        var path = Path.Combine(_testTempDir, "TestDb", Guid.NewGuid().ToString());
+        Directory.CreateDirectory(path);
+        return path;
     }
+}
+
+[CollectionDefinition("SharedFileSystem")]
+public class SharedFileSystemCollection : ICollectionFixture<SharedFileSystem>
+{
 }

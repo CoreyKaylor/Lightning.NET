@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <LangVersion>11</LangVersion>
     <AssemblyName>LightningDB.Tests</AssemblyName>
     <PackageId>LightningDB.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -11,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LightningDB\LightningDB.csproj" />
+    <ProjectReference Include="..\SecondProcess\SecondProcess.csproj" />
   </ItemGroup>
 
   <ItemGroup>
