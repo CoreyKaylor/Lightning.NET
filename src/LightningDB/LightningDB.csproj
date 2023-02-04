@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>LightningDB</Description>
-    <VersionPrefix>0.14.1</VersionPrefix>
+    <VersionPrefix>0.15.0</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
     <TargetFrameworks>netstandard2.0;netcoreapp3.1;net7.0</TargetFrameworks>
     <LangVersion>11</LangVersion>
