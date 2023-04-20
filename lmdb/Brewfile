@@ -1,2 +1,3 @@
 # Using mingw to compile Windows native libs for x86 and x64
 brew "mingw-w64"
+cask "android-ndk"

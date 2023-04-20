@@ -25,6 +25,19 @@ make clean
 make CC='i686-w64-mingw32-gcc' AR='i686-w64-mingw32-gcc-ar'
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/win-x86/native/lmdb.dll
 make clean
+#Android NDK
+make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/android-arm64/native/liblmdb.so
+make clean
+make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/android-arm/native/liblmdb.so
+make clean
+make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/android-x86/native/liblmdb.so
+make clean
+make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/android-x64/native/liblmdb.so
+make clean
 # Checkout release sha with FIXEDSIZE preprocessor directive to support auto-growing map size on Windows
 git checkout 48a7fed59a8aae623deff415dda27097198ca0c1
 make CC='x86_64-w64-mingw32-gcc' AR='x86_64-w64-mingw32-gcc-ar' XCFLAGS='-UMDB_FIXEDSIZE'
@@ -33,4 +46,3 @@ make clean
 make CC='i686-w64-mingw32-gcc' AR='i686-w64-mingw32-gcc-ar'  XCFLAGS='-UMDB_FIXEDSIZE'
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/win-x86/native/lmdbautoresize.dll
 make clean
-
