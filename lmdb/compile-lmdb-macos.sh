@@ -7,6 +7,18 @@ cd ./lmdb/libraries/liblmdb
 git checkout LMDB_0.9.29
 make clean
 # Start with the tagged version release.
+make CC='xcrun --sdk iphoneos --toolchain iphoneos clang -arch armv7s'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/ios-arm/native/liblmdb.dylib
+make clean
+make CC='xcrun --sdk iphoneos --toolchain iphoneos clang -arch arm64'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/ios-arm64/native/liblmdb.dylib
+make clean
+make CC='xcrun --sdk iphonesimulator --toolchain iphoneos clang -arch arm64'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/iossimulator-arm64/native/liblmdb.dylib
+make clean
+make CC='xcrun --sdk iphonesimulator --toolchain iphoneos clang -arch x86_64'
+mv ./liblmdb.so ../../../../src/LightningDB/runtimes/iossimulator-x64/native/liblmdb.dylib
+make clean
 make
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/osx-arm64/native/lmdb.dylib
 make clean
