@@ -7,13 +7,14 @@ namespace LightningDB.Tests;
 [Collection("SharedFileSystem")]
 public class EnvironmentTests : IDisposable
 {
-    private readonly string _path,  _pathCopy;
+    private readonly string _path,  _pathCopy, _pathSpecial;
     private LightningEnvironment _env;
 
     public EnvironmentTests(SharedFileSystem fileSystem)
     {
         _path = fileSystem.CreateNewDirectoryForTest();
         _pathCopy = fileSystem.CreateNewDirectoryForTest();
+        _pathSpecial = fileSystem.CreateNewDirectoryForSpecialCharacterTest();
     }
 
     public void Dispose()
@@ -149,6 +150,14 @@ public class EnvironmentTests : IDisposable
         {
             MapSize = 55 * 1024 * 1024
         };
+
+        _env.Open();
+    }
+    
+    [Fact]
+    public void CanOpenEnvironmentWithSpecialCharacters()
+    {
+        _env = new LightningEnvironment(_pathSpecial);
 
         _env.Open();
     }

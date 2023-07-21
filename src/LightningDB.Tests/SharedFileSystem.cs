@@ -27,6 +27,13 @@ public class SharedFileSystem : IDisposable
         Directory.CreateDirectory(path);
         return path;
     }
+    
+    public string CreateNewDirectoryForSpecialCharacterTest()
+    {
+        var path = Path.Combine(_testTempDir, "Testß", Guid.NewGuid().ToString());
+        Directory.CreateDirectory(path);
+        return path;
+    }
 }
 
 [CollectionDefinition("SharedFileSystem")]
