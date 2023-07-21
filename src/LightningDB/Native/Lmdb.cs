@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace LightningDB.Native;
 
@@ -214,8 +215,15 @@ public static partial class Lmdb
         public static extern void mdb_env_close(nint env);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern MDBResultCode mdb_env_open(nint env, string path, EnvironmentOpenFlags flags,
+        private static extern MDBResultCode mdb_env_open(nint env, byte[] path, EnvironmentOpenFlags flags,
             UnixAccessMode mode);
+
+        internal static MDBResultCode mdb_env_open(nint env, string path, EnvironmentOpenFlags flags,
+            UnixAccessMode mode)
+        {
+            var bytes = Encoding.UTF8.GetBytes(path);
+            return mdb_env_open(env, bytes, flags, mode);
+        }
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern MDBResultCode mdb_env_set_mapsize(nint env, nint size);
@@ -263,10 +271,22 @@ public static partial class Lmdb
         public static extern MDBResultCode mdb_stat(nint txn, uint dbi, out MDBStat stat);
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_env_copy(nint env, string path);
+        private static extern MDBResultCode mdb_env_copy(nint env, byte[] path);
+
+        public static MDBResultCode mdb_env_copy(nint env, string path)
+        {
+            var bytes = Encoding.UTF8.GetBytes(path);
+            return mdb_env_copy(env, bytes);
+        }
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_env_copy2(nint env, string path, EnvironmentCopyFlags copyFlags);
+        private static extern MDBResultCode mdb_env_copy2(nint env, byte[] path, EnvironmentCopyFlags copyFlags);
+
+        public static MDBResultCode mdb_env_copy2(nint env, string path, EnvironmentCopyFlags copyFlags)
+        {
+            var bytes = Encoding.UTF8.GetBytes(path);
+            return mdb_env_copy2(env, bytes, copyFlags);
+        }
 
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern MDBResultCode mdb_env_info(nint env, out MDBEnvInfo stat);
