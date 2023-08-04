@@ -3,6 +3,7 @@
   <PropertyGroup>
     <LightningDBTargetRuntimeRelativePath Condition=" '$(LightningDBTargetRuntimeRelativePath)' == '' ">\..\</LightningDBTargetRuntimeRelativePath>
   </PropertyGroup>
+	<Target Name="LightningDBIncludeNativeDll" AfterTargets="BeforeResolveReferences">
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\*" 
           CopyToOutputDirectory="PreserveNewest" 
@@ -27,4 +28,5 @@
           CopyToOutputDirectory="PreserveNewest"
           Condition="'$([MSBuild]::IsOsPlatform(Linux))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64'" />
   </ItemGroup>
+	</Target>
 </Project>
