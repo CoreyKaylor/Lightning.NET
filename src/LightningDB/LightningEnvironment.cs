@@ -245,7 +245,7 @@ public sealed class LightningEnvironment : IDisposable
     /// </summary>
     /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
     /// <param name="compact">Omit empty pages when copying.</param>
-    public void CopyTo(string path, bool compact = false)
+    public MDBResultCode CopyTo(string path, bool compact = false)
     {
         EnsureOpened();
 
@@ -253,7 +253,7 @@ public sealed class LightningEnvironment : IDisposable
             ? EnvironmentCopyFlags.Compact 
             : EnvironmentCopyFlags.None;
             
-        mdb_env_copy2(_handle, path, flags);
+        return mdb_env_copy2(_handle, path, flags);
     }
 
     /// <summary>
