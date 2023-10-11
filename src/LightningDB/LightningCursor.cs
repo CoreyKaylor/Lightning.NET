@@ -497,6 +497,18 @@ public class LightningCursor : IDisposable
 
         return mdb_cursor_renew(txn.Handle(), _handle);
     }
+    
+    /// <summary>
+    /// Return count of duplicates for current key.
+    /// 
+    /// This call is only valid on databases that support sorted duplicate data items DatabaseOpenFlags.DuplicatesFixed. 
+    /// </summary>
+    /// <param name="value">Output parameter where the duplicate count will be stored.</param>
+    /// <returns>Returns <see cref="MDBResultCode"/></returns>
+    public MDBResultCode Count(out int value)
+    {
+        return mdb_cursor_count(_handle, out value);
+    }
 
     /// <summary>
     /// Closes the cursor and deallocates all resources associated with it.

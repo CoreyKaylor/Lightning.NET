@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Xunit;
 using static System.Text.Encoding;
@@ -396,5 +396,20 @@ public class CursorTests : IDisposable
             ReproduceCoreIteration(_env, db);
         }
         Assert.True(true, "Code would be unreachable otherwise.");
+    }
+    
+    [Fact]
+    public void CountCursor()
+    {
+        _env.RunCursorScenario((_, _, c) =>
+        {
+            var key = "TestKey"u8.ToArray();
+            var keys = PopulateMultipleCursorValues(c);
+
+            c.SetRange(key);
+            c.Count(out var amount);
+            
+            Assert.Equal(5, amount);
+        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 }
