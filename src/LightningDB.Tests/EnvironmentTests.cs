@@ -137,10 +137,23 @@ public class EnvironmentTests : IDisposable
         _env = new LightningEnvironment(_path);
         _env.Open(); 
 
-        _env.CopyTo(_pathCopy, compact);
+        _env.CopyTo(_pathCopy, compact).ThrowOnError();
 
         if (Directory.GetFiles(_pathCopy).Length == 0)
             Assert.True(false, "Copied files doesn't exist");
+    }
+
+    [Fact]
+    public void EnvironmentShouldFailCopyIfPathIsFile()
+    {
+        _env = new LightningEnvironment(_path);
+        _env.Open();
+
+        string filePath = Path.Combine(_pathCopy, "test.txt");
+        File.WriteAllBytes(filePath, Array.Empty<byte>());
+        
+        MDBResultCode result = _env.CopyTo(filePath);
+        Assert.NotEqual(MDBResultCode.Success, result);
     }
 
     [Fact]
