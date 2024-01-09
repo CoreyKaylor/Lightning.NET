@@ -30,6 +30,9 @@ using (var db = tx.OpenDatabase())
 
 More examples can be found in the unit tests.
 
+> Note:
+> Do not call OpenDatabase from multiple threads concurrently!
+
 <a href="http://lmdb.tech/doc" target="_blank">Official LMDB API docs</a>
 
 Library is available from NuGet: https://www.nuget.org/packages/LightningDB/
