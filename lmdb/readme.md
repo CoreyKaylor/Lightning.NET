@@ -1,8 +1,7 @@
 ### Compiling multi-platform targets for LMDB
 
 This process has historically been very tedious and error prone due to manual nature taken in the past.
-Now all targets can be handled in a single script with the exception of MacOS x64 (assuming you're on M*).
-It does require a little bit of setup, but better than it used to be.
+Now all targets can be handled in a single script.
 
 If you deal with this kind of stuff frequently and know a better way, please contribute.
 
