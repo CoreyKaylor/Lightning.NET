@@ -63,12 +63,12 @@ public static class LightningExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IEnumerable<ValueTuple<MDBValue, MDBValue>> AsEnumerable(this LightningCursor cursor)
     {
-        while(cursor.Next() == MDBResultCode.Success)
+        (MDBResultCode, MDBValue, MDBValue) result;
+        while((result = cursor.Next()).Item1 == MDBResultCode.Success)
         {
-            var (resultCode, key, value) = cursor.GetCurrent();
-            resultCode.ThrowOnError();
-            yield return (key, value);
+            yield return (result.Item2, result.Item3);
         }
+        result.Item1.ThrowOnReadError();
     }
 
     /// <summary>

@@ -153,37 +153,37 @@ public class LightningCursor : IDisposable
     /// <summary>
     /// Position at first key/data item
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode First()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) First()
     {
-        return Get(CursorOperation.First).resultCode;
+        return Get(CursorOperation.First);
     }
 
     /// <summary>
     /// Position at first data item of current key. Only for MDB_DUPSORT
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode FirstDuplicate()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) FirstDuplicate()
     {
-        return Get(CursorOperation.FirstDuplicate).resultCode;
+        return Get(CursorOperation.FirstDuplicate);
     }
 
     /// <summary>
     /// Position at last key/data item
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode Last()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) Last()
     {
-        return Get(CursorOperation.Last).resultCode;
+        return Get(CursorOperation.Last);
     }
 
     /// <summary>
     /// Position at last data item of current key. Only for MDB_DUPSORT
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode LastDuplicate()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) LastDuplicate()
     {
-        return Get(CursorOperation.LastDuplicate).resultCode;
+        return Get(CursorOperation.LastDuplicate);
     }
 
     /// <summary>
@@ -198,28 +198,28 @@ public class LightningCursor : IDisposable
     /// <summary>
     /// Position at next data item
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode Next()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) Next()
     {
-        return Get(CursorOperation.Next).resultCode;
+        return Get(CursorOperation.Next);
     }
 
     /// <summary>
     /// Position at next data item of current key. Only for MDB_DUPSORT
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode NextDuplicate()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) NextDuplicate()
     {
-        return Get(CursorOperation.NextDuplicate).resultCode;
+        return Get(CursorOperation.NextDuplicate);
     }
 
     /// <summary>
     /// Position at first data item of next key. Only for MDB_DUPSORT.
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode NextNoDuplicate()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) NextNoDuplicate()
     {
-        return Get(CursorOperation.NextNoDuplicate).resultCode;
+        return Get(CursorOperation.NextNoDuplicate);
     }
 
     /// <summary>
@@ -235,28 +235,28 @@ public class LightningCursor : IDisposable
     /// <summary>
     /// Position at previous data item.
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode Previous()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) Previous()
     {
-        return Get(CursorOperation.Previous).resultCode;
+        return Get(CursorOperation.Previous);
     }
 
     /// <summary>
     /// Position at previous data item of current key. Only for MDB_DUPSORT.
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode PreviousDuplicate()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) PreviousDuplicate()
     {
-        return Get(CursorOperation.PreviousDuplicate).resultCode;
+        return Get(CursorOperation.PreviousDuplicate);
     }
 
     /// <summary>
     /// Position at last data item of previous key. Only for MDB_DUPSORT.
     /// </summary>
-    /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode PreviousNoDuplicate()
+    /// <returns>Returns <see cref="MDBResultCode"/>, and <see cref="MDBValue"/> key/value</returns>
+    public (MDBResultCode resultCode, MDBValue key, MDBValue value) PreviousNoDuplicate()
     {
-        return Get(CursorOperation.PreviousNoDuplicate).resultCode;
+        return Get(CursorOperation.PreviousNoDuplicate);
     }
         
     private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation)

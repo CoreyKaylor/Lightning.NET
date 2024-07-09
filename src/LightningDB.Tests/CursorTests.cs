@@ -87,9 +87,8 @@ public class CursorTests : IDisposable
             var keys = PopulateCursorValues(c);
             var lastKey = keys.Last();
             var result = c.Last();
-            Assert.Equal(MDBResultCode.Success, result);
-            var current = c.GetCurrent();
-            Assert.Equal(lastKey, current.key.CopyToNewArray());
+            Assert.Equal(MDBResultCode.Success, result.resultCode);
+            Assert.Equal(lastKey, result.key.CopyToNewArray());
         });
     }
 
@@ -101,9 +100,8 @@ public class CursorTests : IDisposable
             var keys = PopulateCursorValues(c);
             var firstKey = keys.First();
             var result = c.First();
-            Assert.Equal(MDBResultCode.Success, result);
-            var current = c.GetCurrent();
-            Assert.Equal(firstKey, current.key.CopyToNewArray());
+            Assert.Equal(MDBResultCode.Success, result.resultCode);
+            Assert.Equal(firstKey, result.key.CopyToNewArray());
         });
     }
 
@@ -247,7 +245,7 @@ public class CursorTests : IDisposable
             var expectedSpan = expected.AsSpan();
             c.GetBoth(expectedSpan, expectedSpan);
             var result = c.Previous();
-            Assert.Equal(MDBResultCode.Success, result);
+            Assert.Equal(MDBResultCode.Success, result.resultCode);
         }); 
     }
         
@@ -302,10 +300,9 @@ public class CursorTests : IDisposable
             var values = PopulateMultipleCursorValues(c);
             var result = c.GetBothRange(key, values[1]);
             Assert.Equal(MDBResultCode.Success, result);
-            result = c.FirstDuplicate();
-            Assert.Equal(MDBResultCode.Success, result);
-            var current = c.GetCurrent();
-            Assert.Equal(values[0], current.value.CopyToNewArray());
+            var dupResult = c.FirstDuplicate();
+            Assert.Equal(MDBResultCode.Success, dupResult.resultCode);
+            Assert.Equal(values[0], dupResult.value.CopyToNewArray());
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
@@ -318,9 +315,8 @@ public class CursorTests : IDisposable
             var values = PopulateMultipleCursorValues(c);
             c.Set(key);
             var result = c.LastDuplicate();
-            Assert.Equal(MDBResultCode.Success, result);
-            var current = c.GetCurrent();
-            Assert.Equal(values[4], current.value.CopyToNewArray());
+            Assert.Equal(MDBResultCode.Success, result.resultCode);
+            Assert.Equal(values[4], result.value.CopyToNewArray());
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
@@ -331,9 +327,8 @@ public class CursorTests : IDisposable
         {
             var values = PopulateMultipleCursorValues(c);
             var result = c.NextNoDuplicate();
-            Assert.Equal(MDBResultCode.Success, result);
-            var current = c.GetCurrent();
-            Assert.Equal(values[0], current.value.CopyToNewArray());
+            Assert.Equal(MDBResultCode.Success, result.resultCode);
+            Assert.Equal(values[0], result.value.CopyToNewArray());
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         

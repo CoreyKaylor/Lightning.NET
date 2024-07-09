@@ -190,8 +190,9 @@ public class TransactionTests : IDisposable
         using (var c = txn.CreateCursor(db))
         {
             var order = 0;
-            while (c.Next() == MDBResultCode.Success)
-                Assert.Equal(keysSorted[order++], BitConverter.ToInt32(c.GetCurrent().key.CopyToNewArray(), 0));
+            (MDBResultCode, MDBValue, MDBValue) result;
+            while ((result = c.Next()).Item1 == MDBResultCode.Success)
+                Assert.Equal(keysSorted[order++], BitConverter.ToInt32(result.Item2.CopyToNewArray(), 0));
         }
     }
 
@@ -217,8 +218,9 @@ public class TransactionTests : IDisposable
         {
             var order = 0;
 
-            while (c.Next() == MDBResultCode.Success)
-                Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(c.GetCurrent().value.CopyToNewArray(), 0));
+            (MDBResultCode, MDBValue, MDBValue) result;
+            while ((result = c.Next()).Item1 == MDBResultCode.Success)
+                Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(result.Item3.CopyToNewArray(), 0));
         }
     }
 }
