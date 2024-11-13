@@ -25,13 +25,13 @@ make clean
 make CC='clang -mmacosx-version-min=10.15 -arch x86_64' XCFLAGS='-DNDEBUG'
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/osx/native/lmdb.dylib
 make clean
-docker run --mount type=bind,source="$(pwd)",target=/lmdb --rm --platform=linux/arm/7 -w /lmdb gcc:latest make XCFLAGS='-DNDEBUG'
+podman run --mount type=bind,source="$(pwd)",target=/lmdb --rm --platform=linux/arm/7 -w /lmdb gcc:latest make XCFLAGS='-DNDEBUG'
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/linux-arm/native/liblmdb.so
 make clean
-docker run --mount type=bind,source="$(pwd)",target=/lmdb --rm --platform=linux/arm64 -w /lmdb gcc:latest make XCFLAGS='-DNDEBUG'
+podman run --mount type=bind,source="$(pwd)",target=/lmdb --rm --platform=linux/arm64 -w /lmdb gcc:latest make XCFLAGS='-DNDEBUG'
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/linux-arm64/native/liblmdb.so
 make clean
-docker run --mount type=bind,source="$(pwd)",target=/lmdb --rm --platform=linux/amd64 -w /lmdb gcc:latest make XCFLAGS='-DNDEBUG'
+podman run --mount type=bind,source="$(pwd)",target=/lmdb --rm --platform=linux/amd64 -w /lmdb gcc:latest make XCFLAGS='-DNDEBUG'
 mv ./liblmdb.so ../../../../src/LightningDB/runtimes/linux-x64/native/liblmdb.so
 make clean
 make CC='x86_64-w64-mingw32-gcc' AR='x86_64-w64-mingw32-gcc-ar' XCFLAGS='-DNDEBUG'
