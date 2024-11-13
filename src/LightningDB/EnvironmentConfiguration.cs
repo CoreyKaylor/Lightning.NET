@@ -9,16 +9,6 @@ public class EnvironmentConfiguration
     private int? _maxReaders;
     private int? _maxDatabases;
         
-#if NETCOREAPP3_1_OR_GREATER
-    private bool? _autoResizeWindows;
-        
-    public bool AutoResizeWindows
-    {
-        get => _autoResizeWindows ?? false;
-        set => _autoResizeWindows = value;
-    }
-#endif
-
     public long MapSize
     {
         get => _mapSize ?? 0;

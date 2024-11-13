@@ -342,27 +342,4 @@ public static partial class Lmdb
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern MDBResultCode mdb_cursor_put(nint cursor, ref MDBValue key, MDBValue[] value, CursorPutOptions flags);
 #endif 
-
-#if NETCOREAPP3_1_OR_GREATER
-
-    private static bool _shouldSetDllImportResolver = true;
-    private static readonly object _syncRoot = new();
-
-    public static void LoadWindowsAutoResizeLibrary()
-    {
-        if (!_shouldSetDllImportResolver) return;
-        lock (_syncRoot)
-        {
-            if (!_shouldSetDllImportResolver) return;
-            NativeLibrary.SetDllImportResolver(System.Reflection.Assembly.GetExecutingAssembly(), DllImportResolver);
-            _shouldSetDllImportResolver = false;
-        }
-    }
-
-    private static nint DllImportResolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath)
-    {
-        return libraryName == MDB_DLL_NAME 
-            ? NativeLibrary.Load($"{MDB_DLL_NAME}autoresize", assembly, searchPath) : 0;
-    }
-#endif
 }

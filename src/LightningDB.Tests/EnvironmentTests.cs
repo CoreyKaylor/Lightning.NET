@@ -174,34 +174,4 @@ public class EnvironmentTests : IDisposable
 
         _env.Open();
     }
-        
-        
-#if NETCOREAPP3_1_OR_GREATER
-    [WindowsOnlyFact]
-    public void CreateEnvironmentWithAutoResize()
-    {
-        using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
-               {
-                   MapSize = 1048576,
-                   AutoResizeWindows = true
-               }))
-        {
-            env.Open();
-        }
-
-        using (var env = new LightningEnvironment(_path, new EnvironmentConfiguration
-               {
-                   MapSize = 1048576,
-                   AutoResizeWindows = true
-               }))
-        {
-            env.Open();
-        }
-
-        using (var dbFile = File.OpenRead(Path.Combine(_path, "data.mdb")))
-        {
-            Assert.Equal(8192, dbFile.Length);
-        }
-    }
-#endif
 }
