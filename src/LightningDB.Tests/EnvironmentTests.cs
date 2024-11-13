@@ -140,7 +140,7 @@ public class EnvironmentTests : IDisposable
         _env.CopyTo(_pathCopy, compact).ThrowOnError();
 
         if (Directory.GetFiles(_pathCopy).Length == 0)
-            Assert.True(false, "Copied files doesn't exist");
+            Assert.Fail("Copied files doesn't exist");
     }
 
     [Fact]

@@ -73,7 +73,7 @@ public class KeyBatch
     private static byte[] CopyToArray(int keyValue)
     {
         var key = new byte[4];
-        MemoryMarshal.Write(key, ref keyValue);
+        MemoryMarshal.Write(key, in keyValue);
         return key;
     }
 }
