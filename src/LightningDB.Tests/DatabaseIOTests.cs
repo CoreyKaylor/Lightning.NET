@@ -24,6 +24,8 @@ public class DatabaseIOTests : IDisposable
 
     public void Dispose()
     {
+        _txn.Dispose();
+        _db.Dispose();
         _env.Dispose();
     }
 

@@ -18,6 +18,7 @@ public class DatabaseTests : IDisposable
 
     public void Dispose()
     {
+        _txn?.Dispose();
         _env.Dispose();
     }
         
@@ -80,12 +81,12 @@ public class DatabaseTests : IDisposable
 
         using (var tx = _env.BeginTransaction())
         {
-            tx.OpenDatabase("customdb", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+            using var db = tx.OpenDatabase("customdb", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
             tx.Commit();
         }
         using (var tx = _env.BeginTransaction())
         {
-            var db = tx.OpenDatabase();
+            using var db = tx.OpenDatabase();
             using (var cursor = tx.CreateCursor(db))
             {
                 cursor.Next();
@@ -110,13 +111,13 @@ public class DatabaseTests : IDisposable
         }
         using (var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly))
         {
-            var db = tx.OpenDatabase("custom");
+            using var db = tx.OpenDatabase("custom");
             var result = tx.Get(db, "hello");
             Assert.Equal("world", result);
         }
         using (var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly))
         {
-            var db = tx.OpenDatabase("custom");
+            using var db = tx.OpenDatabase("custom");
             var result = tx.Get(db, "hello");
             Assert.Equal("world", result);
         }
@@ -137,6 +138,7 @@ public class DatabaseTests : IDisposable
         db = _txn.OpenDatabase("notmaster");
 
         db.Drop(_txn);
+        db.Dispose();
         _txn.Commit();
         _txn.Dispose();
 
@@ -155,16 +157,19 @@ public class DatabaseTests : IDisposable
         var db = _txn.OpenDatabase();
 
         _txn.Put(db, "hello", "world");
+        db.Dispose();
         _txn.Commit();
         _txn.Dispose();
         _txn = _env.BeginTransaction();
         db = _txn.OpenDatabase();
         db.Truncate(_txn);
+        db.Dispose();
         _txn.Commit();
         _txn.Dispose();
         _txn = _env.BeginTransaction();
         db = _txn.OpenDatabase();
         var result = _txn.Get(db, "hello"u8.ToArray());
+        db.Dispose();
 
         Assert.Equal(MDBResultCode.NotFound, result.resultCode);
     }

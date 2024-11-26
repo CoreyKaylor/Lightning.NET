@@ -63,7 +63,7 @@ public class EnvironmentTests : IDisposable
         Assert.Equal(_env.MapSize, info.MapSize);
     }
 
-    [Fact(Skip = "Skipping to investigate linux build server failures")]
+    [Not32BitFact]
     public void CanGetLargeEnvironmentInfo()
     {
         const long mapSize = 1024 * 1024 * 1024 * 3L;
@@ -84,8 +84,8 @@ public class EnvironmentTests : IDisposable
         _env.Open();
         using (var tx = _env.BeginTransaction())
         {
-            tx.OpenDatabase("db1", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
-            tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+            using var db = tx.OpenDatabase("db1", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+            using var db2 = tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
             tx.Commit();
         }
         Assert.Equal(2, _env.MaxDatabases);
