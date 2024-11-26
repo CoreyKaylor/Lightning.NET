@@ -8,7 +8,8 @@ namespace LightningDB;
 /// </summary>
 public sealed class LightningDatabase : IDisposable
 {
-    private uint _handle;
+    internal uint _handle;
+    private bool _disposed = false;
     private readonly DatabaseConfiguration _configuration;
     private readonly bool _closeOnDispose;
     private readonly LightningTransaction _transaction;
@@ -32,15 +33,9 @@ public sealed class LightningDatabase : IDisposable
         _closeOnDispose = closeOnDispose;
         Environment = transaction.Environment;
         _transaction = transaction;
-        Environment.Disposing += Dispose;
-        mdb_dbi_open(transaction.Handle(), name, _configuration.Flags, out _handle).ThrowOnError();
+        mdb_dbi_open(transaction._handle, name, _configuration.Flags, out _handle).ThrowOnError();
         _pinnedConfig = _configuration.ConfigureDatabase(transaction, this);
         IsOpened = true;
-    }
-
-    public uint Handle()
-    {
-        return _handle;
     }
 
     /// <summary>
@@ -57,7 +52,7 @@ public sealed class LightningDatabase : IDisposable
     {
         get
         {
-            mdb_stat(_transaction.Handle(), Handle(), out var nativeStat).ThrowOnError();
+            mdb_stat(_transaction._handle, _handle, out var nativeStat).ThrowOnError();
             return new Stats
             {
                 BranchPages = nativeStat.ms_branch_pages,
@@ -85,8 +80,7 @@ public sealed class LightningDatabase : IDisposable
     /// </summary>
     public MDBResultCode Drop(LightningTransaction transaction)
     {
-        var result = mdb_drop(transaction.Handle(), _handle, true);
-        _transaction.ShouldCloseCursor = false;
+        var result = mdb_drop(transaction._handle, _handle, true);
         IsOpened = false;
         _handle = default;
         return result;
@@ -97,7 +91,7 @@ public sealed class LightningDatabase : IDisposable
     /// </summary>
     public MDBResultCode Truncate(LightningTransaction transaction)
     {
-        return mdb_drop(transaction.Handle(), _handle, false);
+        return mdb_drop(transaction._handle, _handle, false);
     }
 
     /// <summary>
@@ -106,18 +100,15 @@ public sealed class LightningDatabase : IDisposable
     /// <param name="disposing">true if called from Dispose.</param>
     private void Dispose(bool disposing)
     {
-        if (_handle == default)
+        if (_disposed)
             return;
+        _disposed = true;
 
-        if(!disposing)
-            throw new InvalidOperationException("The LightningDatabase was not disposed and cannot be reliably dealt with from the finalizer");
-
-        Environment.Disposing -= Dispose;
         IsOpened = false;
-        _pinnedConfig.Dispose();
+        _pinnedConfig?.Dispose();
 
         if (_closeOnDispose)
-            mdb_dbi_close(Environment.Handle(), _handle);
+            mdb_dbi_close(Environment._handle, _handle);
 
         GC.SuppressFinalize(this);
         _handle = default;

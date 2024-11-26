@@ -6,9 +6,9 @@
 public enum LightningTransactionState
 {
     /// <summary>
-    /// Transaction is currently active.
+    /// Transaction is ready.
     /// </summary>
-    Active,
+    Ready,
 
     /// <summary>
     /// Transaction is currently reset.
@@ -16,12 +16,12 @@ public enum LightningTransactionState
     Reset,
 
     /// <summary>
-    /// Transaction is aborted.
+    /// Transaction is done.
     /// </summary>
-    Aborted,
+    Done,
 
     /// <summary>
     /// Transaction is committed.
     /// </summary>
-    Committed
+    Released
 }

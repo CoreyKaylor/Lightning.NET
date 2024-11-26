@@ -48,7 +48,7 @@ public class TransactionTests : IDisposable
     {
         _env.RunTransactionScenario((tx, _) =>
         {
-            Assert.Equal(LightningTransactionState.Active, tx.State);
+            Assert.Equal(LightningTransactionState.Ready, tx.State);
         });
     }
 
@@ -58,7 +58,8 @@ public class TransactionTests : IDisposable
         _env.RunTransactionScenario((tx, _) =>
         {
             _env.Dispose();
-            Assert.Equal(LightningTransactionState.Aborted, tx.State);
+            tx.Dispose();
+            Assert.Equal(LightningTransactionState.Released, tx.State);
         });
     }
 
@@ -68,7 +69,7 @@ public class TransactionTests : IDisposable
         _env.RunTransactionScenario((tx, _) =>
         {
             tx.Commit();
-            Assert.Equal(LightningTransactionState.Committed, tx.State);
+            Assert.Equal(LightningTransactionState.Done, tx.State);
         });
     }
 
@@ -78,7 +79,8 @@ public class TransactionTests : IDisposable
         _env.RunTransactionScenario((tx, _) =>
         {
             var subTxn = tx.BeginTransaction();
-            Assert.Equal(LightningTransactionState.Active, subTxn.State);
+            Assert.Equal(LightningTransactionState.Ready, subTxn.State);
+            Assert.Same(subTxn.ParentTransaction, tx);
         });
     }
 
@@ -89,7 +91,7 @@ public class TransactionTests : IDisposable
         {
             tx.Reset();
             tx.Dispose();
-            Assert.Equal(LightningTransactionState.Aborted, tx.State);
+            Assert.Equal(LightningTransactionState.Released, tx.State);
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
@@ -100,7 +102,8 @@ public class TransactionTests : IDisposable
         {
             var child = tx.BeginTransaction();
             tx.Abort();
-            Assert.Equal(LightningTransactionState.Aborted, child.State);
+            child.Dispose();
+            Assert.Equal(LightningTransactionState.Released, child.State);
         });
     }
 
@@ -111,7 +114,8 @@ public class TransactionTests : IDisposable
         {
             var child = tx.BeginTransaction();
             tx.Commit();
-            Assert.Equal(LightningTransactionState.Aborted, child.State);
+            child.Dispose();
+            Assert.Equal(LightningTransactionState.Released, child.State);
         });
     }
 
@@ -122,7 +126,8 @@ public class TransactionTests : IDisposable
         {
             var child = tx.BeginTransaction();
             _env.Dispose();
-            Assert.Equal(LightningTransactionState.Aborted, child.State);
+            child.Dispose();
+            Assert.Equal(LightningTransactionState.Released, child.State);
         });
     }
 
@@ -143,7 +148,7 @@ public class TransactionTests : IDisposable
         {
             tx.Reset();
             tx.Renew();
-            Assert.Equal(LightningTransactionState.Active, tx.State);
+            Assert.Equal(LightningTransactionState.Ready, tx.State);
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 

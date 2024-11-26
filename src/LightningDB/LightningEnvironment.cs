@@ -10,10 +10,9 @@ namespace LightningDB;
 public sealed class LightningEnvironment : IDisposable
 {
     private readonly EnvironmentConfiguration _config = new();
+    private bool _disposed = false;
 
-    private nint _handle;
-
-    public event Action Disposing;
+    internal nint _handle;
 
     /// <summary>
     /// Creates a new instance of LightningEnvironment.
@@ -33,11 +32,6 @@ public sealed class LightningEnvironment : IDisposable
 
         Path = path;
 
-    }
-
-    public nint Handle()
-    {
-        return _handle;
     }
 
     /// <summary>
@@ -131,7 +125,7 @@ public sealed class LightningEnvironment : IDisposable
     {
         get
         {
-            mdb_env_stat(Handle(), out var nativeStat);
+            mdb_env_stat(_handle, out var nativeStat);
             return new Stats
             {
                 BranchPages = nativeStat.ms_branch_pages,
@@ -151,7 +145,7 @@ public sealed class LightningEnvironment : IDisposable
     {
         get
         {
-            mdb_env_info(Handle(), out var nativeInfo);
+            mdb_env_info(_handle, out var nativeInfo);
             return new EnvironmentInfo
             {
                 MapSize = nativeInfo.me_mapsize,
@@ -273,14 +267,12 @@ public sealed class LightningEnvironment : IDisposable
     /// <param name="disposing">True if called from Dispose.</param>
     private void Dispose(bool disposing)
     {
-        if (_handle == 0)
+        if (_disposed)
             return;
+        _disposed = true;
 
         if(!disposing)
             throw new InvalidOperationException("The LightningEnvironment was not disposed and cannot be reliably dealt with from the finalizer");
-
-        var copy = Disposing;
-        copy?.Invoke();
 
         if (IsOpened)
         {

@@ -26,13 +26,13 @@ public class DatabaseConfiguration
         {
             CompareFunction compare = Compare;
             pinnedComparer.AddComparer(compare);
-            mdb_set_compare(tx.Handle(), db.Handle(), compare);
+            mdb_set_compare(tx._handle, db._handle, compare);
         }
 
         if (_duplicatesComparer == null) return pinnedComparer;
         CompareFunction dupCompare = IsDuplicate;
         pinnedComparer.AddComparer(dupCompare);
-        mdb_set_dupsort(tx.Handle(), db.Handle(), dupCompare);
+        mdb_set_dupsort(tx._handle, db._handle, dupCompare);
         return pinnedComparer;
     }
 

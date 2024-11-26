@@ -12,6 +12,7 @@ namespace LightningDB;
 public class LightningCursor : IDisposable
 {
     private nint _handle;
+    private bool _disposed = false;
 
     /// <summary>
     /// Creates new instance of LightningCursor
@@ -26,15 +27,14 @@ public class LightningCursor : IDisposable
         if (txn == null)
             throw new ArgumentNullException(nameof(txn));
 
-        mdb_cursor_open(txn.Handle(), db.Handle(), out _handle).ThrowOnError();
+        mdb_cursor_open(txn._handle, db._handle, out _handle).ThrowOnError();
 
+        Database = db;
         Transaction = txn;
-        Transaction.ShouldCloseCursor = true;
-        Transaction.Disposing += Dispose;
     }
 
     /// <summary>
-    /// Gets the the native handle of the cursor
+    /// Gets the native handle of the cursor
     /// </summary>
     public nint Handle()
     {
@@ -45,6 +45,10 @@ public class LightningCursor : IDisposable
     /// Cursor's transaction.
     /// </summary>
     public LightningTransaction Transaction { get; }
+    /// <summary>
+    /// The database that the cursor is associated with.
+    /// </summary>
+    public LightningDatabase Database { get; }
 
     /// <summary>
     /// Position at specified key, if key is not found index will be positioned to closest match.
@@ -495,7 +499,7 @@ public class LightningCursor : IDisposable
         if (!txn.IsReadOnly)
             throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");
 
-        return mdb_cursor_renew(txn.Handle(), _handle);
+        return mdb_cursor_renew(txn._handle, _handle);
     }
     
     /// <summary>
@@ -510,31 +514,46 @@ public class LightningCursor : IDisposable
         return mdb_cursor_count(_handle, out value);
     }
 
+    private bool ShouldCloseCursor()
+    {
+        return Database.IsOpened &&
+               Transaction.State == LightningTransactionState.Ready;
+    }
+
+    private bool CheckReadOnly()
+    {
+        return Transaction.IsReadOnly && Database.IsOpened &&
+               Transaction.State != LightningTransactionState.Ready;
+    }
+
     /// <summary>
     /// Closes the cursor and deallocates all resources associated with it.
     /// </summary>
     /// <param name="disposing">True if called from Dispose.</param>
     private void Dispose(bool disposing)
     {
-        if (_handle == default)
+        if (_disposed)
             return;
+        _disposed = true;
 
-        if (!disposing)
-            throw new InvalidOperationException("The LightningCursor was not disposed and cannot be reliably dealt with from the finalizer");
-
-        if (Transaction.ShouldCloseCursor)
+        if (CheckReadOnly() && !disposing)
+        {
+            throw new InvalidOperationException("The LightningCursor in a read-only transaction must be disposed explicitly.");
+        }
+        
+        if (ShouldCloseCursor())
         {
             mdb_cursor_close(_handle);
         }
         _handle = default;
 
-        Transaction.Disposing -= Dispose;
-
         GC.SuppressFinalize(this);
     }
 
     /// <summary>
-    /// Closes the cursor and deallocates all resources associated with it.
+    /// A cursor in a write-transaction can be closed before its transaction ends,
+    /// and will otherwise be closed when its transaction ends. A cursor in a read-only transaction must be closed explicitly,
+    /// before or after its transaction ends. It can be reused with Transaction.Renew() before finally closing it.
     /// </summary>
     public void Dispose()
     {

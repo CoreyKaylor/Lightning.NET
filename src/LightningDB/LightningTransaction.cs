@@ -14,8 +14,9 @@ public sealed class LightningTransaction : IDisposable
     /// </summary>
     public const TransactionBeginFlags DefaultTransactionBeginFlags = TransactionBeginFlags.None;
 
-    private nint _handle;
+    internal nint _handle;
     private readonly nint _originalHandle;
+    private bool _disposed = false;
 
     /// <summary>
     /// Created new instance of LightningTransaction
@@ -28,39 +29,12 @@ public sealed class LightningTransaction : IDisposable
         Environment = environment ?? throw new ArgumentNullException(nameof(environment));
         ParentTransaction = parent;
         IsReadOnly = flags == TransactionBeginFlags.ReadOnly;
-        State = LightningTransactionState.Active;
-        Environment.Disposing += Dispose;
-        if (parent != null)
-        {
-            parent.Disposing += Dispose;
-            parent.StateChanging += OnParentStateChanging;
-        }
+        State = LightningTransactionState.Ready;
 
-        var parentHandle = parent?.Handle() ?? default(nint);
-        mdb_txn_begin(environment.Handle(), parentHandle, flags, out _handle).ThrowOnError();
+        var parentHandle = parent?._handle ?? default(nint);
+        mdb_txn_begin(environment._handle, parentHandle, flags, out _handle).ThrowOnError();
         _originalHandle = _handle;
     }
-
-    public nint Handle()
-    {
-        return _handle;
-    }
-
-    private void OnParentStateChanging(LightningTransactionState state)
-    {
-        switch (state)
-        {
-            case LightningTransactionState.Aborted:
-            case LightningTransactionState.Committed:
-                Abort();
-                break;
-        }
-    }
-
-    public event Action Disposing;
-    private event Action<LightningTransactionState> StateChanging;
-    
-    internal bool ShouldCloseCursor { get; set; }
 
     /// <summary>
     /// Current transaction state.
@@ -84,7 +58,7 @@ public sealed class LightningTransaction : IDisposable
     /// <param name="configuration">Database open options.</param>
     /// <param name="closeOnDispose">Close database handle on dispose</param>
     /// <returns>Created database wrapper.</returns>
-    public LightningDatabase OpenDatabase(string name = null, DatabaseConfiguration configuration = null, bool closeOnDispose = true)
+    public LightningDatabase OpenDatabase(string name = null, DatabaseConfiguration configuration = null, bool closeOnDispose = false)
     {
         configuration ??= new DatabaseConfiguration();
         var db = new LightningDatabase(name, this, configuration, closeOnDispose);
@@ -144,7 +118,7 @@ public sealed class LightningTransaction : IDisposable
         {
             var mdbKey = new MDBValue(key.Length, keyBuffer);
 
-            return (mdb_get(_handle, db.Handle(), ref mdbKey, out var mdbValue), mdbKey, mdbValue);
+            return (mdb_get(_handle, db._handle, ref mdbKey, out var mdbValue), mdbKey, mdbValue);
         }
     }
 
@@ -178,7 +152,7 @@ public sealed class LightningTransaction : IDisposable
             var mdbKey = new MDBValue(key.Length, keyPtr);
             var mdbValue = new MDBValue(value.Length, valuePtr);
 
-            return mdb_put(_handle, db.Handle(), mdbKey, mdbValue, options);
+            return mdb_put(_handle, db._handle, mdbKey, mdbValue, options);
         }
     }
 
@@ -220,10 +194,10 @@ public sealed class LightningTransaction : IDisposable
             var mdbKey = new MDBValue(key.Length, keyPtr);
             if (value == null)
             {
-                return mdb_del(_handle, db.Handle(), mdbKey);
+                return mdb_del(_handle, db._handle, mdbKey);
             }
             var mdbValue = new MDBValue(value.Length, valuePtr);
-            return mdb_del(_handle, db.Handle(), mdbKey, mdbValue);
+            return mdb_del(_handle, db._handle, mdbKey, mdbValue);
         }
     }
 
@@ -257,24 +231,27 @@ public sealed class LightningTransaction : IDisposable
     {
         fixed(byte* ptr = key) {
             var mdbKey = new MDBValue(key.Length, ptr);
-            return mdb_del(_handle, db.Handle(), mdbKey);
+            return mdb_del(_handle, db._handle, mdbKey);
         }
     }
 
     /// <summary>
-    /// Reset current transaction.
+    /// Aborts the read-only transaction and resets the transaction handle so it can be
+    /// reused after calling <see cref="Renew"/>
     /// </summary>
     public void Reset()
     {
         if (!IsReadOnly)
             throw new InvalidOperationException("Can't reset non-readonly transaction");
+        if(State != LightningTransactionState.Ready && State != LightningTransactionState.Done)
+            throw new InvalidOperationException("Transaction has already been reset");
 
-        mdb_txn_reset(_handle);
         State = LightningTransactionState.Reset;
+        mdb_txn_reset(_handle);
     }
 
     /// <summary>
-    /// Renew current transaction.
+    /// Renews a read-only transaction previously released with <see cref="Reset"/>
     /// </summary>
     public MDBResultCode Renew()
     {
@@ -284,8 +261,9 @@ public sealed class LightningTransaction : IDisposable
         if (State != LightningTransactionState.Reset)
             throw new InvalidOperationException("Transaction should be reset first");
 
-        var result = mdb_txn_renew(_handle);
-        State = LightningTransactionState.Active;
+        State = LightningTransactionState.Done;
+        var result = mdb_txn_renew(_handle).ThrowOnError();
+        State = LightningTransactionState.Ready;
         return result;
     }
 
@@ -296,9 +274,9 @@ public sealed class LightningTransaction : IDisposable
     /// </summary>
     public MDBResultCode Commit()
     {
-        State = LightningTransactionState.Committed;
-        ShouldCloseCursor = false;
-        StateChanging?.Invoke(State);
+        if(State != LightningTransactionState.Ready)
+            throw new InvalidOperationException("Transaction that is not ready cannot be committed");
+        State = LightningTransactionState.Done;
         return mdb_txn_commit(_handle);
     }
 
@@ -309,8 +287,9 @@ public sealed class LightningTransaction : IDisposable
     /// </summary>
     public void Abort()
     {
-        State = LightningTransactionState.Aborted;
-        StateChanging?.Invoke(State);
+        if(State != LightningTransactionState.Ready)
+            throw new InvalidOperationException("Transaction that is not ready cannot be committed");
+        State = LightningTransactionState.Done;
         mdb_txn_abort(_handle);
     }
 
@@ -321,7 +300,7 @@ public sealed class LightningTransaction : IDisposable
     /// <returns>The number of items.</returns>
     public long GetEntriesCount(LightningDatabase db)
     {
-        mdb_stat(_handle, db.Handle(), out var stat).ThrowOnError();
+        mdb_stat(_handle, db._handle, out var stat).ThrowOnError();
 
         return stat.ms_entries;
     }
@@ -347,22 +326,20 @@ public sealed class LightningTransaction : IDisposable
     /// <param name="disposing">True if called from Dispose.</param>
     private void Dispose(bool disposing)
     {
-        if (_handle == 0)
+        if (_disposed)
             return;
-
-        Environment.Disposing -= Dispose;
-        if (ParentTransaction != null)
-        {
-            ParentTransaction.Disposing -= Dispose;
-            ParentTransaction.StateChanging -= OnParentStateChanging;
-        }
-
-        Disposing?.Invoke();
-
-        if (State is LightningTransactionState.Active or LightningTransactionState.Reset)
+        if (!Environment.IsOpened)
+            State = LightningTransactionState.Done;
+        _disposed = true;
+        
+        if(ParentTransaction != null && ParentTransaction.State != LightningTransactionState.Ready)
+            State = ParentTransaction.State;
+            
+        if (State is LightningTransactionState.Ready)
             Abort();
 
-        _handle = 0;
+        _handle = default;
+        State = LightningTransactionState.Released;
 
         if (disposing)
         {
