@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using Xunit;
+using Xunit.Sdk;
 
 namespace LightningDB.Tests;
 
@@ -21,16 +23,9 @@ public class SharedFileSystem : IDisposable
         }
     }
 
-    public string CreateNewDirectoryForTest()
+    public string CreateNewDirectoryForTest(string seed = "")
     {
-        var path = Path.Combine(_testTempDir, "TestDb", Guid.NewGuid().ToString());
-        Directory.CreateDirectory(path);
-        return path;
-    }
-    
-    public string CreateNewDirectoryForSpecialCharacterTest()
-    {
-        var path = Path.Combine(_testTempDir, "Testß", Guid.NewGuid().ToString());
+        var path = Path.Combine(_testTempDir, $"Test{seed}", Guid.NewGuid().ToString());
         Directory.CreateDirectory(path);
         return path;
     }
@@ -39,4 +34,17 @@ public class SharedFileSystem : IDisposable
 [CollectionDefinition("SharedFileSystem")]
 public class SharedFileSystemCollection : ICollectionFixture<SharedFileSystem>
 {
+}
+
+public class PrintTestMethod : BeforeAfterTestAttribute
+{
+    public override void Before(MethodInfo methodUnderTest)
+    {
+        Console.WriteLine("Setup for test '{0}.'", methodUnderTest.Name);
+    }
+
+    public override void After(MethodInfo methodUnderTest)
+    {
+        Console.WriteLine("TearDown for test '{0}.'", methodUnderTest.Name);
+    }
 }

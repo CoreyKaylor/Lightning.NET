@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Checkout Lightning.NET
         uses: actions/checkout@v4
-      - name: Setup .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |

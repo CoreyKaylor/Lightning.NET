@@ -5,21 +5,11 @@ using static System.Text.Encoding;
 
 namespace LightningDB.Tests;
 
-[Collection("SharedFileSystem")]
-public class CursorTests : IDisposable
+public class CursorTests : TestBase
 {
-    private readonly LightningEnvironment _env;
-
-    public CursorTests(SharedFileSystem fileSystem)
+    public CursorTests(SharedFileSystem fileSystem) : base(fileSystem)
     {
-        var path = fileSystem.CreateNewDirectoryForTest();
-        _env = new LightningEnvironment(path);
         _env.Open();
-    }
-
-    public void Dispose()
-    {
-        _env.Dispose();
     }
 
     private static byte[][] PopulateCursorValues(LightningCursor cursor, int count = 5, string keyPrefix = "key")

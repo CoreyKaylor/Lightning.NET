@@ -4,29 +4,12 @@ using Xunit;
 
 namespace LightningDB.Tests;
 
-[Collection("SharedFileSystem")]
-public class EnvironmentTests : IDisposable
+public class EnvironmentTests(SharedFileSystem fileSystem) : TestBase(fileSystem, false)
 {
-    private readonly string _path,  _pathCopy, _pathSpecial;
-    private LightningEnvironment _env;
-
-    public EnvironmentTests(SharedFileSystem fileSystem)
-    {
-        _path = fileSystem.CreateNewDirectoryForTest();
-        _pathCopy = fileSystem.CreateNewDirectoryForTest();
-        _pathSpecial = fileSystem.CreateNewDirectoryForSpecialCharacterTest();
-    }
-
-    public void Dispose()
-    {
-        _env?.Dispose();
-        _env = null;
-    }
-
     [Fact]
     public void EnvironmentShouldBeCreatedIfWithoutFlags()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         _env.Open();
     }
 
@@ -37,7 +20,7 @@ public class EnvironmentTests : IDisposable
         const int maxDatabaseExpected = 2;
         const int maxReadersExpected = 3;
         var config = new EnvironmentConfiguration {MapSize = mapExpected, MaxDatabases = maxDatabaseExpected, MaxReaders = maxReadersExpected};
-        _env = new LightningEnvironment(_path, config);
+        CreateEnvironment(config: config);
         Assert.Equal(mapExpected, _env.MapSize);
         Assert.Equal(maxDatabaseExpected, _env.MaxDatabases);
         Assert.Equal(maxReadersExpected, _env.MaxReaders);
@@ -46,7 +29,7 @@ public class EnvironmentTests : IDisposable
     [Fact]
     public void StartingTransactionBeforeEnvironmentOpen()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         Assert.Throws<InvalidOperationException>(() => _env.BeginTransaction());
     }
 
@@ -54,7 +37,7 @@ public class EnvironmentTests : IDisposable
     public void CanGetEnvironmentInfo()
     {
         const long mapSize = 1024 * 1024 * 200;
-        _env = new LightningEnvironment(_path, new EnvironmentConfiguration
+        CreateEnvironment(config: new EnvironmentConfiguration
         {
             MapSize = mapSize
         });
@@ -67,7 +50,7 @@ public class EnvironmentTests : IDisposable
     public void CanGetLargeEnvironmentInfo()
     {
         const long mapSize = 1024 * 1024 * 1024 * 3L;
-        _env = new LightningEnvironment(_path, new EnvironmentConfiguration
+        CreateEnvironment(config: new EnvironmentConfiguration
         {
             MapSize = mapSize
         });
@@ -80,12 +63,12 @@ public class EnvironmentTests : IDisposable
     public void MaxDatabasesWorksThroughConfigIssue62()
     {
         var config = new EnvironmentConfiguration { MaxDatabases = 2 };
-        _env = new LightningEnvironment(_path, config);
+        CreateEnvironment(config: config);
         _env.Open();
         using (var tx = _env.BeginTransaction())
         {
-            tx.OpenDatabase("db1", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
-            tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+            using var db = tx.OpenDatabase("db1", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
+            using var db2 = tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
             tx.Commit();
         }
         Assert.Equal(2, _env.MaxDatabases);
@@ -94,25 +77,25 @@ public class EnvironmentTests : IDisposable
     [Fact]
     public void CanLoadAndDisposeMultipleEnvironments()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         _env.Dispose();
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
     }
 
     [Fact]
     public void EnvironmentShouldBeCreatedIfReadOnly()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         _env.Open(); //readonly requires environment to have been created at least once before
         _env.Dispose();
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment(_env.Path);
         _env.Open(EnvironmentOpenFlags.ReadOnly);
     }
 
     [Fact]
     public void EnvironmentShouldBeOpened()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         _env.Open();
 
         Assert.True(_env.IsOpened);
@@ -121,11 +104,9 @@ public class EnvironmentTests : IDisposable
     [Fact]
     public void EnvironmentShouldBeClosed()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         _env.Open();
-
         _env.Dispose();
-
         Assert.False(_env.IsOpened);
     }
 
@@ -134,22 +115,23 @@ public class EnvironmentTests : IDisposable
     [InlineData(false)]
     public void EnvironmentShouldBeCopied(bool compact)
     {
-        _env = new LightningEnvironment(_path);
-        _env.Open(); 
+        CreateEnvironment();
+        _env.Open();
 
-        _env.CopyTo(_pathCopy, compact).ThrowOnError();
+        var newPath = TempPath();
+        _env.CopyTo(newPath, compact).ThrowOnError();
 
-        if (Directory.GetFiles(_pathCopy).Length == 0)
+        if (Directory.GetFiles(newPath).Length == 0)
             Assert.Fail("Copied files doesn't exist");
     }
 
     [Fact]
     public void EnvironmentShouldFailCopyIfPathIsFile()
     {
-        _env = new LightningEnvironment(_path);
+        CreateEnvironment();
         _env.Open();
 
-        string filePath = Path.Combine(_pathCopy, "test.txt");
+        var filePath = Path.Combine(TempPath(), "test.txt");
         File.WriteAllBytes(filePath, Array.Empty<byte>());
         
         MDBResultCode result = _env.CopyTo(filePath);
@@ -159,19 +141,16 @@ public class EnvironmentTests : IDisposable
     [Fact]
     public void CanOpenEnvironmentMoreThan50Mb()
     {
-        _env = new LightningEnvironment(_path)
-        {
-            MapSize = 55 * 1024 * 1024
-        };
-
+        CreateEnvironment();
+        _env.MapSize = 55 * 1024 * 1024;
         _env.Open();
     }
     
     [Fact]
     public void CanOpenEnvironmentWithSpecialCharacters()
     {
-        _env = new LightningEnvironment(_pathSpecial);
-
+        //all include special character now
+        _env = new LightningEnvironment(TempPath("ß"));
         _env.Open();
     }
 }
