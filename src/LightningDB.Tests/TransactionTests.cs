@@ -93,8 +93,8 @@ public class TransactionTests : TestBase
         {
             var child = tx.BeginTransaction();
             tx.Abort();
-            child.Dispose();
-            Assert.Equal(LightningTransactionState.Released, child.State);
+            var result = child.Commit();
+            Assert.Equal(MDBResultCode.BadTxn, result);
         });
     }
 
@@ -105,8 +105,8 @@ public class TransactionTests : TestBase
         {
             var child = tx.BeginTransaction();
             tx.Commit();
-            child.Dispose();
-            Assert.Equal(LightningTransactionState.Released, child.State);
+            var result = child.Commit();
+            Assert.Equal(MDBResultCode.BadTxn, result);
         });
     }
 

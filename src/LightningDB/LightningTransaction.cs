@@ -276,6 +276,12 @@ public sealed class LightningTransaction : IDisposable
     {
         if(State != LightningTransactionState.Ready)
             throw new InvalidOperationException("Transaction that is not ready cannot be committed");
+        if (ParentTransaction != null && ParentTransaction.State != LightningTransactionState.Ready)
+        {
+            State = ParentTransaction.State;
+            return MDBResultCode.BadTxn;
+        }
+
         State = LightningTransactionState.Done;
         return mdb_txn_commit(_handle);
     }
@@ -329,21 +335,13 @@ public sealed class LightningTransaction : IDisposable
         if (_disposed)
             return;
         _disposed = true;
-        if (!Environment.IsOpened)
-        {
-            State = LightningTransactionState.Done;
-        }
-        else if (ParentTransaction != null && ParentTransaction.State != LightningTransactionState.Ready)
-        {
-            State = ParentTransaction.State;
-        }
-        else if (State is LightningTransactionState.Ready)
+        if (State == LightningTransactionState.Ready && Environment.IsOpened)
         {
             Abort();
         }
+        State = LightningTransactionState.Released;
 
         _handle = default;
-        State = LightningTransactionState.Released;
 
         if (disposing)
         {
