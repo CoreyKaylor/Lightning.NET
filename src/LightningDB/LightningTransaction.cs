@@ -328,13 +328,16 @@ public sealed class LightningTransaction : IDisposable
     {
         if (_disposed)
             return;
-        if (!Environment.IsOpened)
-            State = LightningTransactionState.Done;
         _disposed = true;
-        
-        if(ParentTransaction != null && ParentTransaction.State != LightningTransactionState.Ready)
+        if (!Environment.IsOpened)
+        {
+            State = LightningTransactionState.Done;
+        }
+        else if (ParentTransaction != null && ParentTransaction.State != LightningTransactionState.Ready)
+        {
             State = ParentTransaction.State;
-            
+        }
+
         if (State is LightningTransactionState.Ready)
             Abort();
 
