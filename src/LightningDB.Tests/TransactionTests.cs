@@ -173,7 +173,7 @@ public class TransactionTests : TestBase
         }
 
         var txn = _env.BeginTransaction();
-        using var db = txn.OpenDatabase(configuration: options);
+        using var db = txn.OpenDatabase(configuration: options, closeOnDispose: true);
 
         var keysUnsorted = Enumerable.Range(1, 10000).OrderBy(_ => Guid.NewGuid()).ToList();
         var keysSorted = keysUnsorted.ToArray();
@@ -201,7 +201,7 @@ public class TransactionTests : TestBase
         var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
         int CompareWith(MDBValue l, MDBValue r) => Comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
         options.FindDuplicatesWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));
-        using var db = txn.OpenDatabase(configuration: options);
+        using var db = txn.OpenDatabase(configuration: options, closeOnDispose: true);
 
         var valuesUnsorted = new [] { 2, 10, 5, 0 };
         var valuesSorted = valuesUnsorted.ToArray();
