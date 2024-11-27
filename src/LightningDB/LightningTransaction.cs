@@ -337,9 +337,10 @@ public sealed class LightningTransaction : IDisposable
         {
             State = ParentTransaction.State;
         }
-
-        if (State is LightningTransactionState.Ready)
+        else if (State is LightningTransactionState.Ready)
+        {
             Abort();
+        }
 
         _handle = default;
         State = LightningTransactionState.Released;
