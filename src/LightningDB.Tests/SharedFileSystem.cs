@@ -21,16 +21,9 @@ public class SharedFileSystem : IDisposable
         }
     }
 
-    public string CreateNewDirectoryForTest()
+    public string CreateNewDirectoryForTest(string seed = "")
     {
-        var path = Path.Combine(_testTempDir, "TestDb", Guid.NewGuid().ToString());
-        Directory.CreateDirectory(path);
-        return path;
-    }
-    
-    public string CreateNewDirectoryForSpecialCharacterTest()
-    {
-        var path = Path.Combine(_testTempDir, "Testß", Guid.NewGuid().ToString());
+        var path = Path.Combine(_testTempDir, $"Test{seed}", Guid.NewGuid().ToString());
         Directory.CreateDirectory(path);
         return path;
     }

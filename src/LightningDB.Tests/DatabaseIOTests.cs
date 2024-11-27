@@ -27,6 +27,8 @@ public class DatabaseIOTests : IDisposable
         _txn.Dispose();
         _db.Dispose();
         _env.Dispose();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
     }
 
     [Fact]

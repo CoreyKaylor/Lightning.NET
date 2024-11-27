@@ -1,25 +1,16 @@
-﻿using System;
-using Xunit;
+﻿using Xunit;
 using static System.Text.Encoding;
 
 namespace LightningDB.Tests;
 
-[Collection("SharedFileSystem")]
-public class DatabaseTests : IDisposable
+public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
 {
-    private readonly LightningEnvironment _env;
     private LightningTransaction _txn;
-
-    public DatabaseTests(SharedFileSystem fileSystem)
-    {
-        var path = fileSystem.CreateNewDirectoryForTest();
-        _env = new LightningEnvironment(path);
-    }
-
-    public void Dispose()
+    
+    protected override void Dispose(bool disposing)
     {
         _txn?.Dispose();
-        _env.Dispose();
+        base.Dispose(disposing);
     }
         
     [Fact]

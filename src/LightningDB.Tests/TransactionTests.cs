@@ -7,22 +7,13 @@ using System.Runtime.InteropServices;
 namespace LightningDB.Tests;
 
 [Collection("SharedFileSystem")]
-public class TransactionTests : IDisposable
+public class TransactionTests : TestBase
 {
-    private readonly LightningEnvironment _env;
-
-    public TransactionTests(SharedFileSystem fileSystem)
+    public TransactionTests(SharedFileSystem fileSystem) : base(fileSystem)
     {
-        var path = fileSystem.CreateNewDirectoryForTest();
-        _env = new LightningEnvironment(path);
         _env.Open();
     }
 
-    public void Dispose()
-    {
-        _env.Dispose();
-    }
-        
     [Fact]
     public void CanDeletePreviouslyCommittedWithMultipleValuesByPassingNullForValue()
     {
