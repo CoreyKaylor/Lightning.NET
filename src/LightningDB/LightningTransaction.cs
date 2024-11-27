@@ -335,6 +335,8 @@ public sealed class LightningTransaction : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        if (!Environment.IsOpened)
+            throw new InvalidOperationException("A transaction must be disposed before closing the environment");
         if (State == LightningTransactionState.Ready && Environment.IsOpened)
         {
             Abort();

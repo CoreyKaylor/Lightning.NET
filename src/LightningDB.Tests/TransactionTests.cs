@@ -44,17 +44,6 @@ public class TransactionTests : TestBase
     }
 
     [Fact]
-    public void TransactionShouldBeAbortedIfEnvironmentCloses()
-    {
-        _env.RunTransactionScenario((tx, _) =>
-        {
-            _env.Dispose();
-            tx.Dispose();
-            Assert.Equal(LightningTransactionState.Released, tx.State);
-        });
-    }
-
-    [Fact]
     public void TransactionShouldChangeStateOnCommit()
     {
         _env.RunTransactionScenario((tx, _) =>
@@ -69,7 +58,7 @@ public class TransactionTests : TestBase
     {
         _env.RunTransactionScenario((tx, _) =>
         {
-            var subTxn = tx.BeginTransaction();
+            using var subTxn = tx.BeginTransaction();
             Assert.Equal(LightningTransactionState.Ready, subTxn.State);
             Assert.Same(subTxn.ParentTransaction, tx);
         });
@@ -91,7 +80,7 @@ public class TransactionTests : TestBase
     {
         _env.RunTransactionScenario((tx, _) =>
         {
-            var child = tx.BeginTransaction();
+            using var child = tx.BeginTransaction();
             tx.Abort();
             var result = child.Commit();
             Assert.Equal(MDBResultCode.BadTxn, result);
@@ -103,24 +92,13 @@ public class TransactionTests : TestBase
     {
         _env.RunTransactionScenario((tx, _) =>
         {
-            var child = tx.BeginTransaction();
+            using var child = tx.BeginTransaction();
             tx.Commit();
             var result = child.Commit();
             Assert.Equal(MDBResultCode.BadTxn, result);
         });
     }
 
-    [Fact]
-    public void ChildTransactionShouldBeAbortedIfEnvironmentIsClosed()
-    {
-        _env.RunTransactionScenario((tx, _) =>
-        {
-            var child = tx.BeginTransaction();
-            _env.Dispose();
-            child.Dispose();
-            Assert.Equal(LightningTransactionState.Released, child.State);
-        });
-    }
 
     [Fact]
     public void ReadOnlyTransactionShouldChangeStateOnReset()
@@ -166,13 +144,13 @@ public class TransactionTests : TestBase
         options.CompareWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));
 
         using (var txnT = _env.BeginTransaction())
-        using (var db1 = txnT.OpenDatabase(configuration: options))
+        using (var db1 = txnT.OpenDatabase(configuration: options, closeOnDispose: true))
         {
             txnT.DropDatabase(db1);
             txnT.Commit();
         }
 
-        var txn = _env.BeginTransaction();
+        using var txn = _env.BeginTransaction();
         using var db = txn.OpenDatabase(configuration: options, closeOnDispose: true);
 
         var keysUnsorted = Enumerable.Range(1, 10000).OrderBy(_ => Guid.NewGuid()).ToList();
@@ -197,7 +175,7 @@ public class TransactionTests : TestBase
     {
         int Comparison(int l, int r) => -Math.Sign(l - r);
 
-        var txn = _env.BeginTransaction();
+        using var txn = _env.BeginTransaction();
         var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
         int CompareWith(MDBValue l, MDBValue r) => Comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
         options.FindDuplicatesWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));

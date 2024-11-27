@@ -103,6 +103,10 @@ public sealed class LightningDatabase : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        if (!IsOpened)
+            return;
+        if (!Environment.IsOpened)
+            throw new InvalidOperationException("A transaction must be disposed before closing the environment");
 
         IsOpened = false;
         _pinnedConfig?.Dispose();

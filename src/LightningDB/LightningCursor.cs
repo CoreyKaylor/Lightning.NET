@@ -535,6 +535,8 @@ public class LightningCursor : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        if (!Database.Environment.IsOpened)
+            throw new InvalidOperationException("A database must be disposed before closing the environment");
 
         if (CheckReadOnly() && !disposing)
         {
