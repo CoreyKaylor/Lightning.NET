@@ -3,6 +3,7 @@ using Xunit;
 
 namespace LightningDB.Tests;
 
+[PrintTestMethod]
 [Collection("SharedFileSystem")]
 public class TestBase : IDisposable
 {
