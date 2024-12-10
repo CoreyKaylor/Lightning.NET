@@ -164,4 +164,21 @@ public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
 
         Assert.Equal(MDBResultCode.NotFound, result.resultCode);
     }
+
+    [Fact]
+    public void DatabaseCanGetStats()
+    {
+        _env.Open();
+        using var txn = _env.BeginTransaction();
+        using var db = txn.OpenDatabase();
+        
+        txn.Put(db, "key", 1.ToString()).ThrowOnError();
+        var stats = db.DatabaseStats;
+        Assert.Equal(1, stats.Entries);
+        Assert.Equal(0, stats.BranchPages);
+        Assert.Equal(1, stats.LeafPages);
+        Assert.Equal(0, stats.OverflowPages);
+        Assert.Equal(_env.EnvironmentStats.PageSize, stats.PageSize);
+        Assert.Equal(1, stats.BTreeDepth);
+    }
 }
