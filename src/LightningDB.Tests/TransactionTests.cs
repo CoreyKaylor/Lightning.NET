@@ -136,6 +136,29 @@ public class TransactionTests : TestBase
     }
 
     [Fact]
+    public void CanGetDatabaseStatistics()
+    {
+        _env.RunTransactionScenario((commitTx, db) =>
+        {
+            commitTx.Commit().ThrowOnError();
+            Assert.Throws<LightningException>(() => db.DatabaseStats);
+
+            const int entriesCount = 5;
+            using var tx = _env.BeginTransaction();
+            for (var i = 0; i < entriesCount; i++)
+                tx.Put(db, i.ToString(), i.ToString()).ThrowOnError();
+            
+            var stats = tx.GetStats(db);
+            Assert.Equal(entriesCount, stats.Entries);
+            Assert.Equal(0, stats.BranchPages);
+            Assert.Equal(1, stats.LeafPages);
+            Assert.Equal(0, stats.OverflowPages);
+            Assert.Equal(_env.EnvironmentStats.PageSize, stats.PageSize);
+            Assert.Equal(1, stats.BTreeDepth);
+        });
+    }
+
+    [Fact]
     public void TransactionShouldSupportCustomComparer()
     {
         int Comparison(int l, int r) => l.CompareTo(r);

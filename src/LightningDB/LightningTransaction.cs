@@ -312,6 +312,25 @@ public sealed class LightningTransaction : IDisposable
     }
 
     /// <summary>
+    /// Retrieve the statistics for the specified database.
+    /// </summary>
+    /// <param name="db">The database we are interested in.</param>
+    /// <returns>The retrieved statistics.</returns>
+    public Stats GetStats(LightningDatabase db)
+    {
+        mdb_stat(_handle, db._handle, out var stat).ThrowOnError();
+        return new Stats
+        {
+            BranchPages = stat.ms_branch_pages,
+            BTreeDepth = stat.ms_depth,
+            Entries = stat.ms_entries,
+            LeafPages = stat.ms_leaf_pages,
+            OverflowPages = stat.ms_overflow_pages,
+            PageSize = stat.ms_psize
+        };
+    }
+
+    /// <summary>
     /// Environment in which the transaction was opened.
     /// </summary>
     public LightningEnvironment Environment { get; }
