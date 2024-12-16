@@ -48,22 +48,7 @@ public sealed class LightningDatabase : IDisposable
     /// </summary>
     public bool IsOpened { get; private set; }
 
-    public Stats DatabaseStats
-    {
-        get
-        {
-            mdb_stat(_transaction._handle, _handle, out var nativeStat).ThrowOnError();
-            return new Stats
-            {
-                BranchPages = nativeStat.ms_branch_pages,
-                BTreeDepth = nativeStat.ms_depth,
-                Entries = nativeStat.ms_entries,
-                LeafPages = nativeStat.ms_leaf_pages,
-                OverflowPages = nativeStat.ms_overflow_pages,
-                PageSize = nativeStat.ms_psize
-            };
-        }
-    }
+    public Stats DatabaseStats => _transaction.GetStats(this);
 
     /// <summary>
     /// Database name.
