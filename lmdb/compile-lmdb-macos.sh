@@ -6,6 +6,7 @@ fi
 cd ./lmdb/libraries/liblmdb || exit
 git checkout LMDB_0.9.33
 
+declare -A build_outputs
 declare -A supported_targets=(
   [ios-arm/native/liblmdb.dylib]="make CC='xcrun --sdk iphoneos --toolchain iphoneos clang -arch armv7s' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
   [ios-arm64/native/liblmdb.dylib]="make CC='xcrun --sdk iphoneos --toolchain iphoneos clang -arch arm64' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
@@ -33,6 +34,9 @@ function compile_lib() {
     exit 1
   fi
   echo "Build succeeded for $2"
+  output_hash=$(md5 ./liblmdb.so)
+  echo "$2 $output_hash"
+  build_outputs["$output_hash"]="$2"
   cp ./liblmdb.so ../../../../src/LightningDB/runtimes/"$2"
   sleep 10 
   #seems to be a stateful race condition on the docker run processes so this allows everything to succeed
@@ -41,3 +45,9 @@ function compile_lib() {
 for key in "${!supported_targets[@]}"; do
   compile_lib "${supported_targets[$key]}" $key
 done
+
+if [ ${#supported_targets[@]} -eq ${#build_outputs[@]} ]; then
+    echo "All builds for lmdb supported targets have succeeded"
+else
+    echo "Not all supported targets have produced unique output"
+fi
