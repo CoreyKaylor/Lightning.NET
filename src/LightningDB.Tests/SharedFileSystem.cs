@@ -12,20 +12,18 @@ public class SharedFileSystem : IDisposable
 
     public SharedFileSystem()
     {
-        _testTempDir = Path.Combine(Path.GetTempPath(), "ldbtest");
+        _testTempDir = Path.Combine(Path.GetTempPath(), Environment.Version.ToString(), "ldb");
     }
 
     public void Dispose()
     {
         if (Directory.Exists(_testTempDir))
-        {
             Directory.Delete(_testTempDir, true);
-        }
     }
 
     public string CreateNewDirectoryForTest(string seed = "")
     {
-        var path = Path.Combine(_testTempDir, $"Test{seed}", Guid.NewGuid().ToString());
+        var path = Path.Combine(_testTempDir, $"t{seed}", Guid.NewGuid().ToString());
         Directory.CreateDirectory(path);
         return path;
     }
