@@ -18,6 +18,7 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <None Include="lightningdb.png" Pack="true" Visible="false" PackagePath=""/>
     <None Include="../../LICENSE" Pack="true" PackagePath="" />
   </ItemGroup>
 
