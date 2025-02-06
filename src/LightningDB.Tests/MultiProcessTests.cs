@@ -1,25 +1,17 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Xunit;
+using Shouldly;
 
 namespace LightningDB.Tests;
 
-[Collection("SharedFileSystem")]
-public class MultiProcessTests 
+public class MultiProcessTests : TestBase 
 {
-    private readonly SharedFileSystem _fileSystem;
 
-    public MultiProcessTests(SharedFileSystem fileSystem)
-    {
-        _fileSystem = fileSystem;
-    }
-
-    [Fact]
+    [Test]
     public void can_load_environment_from_multiple_processes()
     {
-        var name = _fileSystem.CreateNewDirectoryForTest();
-        using var env = new LightningEnvironment(name);
+        var env = CreateEnvironment();
         env.Open();
         var otherProcessPath = Path.GetFullPath("SecondProcess.dll");
         using var process = new Process
@@ -27,7 +19,7 @@ public class MultiProcessTests
             StartInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"{otherProcessPath} {name}",
+                Arguments = $"{otherProcessPath} {env.Path}",
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
@@ -45,11 +37,11 @@ public class MultiProcessTests
             
         var current = Process.GetCurrentProcess();
         process.Start();
-        Assert.NotEqual(current.Id, process.Id);
+        current.Id.ShouldNotBe(process.Id);
             
         var result = process.StandardOutput.ReadLine();
         process.WaitForExit();
-        Assert.Equal(expected, result);
+        result.ShouldBe(expected);
     }
 
 }

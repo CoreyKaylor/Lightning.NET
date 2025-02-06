@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
-using Xunit;
+using Shouldly;
 using static System.Text.Encoding;
 
 namespace LightningDB.Tests;
 
 public class CursorTests : TestBase
 {
-    public CursorTests(SharedFileSystem fileSystem) : base(fileSystem)
+    public CursorTests()
     {
         _env.Open();
     }
@@ -21,7 +21,7 @@ public class CursorTests : TestBase
         foreach (var k in keys)
         {
             var result = cursor.Put(k, k, CursorPutOptions.None);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
         }
 
         return keys;
@@ -31,31 +31,31 @@ public class CursorTests : TestBase
     {
         var values = Enumerable.Range(1, 5).Select(BitConverter.GetBytes).ToArray();
         var result = cursor.Put(UTF8.GetBytes(key), values);
-        Assert.Equal(MDBResultCode.Success, result);
+        result.ShouldBe(MDBResultCode.Success);
         var notDuplicate = values[0];
         result = cursor.Put(notDuplicate, notDuplicate, CursorPutOptions.NoDuplicateData);
-        Assert.Equal(MDBResultCode.Success, result);
+        result.ShouldBe(MDBResultCode.Success);
         return values;
     }
 
-    [Fact]
+    [Test]
     public void CursorShouldBeCreated()
     {
-        _env.RunCursorScenario((_, _, c) => Assert.NotNull(c));
+        _env.RunCursorScenario((_, _, c) => c.ShouldNotBeNull());
     }
 
-    [Fact]
+    [Test]
     public void CursorShouldPutValues()
     {
         _env.RunCursorScenario((tx, _, c) =>
         {
             PopulateCursorValues(c);
             var result = tx.Commit();
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
         });
     }
 
-    [Fact]
+    [Test]
     public void CursorShouldSetSpanKey()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -63,13 +63,13 @@ public class CursorTests : TestBase
             var keys = PopulateCursorValues(c);
             var firstKey = keys.First();
             var result = c.Set(firstKey.AsSpan());
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
             var current = c.GetCurrent();
-            Assert.Equal(firstKey, current.key.CopyToNewArray());
+            firstKey.ShouldBe(current.key.CopyToNewArray());
         });
     }
 
-    [Fact]
+    [Test]
     public void CursorShouldMoveToLast()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -77,12 +77,12 @@ public class CursorTests : TestBase
             var keys = PopulateCursorValues(c);
             var lastKey = keys.Last();
             var result = c.Last();
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
-            Assert.Equal(lastKey, result.key.CopyToNewArray());
+            result.resultCode.ShouldBe(MDBResultCode.Success);
+            lastKey.ShouldBe(result.key.CopyToNewArray());
         });
     }
 
-    [Fact]
+    [Test]
     public void CursorShouldMoveToFirst()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -90,12 +90,12 @@ public class CursorTests : TestBase
             var keys = PopulateCursorValues(c);
             var firstKey = keys.First();
             var result = c.First();
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
-            Assert.Equal(firstKey, result.key.CopyToNewArray());
+            result.resultCode.ShouldBe(MDBResultCode.Success);
+            firstKey.ShouldBe(result.key.CopyToNewArray());
         });
     }
 
-    [Fact]
+    [Test]
     public void ShouldIterateThroughCursor()
     {
         _env.RunCursorScenario((tx, db, c) =>
@@ -105,14 +105,14 @@ public class CursorTests : TestBase
             var items = c2.AsEnumerable().Select((x, i) => (x, i)).ToList();
             foreach (var (x, i) in items)
             {
-                Assert.Equal(keys[i], x.Item1.CopyToNewArray());
+                keys[i].ShouldBe(x.Item1.CopyToNewArray());
             }
 
-            Assert.Equal(keys.Length, items.Count);
+            keys.Length.ShouldBe(items.Count);
         });
     }
 
-    [Fact]
+    [Test]
     public void CursorShouldDeleteElements()
     {
         _env.RunCursorScenario((tx, db, c) =>
@@ -125,19 +125,18 @@ public class CursorTests : TestBase
             }
 
             using var c2 = tx.CreateCursor(db);
-            Assert.DoesNotContain(c2.AsEnumerable(), x =>
-                keys.Any(k => x.Item1.CopyToNewArray() == k));
+            c2.AsEnumerable().ShouldNotContain(x => keys.Any(k => x.Item1.CopyToNewArray() == k));
         });
     }
 
-    [Fact]
+    [Test]
     public void ShouldPutMultiple()
     {
         _env.RunCursorScenario((_, _, c) => { PopulateMultipleCursorValues(c); },
             DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
-    [Fact]
+    [Test]
     public void ShouldGetMultiple()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -147,12 +146,12 @@ public class CursorTests : TestBase
             c.Set(key);
             c.NextDuplicate();
             var (resultCode, _, value) = c.GetMultiple();
-            Assert.Equal(MDBResultCode.Success, resultCode);
-            Assert.Equal(keys, value.CopyToNewArray().Split(sizeof(int)).ToArray());
+            resultCode.ShouldBe(MDBResultCode.Success);
+            value.CopyToNewArray().Split(sizeof(int)).ToArray().ShouldBe(keys);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
-    [Fact]
+    [Test]
     public void ShouldGetNextMultiple()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -161,60 +160,60 @@ public class CursorTests : TestBase
             var keys = PopulateMultipleCursorValues(c);
             c.Set(key);
             var (resultCode, _, value) = c.NextMultiple();
-            Assert.Equal(MDBResultCode.Success, resultCode);
-            Assert.Equal(keys, value.CopyToNewArray().Split(sizeof(int)).ToArray());
+            resultCode.ShouldBe(MDBResultCode.Success);
+            value.CopyToNewArray().Split(sizeof(int)).ToArray().ShouldBe(keys);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
-    [Fact]
+    [Test]
     public void ShouldAdvanceKeyToClosestWhenKeyNotFound()
     {
         _env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).First();
             var result = c.Set("key"u8.ToArray());
-            Assert.Equal(MDBResultCode.NotFound, result);
+            result.ShouldBe(MDBResultCode.NotFound);
             var (_, key, _) = c.GetCurrent();
-            Assert.Equal(expected, key.CopyToNewArray());
+            key.CopyToNewArray().ShouldBe(expected);
         });
     }
 
-    [Fact]
+    [Test]
     public void ShouldSetKeyAndGet()
     {
         _env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var result = c.SetKey(expected);
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
-            Assert.Equal(expected, result.key.CopyToNewArray());
+            result.resultCode.ShouldBe(MDBResultCode.Success);
+            result.key.CopyToNewArray().ShouldBe(expected);
         }); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldSetKeyAndGetWithSpan()
     {
         _env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var result = c.SetKey(expected.AsSpan());
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
-            Assert.Equal(expected, result.key.CopyToNewArray());
+            result.resultCode.ShouldBe(MDBResultCode.Success);
+            result.key.CopyToNewArray().ShouldBe(expected);
         }); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldGetBoth()
     {
         _env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var result = c.GetBoth(expected, expected);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldGetBothWithSpan()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -222,11 +221,11 @@ public class CursorTests : TestBase
             var expected = PopulateCursorValues(c).ElementAt(2);
             var expectedSpan = expected.AsSpan();
             var result = c.GetBoth(expectedSpan, expectedSpan);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldMoveToPrevious()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -235,11 +234,11 @@ public class CursorTests : TestBase
             var expectedSpan = expected.AsSpan();
             c.GetBoth(expectedSpan, expectedSpan);
             var result = c.Previous();
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
+            result.resultCode.ShouldBe(MDBResultCode.Success);
         }); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldSetRangeWithSpan()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -247,13 +246,13 @@ public class CursorTests : TestBase
             var values = PopulateCursorValues(c);
             var firstAfter = values[0].AsSpan();
             var result = c.SetRange(firstAfter);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
             var current = c.GetCurrent();
-            Assert.Equal(values[0], current.value.CopyToNewArray());
+            current.value.CopyToNewArray().ShouldBe(values[0]);
         }); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldGetBothRange()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -261,13 +260,13 @@ public class CursorTests : TestBase
             var key = "TestKey"u8.ToArray();
             var values = PopulateMultipleCursorValues(c);
             var result = c.GetBothRange(key, values[1]);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
             var current = c.GetCurrent();
-            Assert.Equal(values[1], current.value.CopyToNewArray());
+            current.value.CopyToNewArray().ShouldBe(values[1]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldGetBothRangeWithSpan()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -275,13 +274,13 @@ public class CursorTests : TestBase
             var key = "TestKey"u8.ToArray().AsSpan();
             var values = PopulateMultipleCursorValues(c);
             var result = c.GetBothRange(key, values[1].AsSpan());
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
             var current = c.GetCurrent();
-            Assert.Equal(values[1], current.value.CopyToNewArray());
+            current.value.CopyToNewArray().ShouldBe(values[1]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldMoveToFirstDuplicate()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -289,14 +288,14 @@ public class CursorTests : TestBase
             var key = "TestKey"u8.ToArray();
             var values = PopulateMultipleCursorValues(c);
             var result = c.GetBothRange(key, values[1]);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
             var dupResult = c.FirstDuplicate();
-            Assert.Equal(MDBResultCode.Success, dupResult.resultCode);
-            Assert.Equal(values[0], dupResult.value.CopyToNewArray());
+            dupResult.resultCode.ShouldBe(MDBResultCode.Success);
+            dupResult.value.CopyToNewArray().ShouldBe(values[0]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldMoveToLastDuplicate()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -305,34 +304,34 @@ public class CursorTests : TestBase
             var values = PopulateMultipleCursorValues(c);
             c.Set(key);
             var result = c.LastDuplicate();
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
-            Assert.Equal(values[4], result.value.CopyToNewArray());
+            result.resultCode.ShouldBe(MDBResultCode.Success);
+            result.value.CopyToNewArray().ShouldBe(values[4]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldMoveToNextNoDuplicate()
     {
         _env.RunCursorScenario((_, _, c) =>
         {
             var values = PopulateMultipleCursorValues(c);
             var result = c.NextNoDuplicate();
-            Assert.Equal(MDBResultCode.Success, result.resultCode);
-            Assert.Equal(values[0], result.value.CopyToNewArray());
+            result.resultCode.ShouldBe(MDBResultCode.Success);
+            result.value.CopyToNewArray().ShouldBe(values[0]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Fact]
+    [Test]
     public void ShouldRenewSameTransaction()
     {
         _env.RunCursorScenario((_, _, c) =>
         {
             var result = c.Renew();
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
         }, transactionFlags: TransactionBeginFlags.ReadOnly); 
     }
 
-    [Fact]
+    [Test]
     public void ShouldDeleteDuplicates()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -342,11 +341,11 @@ public class CursorTests : TestBase
             c.Set(key);
             c.DeleteDuplicateData();
             var result = c.Set(key);
-            Assert.Equal(MDBResultCode.NotFound, result);
+            result.ShouldBe(MDBResultCode.NotFound);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);  
     }
 
-    [Fact]
+    [Test]
     public void CanPutBatchesViaCursorIssue155()
     {
         static LightningDatabase OpenDatabase(LightningEnvironment environment)
@@ -380,10 +379,10 @@ public class CursorTests : TestBase
         {
             ReproduceCoreIteration(_env, db);
         }
-        Assert.True(true, "Code would be unreachable otherwise.");
+        true.ShouldBeTrue("Code would be unreachable otherwise.");
     }
     
-    [Fact]
+    [Test]
     public void CountCursor()
     {
         _env.RunCursorScenario((_, _, c) =>
@@ -394,7 +393,7 @@ public class CursorTests : TestBase
             c.SetRange(key);
             c.Count(out var amount);
             
-            Assert.Equal(5, amount);
+            amount.ShouldBe(5);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 }

@@ -1,69 +1,71 @@
 ﻿using System;
 using System.IO;
-using Xunit;
+using System.Runtime.InteropServices;
+using Shouldly;
 
 namespace LightningDB.Tests;
 
-public class EnvironmentTests(SharedFileSystem fileSystem) : TestBase(fileSystem, false)
+public class EnvironmentTests() : TestBase(false)
 {
-    [Fact]
+    [Test]
     public void EnvironmentShouldBeCreatedIfWithoutFlags()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Open();
     }
 
-    [Fact]
+    [Test]
     public void EnvironmentCreatedFromConfig()
     {
         const int mapExpected = 1024*1024*20;
         const int maxDatabaseExpected = 2;
         const int maxReadersExpected = 3;
         var config = new EnvironmentConfiguration {MapSize = mapExpected, MaxDatabases = maxDatabaseExpected, MaxReaders = maxReadersExpected};
-        CreateEnvironment(config: config);
-        Assert.Equal(mapExpected, _env.MapSize);
-        Assert.Equal(maxDatabaseExpected, _env.MaxDatabases);
-        Assert.Equal(maxReadersExpected, _env.MaxReaders);
+        _env = CreateEnvironment(config: config);
+        _env.MapSize.ShouldBe(mapExpected);
+        _env.MaxDatabases.ShouldBe(maxDatabaseExpected);
+        _env.MaxReaders.ShouldBe(maxReadersExpected);
     }
 
-    [Fact]
+    [Test]
     public void StartingTransactionBeforeEnvironmentOpen()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         Assert.Throws<InvalidOperationException>(() => _env.BeginTransaction());
     }
 
-    [Fact]
+    [Test]
     public void CanGetEnvironmentInfo()
     {
         const long mapSize = 1024 * 1024 * 200;
-        CreateEnvironment(config: new EnvironmentConfiguration
+        _env = CreateEnvironment(config: new EnvironmentConfiguration
         {
             MapSize = mapSize
         });
         _env.Open();
         var info = _env.Info;
-        Assert.Equal(_env.MapSize, info.MapSize);
+        info.MapSize.ShouldBe(_env.MapSize);
     }
 
-    [Not32BitFact]
+    [Test]
     public void CanGetLargeEnvironmentInfo()
-    {
+    { 
+        Skip.When(RuntimeInformation.OSArchitecture == Architecture.X86,"Skipping for x86 platform");
         const long mapSize = 1024 * 1024 * 1024 * 3L;
-        CreateEnvironment(config: new EnvironmentConfiguration
+        _env = CreateEnvironment(config: new EnvironmentConfiguration
         {
             MapSize = mapSize
         });
         _env.Open();
         var info = _env.Info;
-        Assert.Equal(_env.MapSize, info.MapSize);
+        _env.MapSize.ShouldBe(info.MapSize);
     }
 
-    [Fact]
+    [Test]
     public void MaxDatabasesWorksThroughConfigIssue62()
     {
         var config = new EnvironmentConfiguration { MaxDatabases = 2 };
-        CreateEnvironment(config: config);
+        _env = CreateEnvironment(config: config);
         _env.Open();
         using (var tx = _env.BeginTransaction())
         {
@@ -71,51 +73,51 @@ public class EnvironmentTests(SharedFileSystem fileSystem) : TestBase(fileSystem
             using var db2 = tx.OpenDatabase("db2", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
             tx.Commit();
         }
-        Assert.Equal(2, _env.MaxDatabases);
+        _env.MaxDatabases.ShouldBe(2);
     }
 
-    [Fact]
+    [Test]
     public void CanLoadAndDisposeMultipleEnvironments()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Dispose();
-        CreateEnvironment();
+        _env = CreateEnvironment();
     }
 
-    [Fact]
+    [Test]
     public void EnvironmentShouldBeCreatedIfReadOnly()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Open(); //readonly requires environment to have been created at least once before
         _env.Dispose();
-        CreateEnvironment(_env.Path);
+        _env = CreateEnvironment(_env.Path);
         _env.Open(EnvironmentOpenFlags.ReadOnly);
     }
 
-    [Fact]
+    [Test]
     public void EnvironmentShouldBeOpened()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Open();
 
-        Assert.True(_env.IsOpened);
+        _env.IsOpened.ShouldBeTrue();
     }
 
-    [Fact]
+    [Test]
     public void EnvironmentShouldBeClosed()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Open();
         _env.Dispose();
-        Assert.False(_env.IsOpened);
+        _env.IsOpened.ShouldBeFalse();
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
     public void EnvironmentShouldBeCopied(bool compact)
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Open();
 
         var newPath = TempPath();
@@ -125,28 +127,28 @@ public class EnvironmentTests(SharedFileSystem fileSystem) : TestBase(fileSystem
             Assert.Fail("Copied files doesn't exist");
     }
 
-    [Fact]
+    [Test]
     public void EnvironmentShouldFailCopyIfPathIsFile()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.Open();
 
         var filePath = Path.Combine(TempPath(), "test.txt");
         File.WriteAllBytes(filePath, Array.Empty<byte>());
         
         MDBResultCode result = _env.CopyTo(filePath);
-        Assert.NotEqual(MDBResultCode.Success, result);
+        result.ShouldNotBe(MDBResultCode.Success);
     }
 
-    [Fact]
+    [Test]
     public void CanOpenEnvironmentMoreThan50Mb()
     {
-        CreateEnvironment();
+        _env = CreateEnvironment();
         _env.MapSize = 55 * 1024 * 1024;
         _env.Open();
     }
     
-    [Fact]
+    [Test]
     public void CanOpenEnvironmentWithSpecialCharacters()
     {
         //all include special character now

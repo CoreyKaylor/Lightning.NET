@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using Xunit;
+using Shouldly;
 using System.Runtime.InteropServices;
 
 namespace LightningDB.Tests;
 
-[Collection("SharedFileSystem")]
 public class TransactionTests : TestBase
 {
-    public TransactionTests(SharedFileSystem fileSystem) : base(fileSystem)
+    public TransactionTests()
     {
         _env.Open();
     }
 
-    [Fact]
+    [Test]
     public void CanDeletePreviouslyCommittedWithMultipleValuesByPassingNullForValue()
     {
         _env.RunTransactionScenario((tx, db) =>
@@ -28,54 +27,54 @@ public class TransactionTests : TestBase
                 
             using var delTxn = _env.BeginTransaction();
             var result = delTxn.Delete(db, key, null);
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
             result = delTxn.Commit();
-            Assert.Equal(MDBResultCode.Success, result);
+            result.ShouldBe(MDBResultCode.Success);
         }, DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed);
     }
 
-    [Fact]
+    [Test]
     public void TransactionShouldBeCreated()
     {
         _env.RunTransactionScenario((tx, _) =>
         {
-            Assert.Equal(LightningTransactionState.Ready, tx.State);
+            tx.State.ShouldBe(LightningTransactionState.Ready);
         });
     }
 
-    [Fact]
+    [Test]
     public void TransactionShouldChangeStateOnCommit()
     {
         _env.RunTransactionScenario((tx, _) =>
         {
             tx.Commit();
-            Assert.Equal(LightningTransactionState.Done, tx.State);
+            tx.State.ShouldBe(LightningTransactionState.Done);
         });
     }
 
-    [Fact]
+    [Test]
     public void ChildTransactionShouldBeCreated()
     {
         _env.RunTransactionScenario((tx, _) =>
         {
             using var subTxn = tx.BeginTransaction();
-            Assert.Equal(LightningTransactionState.Ready, subTxn.State);
-            Assert.Same(subTxn.ParentTransaction, tx);
+            subTxn.State.ShouldBe(LightningTransactionState.Ready);
+            tx.ShouldBeSameAs(subTxn.ParentTransaction);
         });
     }
 
-    [Fact]
+    [Test]
     public void ResetTransactionAbortedOnDispose()
     {
         _env.RunTransactionScenario((tx, _) =>
         {
             tx.Reset();
             tx.Dispose();
-            Assert.Equal(LightningTransactionState.Released, tx.State);
+            tx.State.ShouldBe(LightningTransactionState.Released);
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
-    [Fact]
+    [Test]
     public void ChildTransactionShouldBeAbortedIfParentIsAborted()
     {
         _env.RunTransactionScenario((tx, _) =>
@@ -83,11 +82,11 @@ public class TransactionTests : TestBase
             using var child = tx.BeginTransaction();
             tx.Abort();
             var result = child.Commit();
-            Assert.Equal(MDBResultCode.BadTxn, result);
+            result.ShouldBe(MDBResultCode.BadTxn);
         });
     }
 
-    [Fact]
+    [Test]
     public void ChildTransactionShouldBeAbortedIfParentIsCommitted()
     {
         _env.RunTransactionScenario((tx, _) =>
@@ -95,33 +94,33 @@ public class TransactionTests : TestBase
             using var child = tx.BeginTransaction();
             tx.Commit();
             var result = child.Commit();
-            Assert.Equal(MDBResultCode.BadTxn, result);
+            result.ShouldBe(MDBResultCode.BadTxn);
         });
     }
 
 
-    [Fact]
+    [Test]
     public void ReadOnlyTransactionShouldChangeStateOnReset()
     {
         _env.RunTransactionScenario((tx, _) =>
         {
             tx.Reset();
-            Assert.Equal(LightningTransactionState.Reset, tx.State);
+            tx.State.ShouldBe(LightningTransactionState.Reset);
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
-    [Fact]
+    [Test]
     public void ReadOnlyTransactionShouldChangeStateOnRenew()
     {
         _env.RunTransactionScenario((tx, _) =>
         {
             tx.Reset();
             tx.Renew();
-            Assert.Equal(LightningTransactionState.Ready, tx.State);
+            tx.State.ShouldBe(LightningTransactionState.Ready);
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
-    [Fact]
+    [Test]
     public void CanCountTransactionEntries()
     {
         _env.RunTransactionScenario((tx, db) =>
@@ -131,17 +130,18 @@ public class TransactionTests : TestBase
                 tx.Put(db, i.ToString(), i.ToString());
 
             var count = tx.GetEntriesCount(db);
-            Assert.Equal(entriesCount, count);
+            count.ShouldBe(entriesCount);
         });
     }
 
-    [Fact]
+    [Test]
     public void CanGetDatabaseStatistics()
     {
         _env.RunTransactionScenario((commitTx, db) =>
         {
             commitTx.Commit().ThrowOnError();
-            Assert.Throws<LightningException>(() => db.DatabaseStats);
+            
+            Should.Throw<LightningException>(() => db.DatabaseStats);
 
             const int entriesCount = 5;
             using var tx = _env.BeginTransaction();
@@ -149,16 +149,16 @@ public class TransactionTests : TestBase
                 tx.Put(db, i.ToString(), i.ToString()).ThrowOnError();
             
             var stats = tx.GetStats(db);
-            Assert.Equal(entriesCount, stats.Entries);
-            Assert.Equal(0, stats.BranchPages);
-            Assert.Equal(1, stats.LeafPages);
-            Assert.Equal(0, stats.OverflowPages);
-            Assert.Equal(_env.EnvironmentStats.PageSize, stats.PageSize);
-            Assert.Equal(1, stats.BTreeDepth);
+            stats.Entries.ShouldBe(entriesCount);
+            stats.BranchPages.ShouldBe(0);
+            stats.LeafPages.ShouldBe(1);
+            stats.OverflowPages.ShouldBe(0);
+            stats.PageSize.ShouldBe(_env.EnvironmentStats.PageSize);
+            stats.BTreeDepth.ShouldBe(1);
         });
     }
 
-    [Fact]
+    [Test]
     public void TransactionShouldSupportCustomComparer()
     {
         int Comparison(int l, int r) => l.CompareTo(r);
@@ -189,11 +189,11 @@ public class TransactionTests : TestBase
             var order = 0;
             (MDBResultCode, MDBValue, MDBValue) result;
             while ((result = c.Next()).Item1 == MDBResultCode.Success)
-                Assert.Equal(keysSorted[order++], BitConverter.ToInt32(result.Item2.CopyToNewArray(), 0));
+                BitConverter.ToInt32(result.Item2.CopyToNewArray()).ShouldBe(keysSorted[order++]);
         }
     }
 
-    [Fact]
+    [Test]
     public void TransactionShouldSupportCustomDupSorter()
     {
         int Comparison(int l, int r) => -Math.Sign(l - r);
@@ -217,7 +217,7 @@ public class TransactionTests : TestBase
 
             (MDBResultCode, MDBValue, MDBValue) result;
             while ((result = c.Next()).Item1 == MDBResultCode.Success)
-                Assert.Equal(valuesSorted[order++], BitConverter.ToInt32(result.Item3.CopyToNewArray(), 0));
+                BitConverter.ToInt32(result.Item3.CopyToNewArray()).ShouldBe(valuesSorted[order++]);
         }
     }
 }

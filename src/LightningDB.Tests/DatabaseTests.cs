@@ -1,19 +1,12 @@
-﻿using Xunit;
+﻿using Shouldly;
 using static System.Text.Encoding;
 
 namespace LightningDB.Tests;
 
-public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
+public class DatabaseTests : TestBase
 {
-    private LightningTransaction _txn;
     
-    protected override void Dispose(bool disposing)
-    {
-        _txn?.Dispose();
-        base.Dispose(disposing);
-    }
-        
-    [Fact]
+    [Test]
     public void DatabaseShouldBeCreated()
     {
         const string dbName = "test";
@@ -27,24 +20,24 @@ public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
         using (var txn = _env.BeginTransaction())
         using (var db = txn.OpenDatabase(dbName, new DatabaseConfiguration { Flags = DatabaseOpenFlags.None }))
         {
-            Assert.False(db.IsReleased);
+            db.IsReleased.ShouldBeFalse();
             txn.Commit();
         }
     }
 
-    [Fact]
+    [Test]
     public void DatabaseShouldBeClosed()
     {
         _env.Open();
-        _txn = _env.BeginTransaction();
-        var db = _txn.OpenDatabase();
+        using var txn = _env.BeginTransaction();
+        var db = txn.OpenDatabase();
 
         db.Dispose();
 
-        Assert.False(db.IsOpened);
+        db.IsOpened.ShouldBeFalse();
     }
 
-    [Fact]
+    [Test]
     public void DatabaseFromCommittedTransactionShouldBeAccessible()
     {
         _env.Open();
@@ -64,7 +57,7 @@ public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
         }
     }
 
-    [Fact]
+    [Test]
     public void NamedDatabaseNameExistsInMaster()
     {
         _env.MaxDatabases = 2;
@@ -81,12 +74,13 @@ public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
             using (var cursor = tx.CreateCursor(db))
             {
                 cursor.Next();
-                Assert.Equal("customdb", UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()));
+                UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray())
+                    .ShouldBe("customdb");
             }
         }
     }
 
-    [Fact]
+    [Test]
     public void ReadonlyTransactionOpenedDatabasesDontGetReused()
     {
         //This is here to assert that previous issues with the way manager
@@ -104,68 +98,69 @@ public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
         {
             using var db = tx.OpenDatabase("custom");
             var result = tx.Get(db, "hello");
-            Assert.Equal("world", result);
+            result.ShouldBe("world");
         }
         using (var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly))
         {
             using var db = tx.OpenDatabase("custom");
             var result = tx.Get(db, "hello");
-            Assert.Equal("world", result);
+            result.ShouldBe("world");
         }
     }
 
-    [Fact]
+    [Test]
     public void DatabaseShouldBeDropped()
     {
         _env.MaxDatabases = 2;
         _env.Open();
-        _txn = _env.BeginTransaction();
-        var db = _txn.OpenDatabase("notmaster", new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create});
-        _txn.Commit();
-        _txn.Dispose();
-        db.Dispose();
+        using (var txn = _env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase("notmaster", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            txn.Commit();
+        }
 
-        _txn = _env.BeginTransaction();
-        db = _txn.OpenDatabase("notmaster");
+        using (var txn = _env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase("notmaster");
+            db.Drop(txn);
+            txn.Commit();
+        }
 
-        db.Drop(_txn);
-        db.Dispose();
-        _txn.Commit();
-        _txn.Dispose();
-
-        _txn = _env.BeginTransaction();
-
-        var ex = Assert.Throws<LightningException>(() => _txn.OpenDatabase("notmaster"));
-
-        Assert.Equal(-30798, ex.StatusCode);
+        using (var txn = _env.BeginTransaction())
+        {
+            var ex = Assert.Throws<LightningException>(() => txn.OpenDatabase("notmaster"));
+            ex.StatusCode.ShouldBe(-30798);
+        }
     }
 
-    [Fact]
+    [Test]
     public void TruncatingTheDatabase()
     {
         _env.Open();
-        _txn = _env.BeginTransaction();
-        var db = _txn.OpenDatabase();
+        using (var txn = _env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase();
 
-        _txn.Put(db, "hello", "world");
-        db.Dispose();
-        _txn.Commit();
-        _txn.Dispose();
-        _txn = _env.BeginTransaction();
-        db = _txn.OpenDatabase();
-        db.Truncate(_txn);
-        db.Dispose();
-        _txn.Commit();
-        _txn.Dispose();
-        _txn = _env.BeginTransaction();
-        db = _txn.OpenDatabase();
-        var result = _txn.Get(db, "hello"u8.ToArray());
-        db.Dispose();
+            txn.Put(db, "hello", "world");
+            txn.Commit();
+        }
 
-        Assert.Equal(MDBResultCode.NotFound, result.resultCode);
+        using (var txn = _env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase();
+            db.Truncate(txn);
+            txn.Commit();
+        }
+
+        using (var txn = _env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase();
+            var result = txn.Get(db, "hello"u8.ToArray());
+            result.resultCode.ShouldBe(MDBResultCode.NotFound);
+        }
     }
 
-    [Fact]
+    [Test]
     public void DatabaseCanGetStats()
     {
         _env.Open();
@@ -174,11 +169,11 @@ public class DatabaseTests(SharedFileSystem fileSystem) : TestBase(fileSystem)
         
         txn.Put(db, "key", 1.ToString()).ThrowOnError();
         var stats = db.DatabaseStats;
-        Assert.Equal(1, stats.Entries);
-        Assert.Equal(0, stats.BranchPages);
-        Assert.Equal(1, stats.LeafPages);
-        Assert.Equal(0, stats.OverflowPages);
-        Assert.Equal(_env.EnvironmentStats.PageSize, stats.PageSize);
-        Assert.Equal(1, stats.BTreeDepth);
+        stats.Entries.ShouldBe(1);
+        stats.BranchPages.ShouldBe(0);
+        stats.LeafPages.ShouldBe(1);
+        stats.OverflowPages.ShouldBe(0);
+        stats.PageSize.ShouldBe(_env.EnvironmentStats.PageSize);
+        stats.BTreeDepth.ShouldBe(1);
     }
 }

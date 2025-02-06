@@ -1,32 +1,39 @@
 using System;
-using Xunit;
+using System.IO;
 
 namespace LightningDB.Tests;
 
-[Collection("SharedFileSystem")]
-public class TestBase : IDisposable
+public class TestBase
 {
-   private readonly SharedFileSystem _fileSystem;
+   private static string _tempPath = Path.Combine(Path.GetTempPath(), $"lightningtests-{Environment.Version.ToString()}");
    protected LightningEnvironment _env;
    
-   protected TestBase(SharedFileSystem fileSystem, bool createEnvironment = true)
+   protected TestBase(bool createEnvironment = true)
    {
-      _fileSystem = fileSystem;
       if(createEnvironment)
-         CreateEnvironment();
+         _env = CreateEnvironment();
    }
 
-   protected string TempPath(string seed = "") => _fileSystem.CreateNewDirectoryForTest(seed);
-   protected void CreateEnvironment(string path = null, EnvironmentConfiguration config = null) => _env = new LightningEnvironment(path ?? TempPath(), config);
-
-   public void Dispose()
+   protected string TempPath(string seed = "")
    {
-      Dispose(true);
+      var path = Path.Combine(_tempPath, $"t{seed}", Guid.NewGuid().ToString());
+      Directory.CreateDirectory(path);
+      return path;
    }
+   protected LightningEnvironment CreateEnvironment(string path = null, EnvironmentConfiguration config = null) => 
+      new(path ?? TempPath(), config);
 
-   protected virtual void Dispose(bool disposing)
+   [After(Test)]
+   public void Cleanup()
    {
       _env?.Dispose();
       _env = null;
+   }
+
+   [After(TestSession)]
+   public static void CleanupSession()
+   {
+      if(Directory.Exists(_tempPath))
+         Directory.Delete(_tempPath, true);
    }
 }
