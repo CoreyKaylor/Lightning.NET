@@ -8,15 +8,12 @@ namespace LightningDB.Tests;
 
 public class TransactionTests : TestBase
 {
-    public TransactionTests()
-    {
-        _env.Open();
-    }
-
     [Test]
     public void CanDeletePreviouslyCommittedWithMultipleValuesByPassingNullForValue()
     {
-        _env.RunTransactionScenario((tx, db) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, db) =>
         {
             var key = MemoryMarshal.Cast<char, byte>("abcd");
 
@@ -25,7 +22,7 @@ public class TransactionTests : TestBase
             tx.Commit();
             tx.Dispose();
                 
-            using var delTxn = _env.BeginTransaction();
+            using var delTxn = env.BeginTransaction();
             var result = delTxn.Delete(db, key, null);
             result.ShouldBe(MDBResultCode.Success);
             result = delTxn.Commit();
@@ -36,7 +33,9 @@ public class TransactionTests : TestBase
     [Test]
     public void TransactionShouldBeCreated()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             tx.State.ShouldBe(LightningTransactionState.Ready);
         });
@@ -45,7 +44,9 @@ public class TransactionTests : TestBase
     [Test]
     public void TransactionShouldChangeStateOnCommit()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             tx.Commit();
             tx.State.ShouldBe(LightningTransactionState.Done);
@@ -55,7 +56,9 @@ public class TransactionTests : TestBase
     [Test]
     public void ChildTransactionShouldBeCreated()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             using var subTxn = tx.BeginTransaction();
             subTxn.State.ShouldBe(LightningTransactionState.Ready);
@@ -66,7 +69,9 @@ public class TransactionTests : TestBase
     [Test]
     public void ResetTransactionAbortedOnDispose()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             tx.Reset();
             tx.Dispose();
@@ -77,7 +82,9 @@ public class TransactionTests : TestBase
     [Test]
     public void ChildTransactionShouldBeAbortedIfParentIsAborted()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             using var child = tx.BeginTransaction();
             tx.Abort();
@@ -89,7 +96,9 @@ public class TransactionTests : TestBase
     [Test]
     public void ChildTransactionShouldBeAbortedIfParentIsCommitted()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             using var child = tx.BeginTransaction();
             tx.Commit();
@@ -102,7 +111,9 @@ public class TransactionTests : TestBase
     [Test]
     public void ReadOnlyTransactionShouldChangeStateOnReset()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             tx.Reset();
             tx.State.ShouldBe(LightningTransactionState.Reset);
@@ -112,7 +123,9 @@ public class TransactionTests : TestBase
     [Test]
     public void ReadOnlyTransactionShouldChangeStateOnRenew()
     {
-        _env.RunTransactionScenario((tx, _) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, _) =>
         {
             tx.Reset();
             tx.Renew();
@@ -123,7 +136,9 @@ public class TransactionTests : TestBase
     [Test]
     public void CanCountTransactionEntries()
     {
-        _env.RunTransactionScenario((tx, db) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, db) =>
         {
             const int entriesCount = 10;
             for (var i = 0; i < entriesCount; i++)
@@ -137,14 +152,16 @@ public class TransactionTests : TestBase
     [Test]
     public void CanGetDatabaseStatistics()
     {
-        _env.RunTransactionScenario((commitTx, db) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((commitTx, db) =>
         {
             commitTx.Commit().ThrowOnError();
             
             Should.Throw<LightningException>(() => db.DatabaseStats);
 
             const int entriesCount = 5;
-            using var tx = _env.BeginTransaction();
+            using var tx = env.BeginTransaction();
             for (var i = 0; i < entriesCount; i++)
                 tx.Put(db, i.ToString(), i.ToString()).ThrowOnError();
             
@@ -153,7 +170,7 @@ public class TransactionTests : TestBase
             stats.BranchPages.ShouldBe(0);
             stats.LeafPages.ShouldBe(1);
             stats.OverflowPages.ShouldBe(0);
-            stats.PageSize.ShouldBe(_env.EnvironmentStats.PageSize);
+            stats.PageSize.ShouldBe(env.EnvironmentStats.PageSize);
             stats.BTreeDepth.ShouldBe(1);
         });
     }
@@ -166,14 +183,16 @@ public class TransactionTests : TestBase
         int CompareWith(MDBValue l, MDBValue r) => Comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
         options.CompareWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));
 
-        using (var txnT = _env.BeginTransaction())
+        using var env = CreateEnvironment();
+        env.Open();
+        using (var txnT = env.BeginTransaction())
         using (var db1 = txnT.OpenDatabase(configuration: options, closeOnDispose: true))
         {
             txnT.DropDatabase(db1);
             txnT.Commit();
         }
 
-        using var txn = _env.BeginTransaction();
+        using var txn = env.BeginTransaction();
         using var db = txn.OpenDatabase(configuration: options, closeOnDispose: true);
 
         var keysUnsorted = Enumerable.Range(1, 10000).OrderBy(_ => Guid.NewGuid()).ToList();
@@ -198,7 +217,9 @@ public class TransactionTests : TestBase
     {
         int Comparison(int l, int r) => -Math.Sign(l - r);
 
-        using var txn = _env.BeginTransaction();
+        using var env = CreateEnvironment();
+        env.Open();
+        using var txn = env.BeginTransaction();
         var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
         int CompareWith(MDBValue l, MDBValue r) => Comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
         options.FindDuplicatesWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));

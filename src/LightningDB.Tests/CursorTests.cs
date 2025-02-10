@@ -7,11 +7,6 @@ namespace LightningDB.Tests;
 
 public class CursorTests : TestBase
 {
-    public CursorTests()
-    {
-        _env.Open();
-    }
-
     private static byte[][] PopulateCursorValues(LightningCursor cursor, int count = 5, string keyPrefix = "key")
     {
         var keys = Enumerable.Range(1, count)
@@ -41,13 +36,17 @@ public class CursorTests : TestBase
     [Test]
     public void CursorShouldBeCreated()
     {
-        _env.RunCursorScenario((_, _, c) => c.ShouldNotBeNull());
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) => c.ShouldNotBeNull());
     }
 
     [Test]
     public void CursorShouldPutValues()
     {
-        _env.RunCursorScenario((tx, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((tx, _, c) =>
         {
             PopulateCursorValues(c);
             var result = tx.Commit();
@@ -58,7 +57,9 @@ public class CursorTests : TestBase
     [Test]
     public void CursorShouldSetSpanKey()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var keys = PopulateCursorValues(c);
             var firstKey = keys.First();
@@ -72,7 +73,9 @@ public class CursorTests : TestBase
     [Test]
     public void CursorShouldMoveToLast()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var keys = PopulateCursorValues(c);
             var lastKey = keys.Last();
@@ -85,7 +88,9 @@ public class CursorTests : TestBase
     [Test]
     public void CursorShouldMoveToFirst()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var keys = PopulateCursorValues(c);
             var firstKey = keys.First();
@@ -98,7 +103,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldIterateThroughCursor()
     {
-        _env.RunCursorScenario((tx, db, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((tx, db, c) =>
         {
             var keys = PopulateCursorValues(c);
             using var c2 = tx.CreateCursor(db);
@@ -115,7 +122,9 @@ public class CursorTests : TestBase
     [Test]
     public void CursorShouldDeleteElements()
     {
-        _env.RunCursorScenario((tx, db, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((tx, db, c) =>
         {
             var keys = PopulateCursorValues(c).Take(2).ToArray();
             for (var i = 0; i < 2; ++i)
@@ -132,14 +141,18 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldPutMultiple()
     {
-        _env.RunCursorScenario((_, _, c) => { PopulateMultipleCursorValues(c); },
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) => { PopulateMultipleCursorValues(c); },
             DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
     [Test]
     public void ShouldGetMultiple()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             var keys = PopulateMultipleCursorValues(c);
@@ -154,7 +167,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldGetNextMultiple()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             var keys = PopulateMultipleCursorValues(c);
@@ -168,7 +183,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldAdvanceKeyToClosestWhenKeyNotFound()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).First();
             var result = c.Set("key"u8.ToArray());
@@ -181,7 +198,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldSetKeyAndGet()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var result = c.SetKey(expected);
@@ -193,7 +212,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldSetKeyAndGetWithSpan()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var result = c.SetKey(expected.AsSpan());
@@ -205,7 +226,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldGetBoth()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var result = c.GetBoth(expected, expected);
@@ -216,7 +239,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldGetBothWithSpan()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var expectedSpan = expected.AsSpan();
@@ -228,7 +253,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldMoveToPrevious()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var expected = PopulateCursorValues(c).ElementAt(2);
             var expectedSpan = expected.AsSpan();
@@ -241,7 +268,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldSetRangeWithSpan()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var values = PopulateCursorValues(c);
             var firstAfter = values[0].AsSpan();
@@ -255,7 +284,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldGetBothRange()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             var values = PopulateMultipleCursorValues(c);
@@ -269,7 +300,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldGetBothRangeWithSpan()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray().AsSpan();
             var values = PopulateMultipleCursorValues(c);
@@ -283,7 +316,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldMoveToFirstDuplicate()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             var values = PopulateMultipleCursorValues(c);
@@ -298,7 +333,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldMoveToLastDuplicate()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             var values = PopulateMultipleCursorValues(c);
@@ -312,7 +349,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldMoveToNextNoDuplicate()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var values = PopulateMultipleCursorValues(c);
             var result = c.NextNoDuplicate();
@@ -324,7 +363,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldRenewSameTransaction()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var result = c.Renew();
             result.ShouldBe(MDBResultCode.Success);
@@ -334,7 +375,9 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldDeleteDuplicates()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             PopulateMultipleCursorValues(c);
@@ -373,11 +416,13 @@ public class CursorTests : TestBase
             tx.Commit().ThrowOnError();
         }
 
-        using var db = OpenDatabase(_env);
+        using var env = CreateEnvironment();
+        env.Open();
+        using var db = OpenDatabase(env);
 
         for (var i = 0; i < 5000; i++)
         {
-            ReproduceCoreIteration(_env, db);
+            ReproduceCoreIteration(env, db);
         }
         true.ShouldBeTrue("Code would be unreachable otherwise.");
     }
@@ -385,7 +430,9 @@ public class CursorTests : TestBase
     [Test]
     public void CountCursor()
     {
-        _env.RunCursorScenario((_, _, c) =>
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
         {
             var key = "TestKey"u8.ToArray();
             var keys = PopulateMultipleCursorValues(c);

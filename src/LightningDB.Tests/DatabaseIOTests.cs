@@ -4,10 +4,11 @@ namespace LightningDB.Tests;
 
 public class DatabaseIOTests : TestBase
 {
+    private readonly LightningEnvironment _env;
     private readonly LightningTransaction _txn;
     private readonly LightningDatabase _db;
 
-    public DatabaseIOTests() : base(false)
+    public DatabaseIOTests()
     {
         _env = CreateEnvironment(TempPath(), new EnvironmentConfiguration { MaxDatabases = 2});
         _env.Open();
@@ -21,6 +22,7 @@ public class DatabaseIOTests : TestBase
     {
         _txn.Dispose();
         _db.Dispose();
+        _env.Dispose();
     }
 
     [Test]

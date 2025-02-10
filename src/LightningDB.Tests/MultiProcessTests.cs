@@ -11,7 +11,7 @@ public class MultiProcessTests : TestBase
     [Test]
     public void can_load_environment_from_multiple_processes()
     {
-        var env = CreateEnvironment();
+        using var env = CreateEnvironment();
         env.Open();
         var otherProcessPath = Path.GetFullPath("SecondProcess.dll");
         using var process = new Process
