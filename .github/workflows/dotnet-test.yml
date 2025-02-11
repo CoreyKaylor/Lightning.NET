@@ -30,4 +30,6 @@ jobs:
         run: dotnet build --no-restore
       - name: Test
         working-directory: ${{ runner.workspace }}/Lightning.NET
-        run: dotnet test --no-build --no-restore --verbosity normal
+        run: |
+          dotnet run --project src/LightningDB.Tests --no-build --no-restore --verbosity normal --framework net9.0
+          dotnet run --project src/LightningDB.Tests --no-build --no-restore --verbosity normal --framework net8.0
