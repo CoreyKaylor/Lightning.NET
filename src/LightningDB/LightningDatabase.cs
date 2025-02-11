@@ -4,7 +4,9 @@ using static LightningDB.Native.Lmdb;
 namespace LightningDB;
 
 /// <summary>
-/// Lightning database.
+/// Represents a database in the Lightning environment, providing mechanisms to perform
+/// various operations such as opening, dropping, and accessing database statistics. Generally,
+/// a database can be reused and rarely needs to be disposed.
 /// </summary>
 public sealed class LightningDatabase : IDisposable
 {

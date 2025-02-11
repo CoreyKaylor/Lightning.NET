@@ -7,7 +7,7 @@ using static LightningDB.Native.Lmdb;
 namespace LightningDB;
 
 /// <summary>
-/// Cursor to iterate over a database
+/// Represents a cursor used to navigate and manipulate records within a database in the context of a transaction.
 /// </summary>
 public class LightningCursor : IDisposable
 {

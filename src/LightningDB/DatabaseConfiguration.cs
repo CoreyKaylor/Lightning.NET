@@ -6,6 +6,10 @@ using static LightningDB.Native.Lmdb;
 
 namespace LightningDB;
 
+/// <summary>
+/// Represents the configuration for a database in the LightningDB library.
+/// Allows setting custom flags and configuring comparer logic for database operations.
+/// </summary>
 public class DatabaseConfiguration
 {
     private IComparer<MDBValue> _comparer;
@@ -16,6 +20,15 @@ public class DatabaseConfiguration
         Flags = DatabaseOpenFlags.None;
     }
 
+    /// <summary>
+    /// Gets or sets the configuration flags used when opening a database.
+    /// </summary>
+    /// <remarks>
+    /// The <see cref="Flags"/> property specifies the behavior of the database based on the combination of
+    /// values from the <see cref="DatabaseOpenFlags"/> enumeration. These flags determine how the database
+    /// should be opened and interacted with, such as creating new databases, sorting duplicates, or using
+    /// integer keys. The default value is <see cref="DatabaseOpenFlags.None"/>.
+    /// </remarks>
     public DatabaseOpenFlags Flags { get; set; }
 
 
@@ -46,11 +59,23 @@ public class DatabaseConfiguration
         return _duplicatesComparer.Compare(left, right);
     }
 
+    /// <summary>
+    /// Sets a custom comparer for database operations using the specified comparer.
+    /// </summary>
+    /// <param name="comparer">
+    /// The comparer implementation to use for comparing MDBValue objects.
+    /// </param>
     public void CompareWith(IComparer<MDBValue> comparer)
     {
         _comparer = comparer;
     }
 
+    /// <summary>
+    /// Sets a custom comparer for detecting duplicate records in the database.
+    /// </summary>
+    /// <param name="comparer">
+    /// The comparer implementation to use for identifying duplicates between MDBValue objects.
+    /// </param>
     public void FindDuplicatesWith(IComparer<MDBValue> comparer)
     {
         _duplicatesComparer = comparer;

@@ -5,7 +5,9 @@ using static LightningDB.Native.Lmdb;
 namespace LightningDB;
 
 /// <summary>
-/// Represents a transaction.
+/// Represents a transaction in the LightningDB environment.
+/// Provides methods for managing database operations within the scope of a transaction, including
+/// database access, key-value storage, and transaction control (commit, abort, etc.).
 /// </summary>
 public sealed class LightningTransaction : IDisposable
 {
@@ -371,7 +373,7 @@ public sealed class LightningTransaction : IDisposable
     }
 
     /// <summary>
-    /// Dispose this transaction and deallocate all resources associated with it (including databases).
+    /// Dispose this transaction
     /// </summary>
     public void Dispose()
     {

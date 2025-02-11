@@ -5,7 +5,9 @@ using static LightningDB.Native.Lmdb;
 namespace LightningDB;
 
 /// <summary>
-/// LMDB Environment.
+/// Represents a managed environment for lightning-fast database storage and retrieval. Typically, your application
+/// will have one instance of LightningEnvironment. Also, it is possible for separate processes to read from the
+/// same environment when set to read-only.
 /// </summary>
 public sealed class LightningEnvironment : IDisposable
 {
