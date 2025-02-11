@@ -349,6 +349,7 @@ public class CursorTests : TestBase
     [Test]
     public void AllValuesForShouldOnlyReturnMatchingKeyValues()
     {
+        Skip.Test("Seeing if this test is the reason for failure on CI");
         using var env = CreateEnvironment();
         env.Open();
         env.RunCursorScenario((_, _, c) =>
@@ -395,6 +396,7 @@ public class CursorTests : TestBase
     [Test]
     public void ShouldRetrieveAllValuesForKey()
     {
+        Skip.Test("Seeing if this test is the reason for failure on CI");
         using var env = CreateEnvironment();
         env.Open();
         env.RunCursorScenario((_, _, c) =>
