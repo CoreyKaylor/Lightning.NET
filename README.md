@@ -157,7 +157,7 @@ In this example:
 
 ## Additional Resources
 
-For more detailed examples and advanced usage, refer to the unit tests in the [Lightning.NET repository](https://github.com/CoreyKaylor/Lightning.NET). 
+For more detailed examples and advanced usage, refer to the unit tests in the [Lightning.NET](https://github.com/CoreyKaylor/Lightning.NET) repository. 
 
-The official <a href="http://lmdb.tech/doc" target="_blank">Official LMDB API documentation</a>
+The <a href="http://lmdb.tech/doc" target="_blank">Official LMDB API documentation</a>
 is also a valuable resource for understanding the underlying database engine.
