@@ -19,7 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="TUnit" Version="0.10.24" />
+    <PackageReference Include="TUnit" Version="0.11.0" />
   </ItemGroup>
 
   <Import Project="..\LightningDB\LightningDB.targets" />
