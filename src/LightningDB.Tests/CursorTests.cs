@@ -345,6 +345,37 @@ public class CursorTests : TestBase
             result.value.CopyToNewArray().ShouldBe(values[4]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
+    
+    [Test]
+    public void AllValuesForShouldOnlyReturnMatchingKeyValues()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
+        {
+            var key1 = "TestKey1"u8.ToArray();
+            var key2 = "TestKey2"u8.ToArray();
+    
+            var key1Values = Enumerable.Range(1, 5).Select(i => UTF8.GetBytes($"key1_value{i}")).ToArray();
+            var key2Values = Enumerable.Range(1, 3).Select(i => UTF8.GetBytes($"key2_value{i}")).ToArray();
+    
+            foreach (var value in key1Values)
+            {
+                c.Put(key1, value, CursorPutOptions.None);
+            }
+    
+            foreach (var value in key2Values)
+            {
+                c.Put(key2, value, CursorPutOptions.None);
+            }
+    
+            var allKey1Values = c.AllValuesFor(key1).Select(v => v.CopyToNewArray()).ToArray();
+            var allKey2Values = c.AllValuesFor(key2).Select(v => v.CopyToNewArray()).ToArray();
+    
+            allKey1Values.ShouldBe(key1Values);
+            allKey2Values.ShouldBe(key2Values);
+        }, DatabaseOpenFlags.DuplicatesSort | DatabaseOpenFlags.Create);
+    }
         
     [Test]
     public void ShouldMoveToNextNoDuplicate()
@@ -359,7 +390,32 @@ public class CursorTests : TestBase
             result.value.CopyToNewArray().ShouldBe(values[0]);
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
-        
+    
+    
+    [Test]
+    public void ShouldRetrieveAllValuesForKey()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
+        {
+            var key = "TestKey"u8.ToArray();
+            var values = Enumerable.Range(1, 5).Select(i => UTF8.GetBytes($"value{i}")).ToArray();
+    
+            // Insert multiple values for the same key with DuplicateSort option
+            foreach (var value in values)
+            {
+                c.Put(key, value, CursorPutOptions.None);
+            }
+    
+            // Fetch all values using the AllValuesFor method
+            var retrievedValues = c.AllValuesFor(key).Select(v => v.CopyToNewArray()).ToArray();
+    
+            // Verify all inserted values are retrieved
+            retrievedValues.ShouldBe(values);
+        }, DatabaseOpenFlags.DuplicatesSort | DatabaseOpenFlags.Create);
+    }
+    
     [Test]
     public void ShouldRenewSameTransaction()
     {

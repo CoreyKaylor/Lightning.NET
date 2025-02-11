@@ -70,6 +70,50 @@ public static class LightningExtensions
         }
         result.Item1.ThrowOnReadError();
     }
+    
+    /// <summary>
+    /// Enumerates the values for a given key. Requires MDB_DUPSORT
+    /// </summary>
+    /// <param name="cursor"><see cref="LightningCursor"/></param>
+    /// <param name="key">The key with multiple values</param>
+    /// <returns><see cref="MDBValue"/> representing each value for a given key</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<MDBValue> AllValuesFor(this LightningCursor cursor, byte[] key)
+    {
+        return cursor.AllValuesFor(key.AsSpan());
+    }
+
+    /// <summary>
+    /// Enumerates the values for a given key. Requires MDB_DUPSORT
+    /// </summary>
+    /// <param name="cursor"><see cref="LightningCursor"/></param>
+    /// <param name="key">The key with multiple values</param>
+    /// <returns><see cref="MDBValue"/> representing each value for a given key</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static IEnumerable<MDBValue> AllValuesFor(this LightningCursor cursor, Span<byte> key)
+    {
+        var result = cursor.Set(key);
+        result.ThrowOnReadError();
+        return cursor.AllValuesForImpl();
+    }
+
+    /// <summary>
+    /// Enumerates the values for a given key. Requires MDB_DUPSORT
+    /// </summary>
+    /// <param name="cursor"><see cref="LightningCursor"/></param>
+    /// <returns><see cref="MDBValue"/> representing each value for a given key</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static IEnumerable<MDBValue> AllValuesForImpl(this LightningCursor cursor)
+    {
+        (MDBResultCode, MDBValue, MDBValue) result = cursor.GetCurrent();
+        do
+        {
+            yield return result.Item3;
+            result = cursor.NextDuplicate();
+        } while (result.Item1 == MDBResultCode.Success);
+
+        result.Item1.ThrowOnReadError();
+    }
 
     /// <summary>
     /// Tries to get a value by its key.
