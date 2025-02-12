@@ -18,7 +18,7 @@ public sealed class LightningTransaction : IDisposable
 
     internal nint _handle;
     private readonly nint _originalHandle;
-    private bool _disposed = false;
+    private bool _disposed;
 
     /// <summary>
     /// Created new instance of LightningTransaction

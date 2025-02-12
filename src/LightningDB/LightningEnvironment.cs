@@ -12,7 +12,7 @@ namespace LightningDB;
 public sealed class LightningEnvironment : IDisposable
 {
     private readonly EnvironmentConfiguration _config = new();
-    private bool _disposed = false;
+    private bool _disposed;
 
     internal nint _handle;
 

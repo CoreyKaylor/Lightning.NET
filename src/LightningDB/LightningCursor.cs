@@ -12,7 +12,7 @@ namespace LightningDB;
 public class LightningCursor : IDisposable
 {
     private nint _handle;
-    private bool _disposed = false;
+    private bool _disposed;
 
     /// <summary>
     /// Creates new instance of LightningCursor
@@ -31,14 +31,6 @@ public class LightningCursor : IDisposable
 
         Database = db;
         Transaction = txn;
-    }
-
-    /// <summary>
-    /// Gets the native handle of the cursor
-    /// </summary>
-    public nint Handle()
-    {
-        return _handle;
     }
 
     /// <summary>
@@ -549,7 +541,8 @@ public class LightningCursor : IDisposable
         }
         _handle = default;
 
-        GC.SuppressFinalize(this);
+        if(disposing)
+            GC.SuppressFinalize(this);
     }
 
     /// <summary>

@@ -106,8 +106,9 @@ public static partial class Lmdb
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial MDBResultCode mdb_get(nint txn, uint dbi, ref MDBValue key, out MDBValue data);
         
-    [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-    public static extern MDBResultCode mdb_cursor_count(nint cursor, out int countp);
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_cursor_count(nint cursor, out int countp);
         
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

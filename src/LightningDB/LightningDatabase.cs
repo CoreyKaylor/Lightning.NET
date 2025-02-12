@@ -11,7 +11,7 @@ namespace LightningDB;
 public sealed class LightningDatabase : IDisposable
 {
     internal uint _handle;
-    private bool _disposed = false;
+    private bool _disposed;
     private readonly DatabaseConfiguration _configuration;
     private readonly bool _closeOnDispose;
     private readonly LightningTransaction _transaction;
@@ -101,7 +101,8 @@ public sealed class LightningDatabase : IDisposable
         if (_closeOnDispose)
             mdb_dbi_close(Environment._handle, _handle);
 
-        GC.SuppressFinalize(this);
+        if(disposing)
+            GC.SuppressFinalize(this);
         _handle = default;
     }
 

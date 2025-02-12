@@ -146,7 +146,7 @@ public static class LightningExtensions
             value = mdbValue.CopyToNewArray();
             return true;
         }
-        value = default;
+        value = null;
         return false;
     }
         

@@ -86,6 +86,41 @@ public class TransactionTests : TestBase
             result.ShouldBe(MDBResultCode.BadTxn);
         });
     }
+    
+    public void TryGetShouldVerifyFindingAndNotFindingValues()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, db) =>
+        {
+            var key = MemoryMarshal.Cast<char, byte>("key1");
+            var value = MemoryMarshal.Cast<char, byte>("value1");
+    
+            tx.Put(db, key, value);
+    
+            tx.TryGet(db, key.ToArray(), out var retrievedValue).ShouldBeTrue();
+            retrievedValue.ShouldBe(value.ToArray());
+    
+            var missingKey = MemoryMarshal.Cast<char, byte>("key2");
+            tx.TryGet(db, missingKey.ToArray(), out _).ShouldBeFalse();
+        });
+    }
+    
+    public void TryGetWithKeyAndValueShouldBeFound()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, db) =>
+        {
+            var key = MemoryMarshal.Cast<char, byte>("key3");
+            var value = MemoryMarshal.Cast<char, byte>("value3");
+            tx.Put(db, key, value);
+    
+            var resultBuffer = new byte[value.Length];
+            tx.TryGet(db, key.ToArray(), resultBuffer).ShouldBeTrue();
+            resultBuffer.ShouldBe(value.ToArray());
+        });
+    }
 
     public void ChildTransactionShouldBeAbortedIfParentIsCommitted()
     {
@@ -227,5 +262,28 @@ public class TransactionTests : TestBase
             while ((result = c.Next()).Item1 == MDBResultCode.Success)
                 BitConverter.ToInt32(result.Item3.CopyToNewArray()).ShouldBe(valuesSorted[order++]);
         }
+    }
+    public void DatabaseShouldBeEmptyAfterTruncate()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, db) =>
+        {
+            // Insert several key-value pairs
+            var key1 = MemoryMarshal.Cast<char, byte>("key1");
+            var key2 = MemoryMarshal.Cast<char, byte>("key2");
+            var value1 = MemoryMarshal.Cast<char, byte>("value1");
+            var value2 = MemoryMarshal.Cast<char, byte>("value2");
+
+            tx.Put(db, key1, value1);
+            tx.Put(db, key2, value2);
+
+            // Truncate the database
+            tx.TruncateDatabase(db);
+
+            // Verify the database is empty
+            tx.ContainsKey(db, key1).ShouldBeFalse();
+            tx.ContainsKey(db, key2).ShouldBeFalse();
+        });
     }
 }

@@ -6,6 +6,14 @@ namespace LightningDB.Tests;
 
 public class EnvironmentTests : TestBase
 {
+    public void CanGetEnvironmentVersion()
+    {
+        using var env = CreateEnvironment();
+        var version = env.Version;
+        version.ShouldNotBeNull();
+        version.Minor.ShouldBeGreaterThan(0);
+    }
+
     public void EnvironmentShouldBeCreatedIfWithoutFlags()
     {
         using var env = CreateEnvironment();
@@ -99,6 +107,27 @@ public class EnvironmentTests : TestBase
         env.Open();
         env.Dispose();
         env.IsOpened.ShouldBeFalse();
+    }
+
+    public void CanPutMultipleKeyValuePairsAndFlushSuccessfully()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        using var tx = env.BeginTransaction();
+        using var db = tx.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+
+        for (int i = 0; i < 5; i++)
+        {
+            var key = BitConverter.GetBytes(i);
+            var value = BitConverter.GetBytes(i * 10);
+            tx.Put(db, key, value);
+        }
+
+        tx.Commit();
+
+        var result = env.Flush(force: true);
+        result.ShouldBe(MDBResultCode.Success);
     }
 
     public void EnvironmentShouldBeCopied()
