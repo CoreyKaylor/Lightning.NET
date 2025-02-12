@@ -8,7 +8,6 @@ namespace LightningDB.Tests;
 
 public class TransactionTests : TestBase
 {
-    [Test]
     public void CanDeletePreviouslyCommittedWithMultipleValuesByPassingNullForValue()
     {
         using var env = CreateEnvironment();
@@ -30,7 +29,6 @@ public class TransactionTests : TestBase
         }, DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed);
     }
 
-    [Test]
     public void TransactionShouldBeCreated()
     {
         using var env = CreateEnvironment();
@@ -41,7 +39,6 @@ public class TransactionTests : TestBase
         });
     }
 
-    [Test]
     public void TransactionShouldChangeStateOnCommit()
     {
         using var env = CreateEnvironment();
@@ -53,7 +50,6 @@ public class TransactionTests : TestBase
         });
     }
 
-    [Test]
     public void ChildTransactionShouldBeCreated()
     {
         using var env = CreateEnvironment();
@@ -66,7 +62,6 @@ public class TransactionTests : TestBase
         });
     }
 
-    [Test]
     public void ResetTransactionAbortedOnDispose()
     {
         using var env = CreateEnvironment();
@@ -79,7 +74,6 @@ public class TransactionTests : TestBase
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
-    [Test]
     public void ChildTransactionShouldBeAbortedIfParentIsAborted()
     {
         using var env = CreateEnvironment();
@@ -93,7 +87,6 @@ public class TransactionTests : TestBase
         });
     }
 
-    [Test]
     public void ChildTransactionShouldBeAbortedIfParentIsCommitted()
     {
         using var env = CreateEnvironment();
@@ -108,7 +101,6 @@ public class TransactionTests : TestBase
     }
 
 
-    [Test]
     public void ReadOnlyTransactionShouldChangeStateOnReset()
     {
         using var env = CreateEnvironment();
@@ -120,7 +112,6 @@ public class TransactionTests : TestBase
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
-    [Test]
     public void ReadOnlyTransactionShouldChangeStateOnRenew()
     {
         using var env = CreateEnvironment();
@@ -133,7 +124,6 @@ public class TransactionTests : TestBase
         }, transactionFlags: TransactionBeginFlags.ReadOnly);
     }
 
-    [Test]
     public void CanCountTransactionEntries()
     {
         using var env = CreateEnvironment();
@@ -149,7 +139,6 @@ public class TransactionTests : TestBase
         });
     }
 
-    [Test]
     public void CanGetDatabaseStatistics()
     {
         using var env = CreateEnvironment();
@@ -175,7 +164,6 @@ public class TransactionTests : TestBase
         });
     }
 
-    [Test]
     public void TransactionShouldSupportCustomComparer()
     {
         int Comparison(int l, int r) => l.CompareTo(r);
@@ -212,7 +200,6 @@ public class TransactionTests : TestBase
         }
     }
 
-    [Test]
     public void TransactionShouldSupportCustomDupSorter()
     {
         int Comparison(int l, int r) => -Math.Sign(l - r);

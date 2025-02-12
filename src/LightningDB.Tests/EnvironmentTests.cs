@@ -1,20 +1,17 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using Shouldly;
 
 namespace LightningDB.Tests;
 
 public class EnvironmentTests : TestBase
 {
-    [Test]
     public void EnvironmentShouldBeCreatedIfWithoutFlags()
     {
         using var env = CreateEnvironment();
         env.Open();
     }
 
-    [Test]
     public void EnvironmentCreatedFromConfig()
     {
         const int mapExpected = 1024*1024*20;
@@ -27,14 +24,12 @@ public class EnvironmentTests : TestBase
         env.MaxReaders.ShouldBe(maxReadersExpected);
     }
 
-    [Test]
     public void StartingTransactionBeforeEnvironmentOpen()
     {
         using var env = CreateEnvironment();
-        Assert.Throws<InvalidOperationException>(() => env.BeginTransaction());
+        Should.Throw<InvalidOperationException>(() => env.BeginTransaction());
     }
 
-    [Test]
     public void CanGetEnvironmentInfo()
     {
         const long mapSize = 1024 * 1024 * 200;
@@ -47,10 +42,8 @@ public class EnvironmentTests : TestBase
         info.MapSize.ShouldBe(env.MapSize);
     }
 
-    [Test]
-    public void CanGetLargeEnvironmentInfo()
+    public void CanGetLargeEnvironmentInfoOnlyOn64BitPlatform()
     { 
-        Skip.When(RuntimeInformation.OSArchitecture == Architecture.X86,"Skipping for x86 platform");
         const long mapSize = 1024 * 1024 * 1024 * 3L;
         using var env = CreateEnvironment(config: new EnvironmentConfiguration
         {
@@ -61,7 +54,6 @@ public class EnvironmentTests : TestBase
         env.MapSize.ShouldBe(info.MapSize);
     }
 
-    [Test]
     public void MaxDatabasesWorksThroughConfigIssue62()
     {
         var config = new EnvironmentConfiguration { MaxDatabases = 2 };
@@ -76,7 +68,6 @@ public class EnvironmentTests : TestBase
         env.MaxDatabases.ShouldBe(2);
     }
 
-    [Test]
     public void CanLoadAndDisposeMultipleEnvironments()
     {
         var env = CreateEnvironment();
@@ -84,7 +75,6 @@ public class EnvironmentTests : TestBase
         using var env2 = CreateEnvironment();
     }
 
-    [Test]
     public void EnvironmentShouldBeCreatedIfReadOnly()
     {
         var env = CreateEnvironment();
@@ -95,7 +85,6 @@ public class EnvironmentTests : TestBase
             env.Open(EnvironmentOpenFlags.ReadOnly);
     }
 
-    [Test]
     public void EnvironmentShouldBeOpened()
     {
         using var env = CreateEnvironment();
@@ -104,7 +93,6 @@ public class EnvironmentTests : TestBase
         env.IsOpened.ShouldBeTrue();
     }
 
-    [Test]
     public void EnvironmentShouldBeClosed()
     {
         var env = CreateEnvironment();
@@ -113,22 +101,23 @@ public class EnvironmentTests : TestBase
         env.IsOpened.ShouldBeFalse();
     }
 
-    [Test]
-    [Arguments(true)]
-    [Arguments(false)]
-    public void EnvironmentShouldBeCopied(bool compact)
+    public void EnvironmentShouldBeCopied()
     {
-        using var env = CreateEnvironment();
-        env.Open();
+        void CopyTest(bool compact)
+        {
+            using var env = CreateEnvironment();
+            env.Open();
 
-        var newPath = TempPath();
-        env.CopyTo(newPath, compact).ThrowOnError();
+            var newPath = TempPath();
+            env.CopyTo(newPath, compact).ThrowOnError();
 
-        if (Directory.GetFiles(newPath).Length == 0)
-            Assert.Fail("Copied files doesn't exist");
+            (Directory.GetFiles(newPath).Length == 0)
+                .ShouldBeFalse("Copied files doesn't exist");
+        }
+        CopyTest(true);
+        CopyTest(false);
     }
 
-    [Test]
     public void EnvironmentShouldFailCopyIfPathIsFile()
     {
         using var env = CreateEnvironment();
@@ -141,7 +130,6 @@ public class EnvironmentTests : TestBase
         result.ShouldNotBe(MDBResultCode.Success);
     }
 
-    [Test]
     public void CanOpenEnvironmentMoreThan50Mb()
     {
         using var env = CreateEnvironment();
@@ -149,7 +137,6 @@ public class EnvironmentTests : TestBase
         env.Open();
     }
     
-    [Test]
     public void CanOpenEnvironmentWithSpecialCharacters()
     {
         //all include special character now

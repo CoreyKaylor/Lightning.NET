@@ -16,7 +16,6 @@ public class TestBase
    protected LightningEnvironment CreateEnvironment(string path = null, EnvironmentConfiguration config = null) => 
       new(path ?? TempPath(), config);
    
-   [After(TestSession)]
    public static void CleanupSession()
    {
       if(Directory.Exists(_tempPath))

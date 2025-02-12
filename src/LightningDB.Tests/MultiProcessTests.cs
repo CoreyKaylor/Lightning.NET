@@ -8,7 +8,6 @@ namespace LightningDB.Tests;
 public class MultiProcessTests : TestBase 
 {
 
-    [Test]
     public void can_load_environment_from_multiple_processes()
     {
         using var env = CreateEnvironment();

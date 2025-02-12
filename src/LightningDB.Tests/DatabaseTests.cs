@@ -6,7 +6,6 @@ namespace LightningDB.Tests;
 public class DatabaseTests : TestBase
 {
     
-    [Test]
     public void DatabaseShouldBeCreated()
     {
         using var env = CreateEnvironment();
@@ -26,7 +25,6 @@ public class DatabaseTests : TestBase
         }
     }
 
-    [Test]
     public void DatabaseShouldBeClosed()
     {
         using var env = CreateEnvironment();
@@ -39,7 +37,6 @@ public class DatabaseTests : TestBase
         db.IsOpened.ShouldBeFalse();
     }
 
-    [Test]
     public void DatabaseFromCommittedTransactionShouldBeAccessible()
     {
         using var env = CreateEnvironment();
@@ -60,7 +57,6 @@ public class DatabaseTests : TestBase
         }
     }
 
-    [Test]
     public void NamedDatabaseNameExistsInMaster()
     {
         using var env = CreateEnvironment();
@@ -84,7 +80,6 @@ public class DatabaseTests : TestBase
         }
     }
 
-    [Test]
     public void ReadonlyTransactionOpenedDatabasesDontGetReused()
     {
         //This is here to assert that previous issues with the way manager
@@ -113,7 +108,6 @@ public class DatabaseTests : TestBase
         }
     }
 
-    [Test]
     public void DatabaseShouldBeDropped()
     {
         using var env = CreateEnvironment();
@@ -134,12 +128,11 @@ public class DatabaseTests : TestBase
 
         using (var txn = env.BeginTransaction())
         {
-            var ex = Assert.Throws<LightningException>(() => txn.OpenDatabase("notmaster"));
+            var ex = Should.Throw<LightningException>(() => txn.OpenDatabase("notmaster"));
             ex.StatusCode.ShouldBe(-30798);
         }
     }
 
-    [Test]
     public void TruncatingTheDatabase()
     {
         using var env = CreateEnvironment();
@@ -167,7 +160,6 @@ public class DatabaseTests : TestBase
         }
     }
 
-    [Test]
     public void DatabaseCanGetStats()
     {
         using var env = CreateEnvironment();

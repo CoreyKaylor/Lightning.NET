@@ -33,7 +33,6 @@ public class CursorTests : TestBase
         return values;
     }
 
-    [Test]
     public void CursorShouldBeCreated()
     {
         using var env = CreateEnvironment();
@@ -41,7 +40,6 @@ public class CursorTests : TestBase
         env.RunCursorScenario((_, _, c) => c.ShouldNotBeNull());
     }
 
-    [Test]
     public void CursorShouldPutValues()
     {
         using var env = CreateEnvironment();
@@ -54,7 +52,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void CursorShouldSetSpanKey()
     {
         using var env = CreateEnvironment();
@@ -70,7 +67,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void CursorShouldMoveToLast()
     {
         using var env = CreateEnvironment();
@@ -85,7 +81,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void CursorShouldMoveToFirst()
     {
         using var env = CreateEnvironment();
@@ -100,7 +95,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void ShouldIterateThroughCursor()
     {
         using var env = CreateEnvironment();
@@ -119,7 +113,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void CursorShouldDeleteElements()
     {
         using var env = CreateEnvironment();
@@ -138,7 +131,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void ShouldPutMultiple()
     {
         using var env = CreateEnvironment();
@@ -147,7 +139,6 @@ public class CursorTests : TestBase
             DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
-    [Test]
     public void ShouldGetMultiple()
     {
         using var env = CreateEnvironment();
@@ -164,7 +155,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
-    [Test]
     public void ShouldGetNextMultiple()
     {
         using var env = CreateEnvironment();
@@ -180,7 +170,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
 
-    [Test]
     public void ShouldAdvanceKeyToClosestWhenKeyNotFound()
     {
         using var env = CreateEnvironment();
@@ -195,7 +184,6 @@ public class CursorTests : TestBase
         });
     }
 
-    [Test]
     public void ShouldSetKeyAndGet()
     {
         using var env = CreateEnvironment();
@@ -209,7 +197,6 @@ public class CursorTests : TestBase
         }); 
     }
         
-    [Test]
     public void ShouldSetKeyAndGetWithSpan()
     {
         using var env = CreateEnvironment();
@@ -223,7 +210,6 @@ public class CursorTests : TestBase
         }); 
     }
         
-    [Test]
     public void ShouldGetBoth()
     {
         using var env = CreateEnvironment();
@@ -236,7 +222,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Test]
     public void ShouldGetBothWithSpan()
     {
         using var env = CreateEnvironment();
@@ -250,7 +235,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Test]
     public void ShouldMoveToPrevious()
     {
         using var env = CreateEnvironment();
@@ -265,7 +249,6 @@ public class CursorTests : TestBase
         }); 
     }
         
-    [Test]
     public void ShouldSetRangeWithSpan()
     {
         using var env = CreateEnvironment();
@@ -281,7 +264,6 @@ public class CursorTests : TestBase
         }); 
     }
         
-    [Test]
     public void ShouldGetBothRange()
     {
         using var env = CreateEnvironment();
@@ -297,7 +279,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Test]
     public void ShouldGetBothRangeWithSpan()
     {
         using var env = CreateEnvironment();
@@ -313,7 +294,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Test]
     public void ShouldMoveToFirstDuplicate()
     {
         using var env = CreateEnvironment();
@@ -330,7 +310,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
         
-    [Test]
     public void ShouldMoveToLastDuplicate()
     {
         using var env = CreateEnvironment();
@@ -346,7 +325,36 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
     
-    [Test]
+    public void AllValuesForShouldOnlyReturnMatchingKeyValues()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
+        {
+            var key1 = "TestKey1"u8.ToArray();
+            var key2 = "TestKey2"u8.ToArray();
+    
+            var key1Values = Enumerable.Range(1, 5).Select(i => UTF8.GetBytes($"key1_value{i}")).ToArray();
+            var key2Values = Enumerable.Range(1, 3).Select(i => UTF8.GetBytes($"key2_value{i}")).ToArray();
+    
+            foreach (var value in key1Values)
+            {
+                c.Put(key1, value, CursorPutOptions.None);
+            }
+    
+            foreach (var value in key2Values)
+            {
+                c.Put(key2, value, CursorPutOptions.None);
+            }
+    
+            var allKey1Values = c.AllValuesFor(key1).Select(v => v.CopyToNewArray()).ToArray();
+            var allKey2Values = c.AllValuesFor(key2).Select(v => v.CopyToNewArray()).ToArray();
+    
+            allKey1Values.ShouldBe(key1Values);
+            allKey2Values.ShouldBe(key2Values);
+        }, DatabaseOpenFlags.DuplicatesSort | DatabaseOpenFlags.Create);
+    }
+        
     public void ShouldMoveToNextNoDuplicate()
     {
         using var env = CreateEnvironment();
@@ -360,7 +368,30 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
     }
     
-    [Test]
+    
+    public void ShouldRetrieveAllValuesForKey()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunCursorScenario((_, _, c) =>
+        {
+            var key = "TestKey"u8.ToArray();
+            var values = Enumerable.Range(1, 5).Select(i => UTF8.GetBytes($"value{i}")).ToArray();
+    
+            // Insert multiple values for the same key with DuplicateSort option
+            foreach (var value in values)
+            {
+                c.Put(key, value, CursorPutOptions.None);
+            }
+    
+            // Fetch all values using the AllValuesFor method
+            var retrievedValues = c.AllValuesFor(key).Select(v => v.CopyToNewArray()).ToArray();
+    
+            // Verify all inserted values are retrieved
+            retrievedValues.ShouldBe(values);
+        }, DatabaseOpenFlags.DuplicatesSort | DatabaseOpenFlags.Create);
+    }
+    
     public void ShouldRenewSameTransaction()
     {
         using var env = CreateEnvironment();
@@ -372,7 +403,6 @@ public class CursorTests : TestBase
         }, transactionFlags: TransactionBeginFlags.ReadOnly); 
     }
 
-    [Test]
     public void ShouldDeleteDuplicates()
     {
         using var env = CreateEnvironment();
@@ -388,7 +418,6 @@ public class CursorTests : TestBase
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);  
     }
 
-    [Test]
     public void CanPutBatchesViaCursorIssue155()
     {
         static LightningDatabase OpenDatabase(LightningEnvironment environment)
@@ -427,7 +456,6 @@ public class CursorTests : TestBase
         true.ShouldBeTrue("Code would be unreachable otherwise.");
     }
     
-    [Test]
     public void CountCursor()
     {
         using var env = CreateEnvironment();
