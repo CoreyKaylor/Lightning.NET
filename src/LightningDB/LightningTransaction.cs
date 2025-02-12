@@ -194,7 +194,7 @@ public sealed class LightningTransaction : IDisposable
         fixed (byte* valuePtr = value)
         {
             var mdbKey = new MDBValue(key.Length, keyPtr);
-            if (value == null)
+            if (value.IsEmpty)
             {
                 return mdb_del(_handle, db._handle, mdbKey);
             }
