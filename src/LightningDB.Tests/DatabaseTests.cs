@@ -6,7 +6,7 @@ namespace LightningDB.Tests;
 public class DatabaseTests : TestBase
 {
     
-    public void DatabaseShouldBeCreated()
+    public void database_should_be_created()
     {
         using var env = CreateEnvironment();
         const string dbName = "test";
@@ -25,7 +25,7 @@ public class DatabaseTests : TestBase
         }
     }
 
-    public void DatabaseShouldBeClosed()
+    public void database_should_be_closed()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -37,7 +37,7 @@ public class DatabaseTests : TestBase
         db.IsOpened.ShouldBeFalse();
     }
 
-    public void DatabaseFromCommittedTransactionShouldBeAccessible()
+    public void database_from_committed_transaction_should_be_accessible()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -57,7 +57,7 @@ public class DatabaseTests : TestBase
         }
     }
 
-    public void NamedDatabaseNameExistsInMaster()
+    public void named_database_name_exists_in_master()
     {
         using var env = CreateEnvironment();
         env.MaxDatabases = 2;
@@ -80,7 +80,7 @@ public class DatabaseTests : TestBase
         }
     }
 
-    public void ReadonlyTransactionOpenedDatabasesDontGetReused()
+    public void readonly_transaction_opened_databases_dont_get_reused()
     {
         //This is here to assert that previous issues with the way manager
         //classes (since removed) worked don't happen anymore.
@@ -108,7 +108,7 @@ public class DatabaseTests : TestBase
         }
     }
 
-    public void DatabaseShouldBeDropped()
+    public void database_should_be_dropped()
     {
         using var env = CreateEnvironment();
         env.MaxDatabases = 2;
@@ -133,7 +133,7 @@ public class DatabaseTests : TestBase
         }
     }
 
-    public void TruncatingTheDatabase()
+    public void truncating_the_database()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -160,7 +160,7 @@ public class DatabaseTests : TestBase
         }
     }
 
-    public void DatabaseCanGetStats()
+    public void database_can_get_stats()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -175,5 +175,52 @@ public class DatabaseTests : TestBase
         stats.OverflowPages.ShouldBe(0);
         stats.PageSize.ShouldBe(env.EnvironmentStats.PageSize);
         stats.BTreeDepth.ShouldBe(1);
+    }
+    
+    public void can_get_database_flags()
+    {
+        using var env = CreateEnvironment();
+        env.MaxDatabases = 10; // Allow more named databases
+        env.Open();
+        
+        // Test with the transaction-based GetFlags method using a named database with IntegerKey flag
+        using (var txn = env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase("intkey", new DatabaseConfiguration 
+            { 
+                Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.IntegerKey 
+            });
+            
+            // Test using explicit transaction
+            var flags = db.GetFlags(txn);
+            flags.ShouldNotBe(DatabaseOpenFlags.None);
+            
+            // The flags should include DatabaseOpenFlags.IntegerKey
+            flags.HasFlag(DatabaseOpenFlags.IntegerKey).ShouldBeTrue();
+            txn.Commit();
+        }
+        
+        // Test default database (should have no special flags)
+        using (var txn = env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            
+            var flags = db.GetFlags(txn);
+            flags.ShouldBe(DatabaseOpenFlags.None);
+            txn.Commit();
+        }
+        
+        // Test DuplicatesSort flag
+        using (var txn = env.BeginTransaction())
+        {
+            using var db = txn.OpenDatabase("dupsort", new DatabaseConfiguration 
+            { 
+                Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesSort 
+            });
+            
+            var flags = db.GetFlags(txn);
+            flags.HasFlag(DatabaseOpenFlags.DuplicatesSort).ShouldBeTrue();
+            txn.Commit();
+        }
     }
 }

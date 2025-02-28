@@ -13,7 +13,7 @@ public enum DatabaseOpenFlags
     /// No special options.
     /// </summary>
     None = 0,
-                
+    
     /// <summary>
     /// MDB_REVERSEKEY. Keys are strings to be compared in reverse order, from the end of the strings to the beginning. By default, Keys are treated as strings and compared from beginning to end.
     /// </summary>
@@ -22,7 +22,7 @@ public enum DatabaseOpenFlags
     /// <summary>
     /// MDB_DUPSORT. Duplicate keys may be used in the database. (Or, from another perspective, keys may have multiple data items, stored in sorted order.) By default keys must be unique and may have only a single data item.
     /// </summary>
-    DuplicatesSort = Lmdb.MDB_DUPSORT,
+    DuplicatesSort = 0x04,
 
     /// <summary>
     /// MDB_INTEGERKEY. Keys are binary integers in native byte order. 
@@ -33,7 +33,7 @@ public enum DatabaseOpenFlags
     /// <summary>
     /// MDB_DUPFIXED. This flag may only be used in combination with MDB_DUPSORT. This option tells the library that the data items for this database are all the same size, which allows further optimizations in storage and retrieval. When all data items are the same size, the MDB_GET_MULTIPLE and MDB_NEXT_MULTIPLE cursor operations may be used to retrieve multiple items at once.
     /// </summary>
-    DuplicatesFixed = Lmdb.MDB_DUPSORT | Lmdb.MDB_DUPFIXED,
+    DuplicatesFixed = DuplicatesSort | 0x10,
 
     /// <summary>
     /// MDB_INTEGERDUP. This option specifies that duplicate data items are also integers, and should be sorted as such.

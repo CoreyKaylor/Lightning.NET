@@ -346,6 +346,55 @@ public sealed class LightningTransaction : IDisposable
     /// Whether this transaction is read-only.
     /// </summary>
     public bool IsReadOnly { get; }
+    
+    /// <summary>
+    /// Gets the transaction ID.
+    /// </summary>
+    public int Id => mdb_txn_id(_handle);
+    
+    /// <summary>
+    /// Compares two data items according to the database's key comparison function.
+    /// </summary>
+    /// <param name="db">The database to use for comparison</param>
+    /// <param name="a">First item to compare</param>
+    /// <param name="b">Second item to compare</param>
+    /// <returns>Negative value if a is less than b, zero if equal, positive if a is greater than b</returns>
+    public unsafe int CompareKeys(LightningDatabase db, ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
+    {
+        if (db == null)
+            throw new ArgumentNullException(nameof(db));
+            
+        fixed (byte* aPtr = a)
+        fixed (byte* bPtr = b)
+        {
+            var mdbA = new MDBValue(a.Length, aPtr);
+            var mdbB = new MDBValue(b.Length, bPtr);
+            
+            return mdb_cmp(_handle, db._handle, ref mdbA, ref mdbB);
+        }
+    }
+    
+    /// <summary>
+    /// Compares two data items according to the database's data comparison function.
+    /// </summary>
+    /// <param name="db">The database to use for comparison</param>
+    /// <param name="a">First item to compare</param>
+    /// <param name="b">Second item to compare</param>
+    /// <returns>Negative value if a is less than b, zero if equal, positive if a is greater than b</returns>
+    public unsafe int CompareData(LightningDatabase db, ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
+    {
+        if (db == null)
+            throw new ArgumentNullException(nameof(db));
+            
+        fixed (byte* aPtr = a)
+        fixed (byte* bPtr = b)
+        {
+            var mdbA = new MDBValue(a.Length, aPtr);
+            var mdbB = new MDBValue(b.Length, bPtr);
+            
+            return mdb_dcmp(_handle, db._handle, ref mdbA, ref mdbB);
+        }
+    }
 
     /// <summary>
     /// Abort this transaction and deallocate all resources associated with it (including databases).

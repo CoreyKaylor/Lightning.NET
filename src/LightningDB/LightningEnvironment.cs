@@ -156,6 +156,24 @@ public sealed class LightningEnvironment : IDisposable
             };
         }
     }
+    
+    /// <summary>
+    /// Gets the maximum size of keys and MDB_DUPSORT data we can write.
+    /// </summary>
+    /// <remarks>
+    /// This is the maximum size for a key in a database, or the data for a
+    /// database with MDB_DUPSORT. This property returns a size in bytes.
+    /// Attempting to write keys or data larger than this size will result
+    /// in an MDB_BAD_VALSIZE error.
+    /// </remarks>
+    public int MaxKeySize
+    {
+        get
+        {
+            EnsureOpened();
+            return mdb_env_get_maxkeysize(_handle);
+        }
+    }
 
     /// <summary>
     /// Directory path to store database files.
@@ -255,6 +273,122 @@ public sealed class LightningEnvironment : IDisposable
     public MDBResultCode Flush(bool force)
     {
         return mdb_env_sync(_handle, force);
+    }
+    
+    /// <summary>
+    /// Gets or sets the environment flags.
+    /// When setting flags, they will be either set or cleared based on the value.
+    /// This is a direct wrapper around the mdb_env_get_flags and mdb_env_set_flags functions.
+    /// </summary>
+    /// <remarks>
+    /// Only certain flags can be changed after the environment is opened:
+    /// <list type="bullet">
+    ///   <item><description>NoSync</description></item>
+    ///   <item><description>NoMetaSync</description></item>
+    ///   <item><description>MapAsync</description></item>
+    ///   <item><description>NoReadAhead</description></item>
+    ///   <item><description>NoMemoryInitialization</description></item>
+    /// </list>
+    /// </remarks>
+    public EnvironmentOpenFlags Flags
+    {
+        get
+        {
+            EnsureOpened();
+            mdb_env_get_flags(_handle, out var flags).ThrowOnError();
+            return (EnvironmentOpenFlags)flags;
+        }
+        set
+        {
+            EnsureOpened();
+            
+            // Get current flags
+            mdb_env_get_flags(_handle, out var currentFlags).ThrowOnError();
+            
+            // Determine which flags to turn on and which to turn off by converting to uint
+            var newFlags = (uint)value;
+            var oldFlags = currentFlags;
+            
+            var flagsToEnable = newFlags & ~oldFlags;   // Flags in new value but not in current
+            var flagsToDisable = oldFlags & ~newFlags;  // Flags in current but not in new value
+            
+            // Turn on new flags
+            if (flagsToEnable != 0)
+            {
+                mdb_env_set_flags(_handle, flagsToEnable, true).ThrowOnError();
+            }
+            
+            // Turn off removed flags
+            if (flagsToDisable != 0)
+            {
+                mdb_env_set_flags(_handle, flagsToDisable, false).ThrowOnError();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Checks for stale readers in the environment and cleans them up.
+    /// </summary>
+    /// <returns>The number of stale readers that were cleared</returns>
+    public int CheckStaleReaders()
+    {
+        EnsureOpened();
+        var result = mdb_reader_check(_handle, out var deadReaders);
+        if (result != 0)
+            throw new LightningException($"Failed to check stale readers", result);
+        return deadReaders;
+    }
+    
+    /// <summary>
+    /// Gets a read access FileStream for the environment's file descriptor.
+    /// </summary>
+    /// <returns>A FileStream that wraps the environment's file descriptor</returns>
+    public FileStream GetFileStream()
+    {
+        EnsureOpened();
+        
+        // Get the raw file descriptor
+        mdb_env_get_fd(_handle, out var fd).ThrowOnError();
+        
+        // Create a SafeFileHandle from the file descriptor
+        // Note: We set ownsHandle to false because LMDB owns the file descriptor
+        var safeHandle = new Microsoft.Win32.SafeHandles.SafeFileHandle(fd, ownsHandle: false);
+        
+        // Create a FileStream from the SafeFileHandle
+        return new FileStream(safeHandle, FileAccess.Read);
+    }
+    
+    /// <summary>
+    /// Copies an LMDB environment to the specified FileStream.
+    /// This method accepts a standard .NET FileStream and extracts the file descriptor.
+    /// </summary>
+    /// <param name="fileStream">The FileStream to write to</param>
+    /// <param name="compact">Whether to compact the environment during copy</param>
+    /// <returns>A result code indicating success or failure</returns>
+    /// <exception cref="ArgumentNullException">Thrown when fileStream is null</exception>
+    /// <exception cref="ArgumentException">Thrown when the FileStream is not writable</exception>
+    /// <exception cref="NotSupportedException">Thrown when the platform doesn't support getting file handles from FileStream</exception>
+    public MDBResultCode CopyToStream(FileStream fileStream, bool compact = false)
+    {
+        if (fileStream == null)
+            throw new ArgumentNullException(nameof(fileStream));
+            
+        if (!fileStream.CanWrite)
+            throw new ArgumentException("FileStream must be writable", nameof(fileStream));
+            
+        EnsureOpened();
+
+        // Get the SafeFileHandle from the FileStream
+        var safeHandle = fileStream.SafeFileHandle;
+        if (safeHandle == null || safeHandle.IsInvalid)
+            throw new ArgumentException("Invalid file handle from FileStream", nameof(fileStream));
+
+        // Get the file descriptor as IntPtr/nint
+        var fd = safeHandle.DangerousGetHandle();
+
+        return compact 
+            ? mdb_env_copyfd2(_handle, fd, EnvironmentCopyFlags.Compact) 
+            : mdb_env_copyfd(_handle, fd);
     }
 
     private void EnsureOpened()

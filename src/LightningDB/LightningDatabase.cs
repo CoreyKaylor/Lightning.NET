@@ -61,7 +61,21 @@ public sealed class LightningDatabase : IDisposable
     /// Environment in which the database was opened.
     /// </summary>
     public LightningEnvironment Environment { get; }
-
+    
+    /// <summary>
+    /// Gets the flags used when opening this database.
+    /// </summary>
+    /// <param name="transaction">The transaction to use for retrieving the flags</param>
+    /// <returns>The database flags</returns>
+    public DatabaseOpenFlags GetFlags(LightningTransaction transaction)
+    {
+        if (transaction == null)
+            throw new ArgumentNullException(nameof(transaction));
+            
+        mdb_dbi_flags(transaction._handle, _handle, out var flags).ThrowOnError();
+        return (DatabaseOpenFlags)flags;
+    }
+    
     /// <summary>
     /// Drops the database.
     /// </summary>
@@ -93,7 +107,7 @@ public sealed class LightningDatabase : IDisposable
         if (!IsOpened)
             return;
         if (!Environment.IsOpened)
-            throw new InvalidOperationException("A transaction must be disposed before closing the environment");
+            throw new InvalidOperationException("A database must be disposed before closing the environment");
 
         IsOpened = false;
         _pinnedConfig?.Dispose();
@@ -101,9 +115,8 @@ public sealed class LightningDatabase : IDisposable
         if (_closeOnDispose)
             mdb_dbi_close(Environment._handle, _handle);
 
-        if(disposing)
-            GC.SuppressFinalize(this);
-        _handle = default;
+        if (disposing)
+            _handle = default;
     }
 
     /// <summary>
@@ -111,6 +124,7 @@ public sealed class LightningDatabase : IDisposable
     /// </summary>
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         Dispose(true);
     }
 

@@ -4,7 +4,7 @@ namespace LightningDB.Tests;
 
 public class DatabaseIOTests : TestBase
 {
-    public void DatabasePutShouldNotThrowExceptions()
+    public void database_put_should_not_throw_exceptions()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -17,7 +17,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void DatabaseGetShouldNotThrowExceptions()
+    public void database_get_should_not_throw_exceptions()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -27,7 +27,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void DatabaseInsertedValueShouldBeRetrievedThen()
+    public void database_inserted_value_should_be_retrieved_then()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -43,7 +43,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void DatabaseDeleteShouldRemoveItem()
+    public void database_delete_should_remove_item()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -59,7 +59,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void DatabaseDeleteShouldRemoveAllDuplicateDataItems()
+    public void database_delete_should_remove_all_duplicate_data_items()
     {
         using var env = CreateEnvironment(TempPath(), new EnvironmentConfiguration { MapSize = 1024 * 1024 });
         env.Open();
@@ -77,7 +77,7 @@ public class DatabaseIOTests : TestBase
         }, DatabaseOpenFlags.DuplicatesSort);
     }
 
-    public void ContainsKeyShouldReturnTrueIfKeyExists()
+    public void contains_key_should_return_true_if_key_exists()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -94,7 +94,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void ContainsKeyShouldReturnFalseIfKeyNotExists()
+    public void contains_key_should_return_false_if_key_not_exists()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -107,7 +107,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void TryGetShouldReturnValueIfKeyExists()
+    public void try_get_should_return_value_if_key_exists()
     {
         using var env = CreateEnvironment();
         env.Open();
@@ -125,7 +125,7 @@ public class DatabaseIOTests : TestBase
         });
     }
 
-    public void CanCommitTransactionToNamedDatabase()
+    public void can_commit_transaction_to_named_database()
     {
         using var env = CreateEnvironment(TempPath(), new EnvironmentConfiguration{MaxDatabases = 2});
         env.Open();
