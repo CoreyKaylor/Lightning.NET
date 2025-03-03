@@ -9,6 +9,21 @@ namespace LightningDB;
 /// Provides methods for managing database operations within the scope of a transaction, including
 /// database access, key-value storage, and transaction control (commit, abort, etc.).
 /// </summary>
+/// <remarks>
+/// A transaction and its cursors must only be used by a single thread, and a thread may only 
+/// have a single transaction at a time (except for read-only transactions when MDB_NOTLS is in use).
+/// 
+/// Transactions can be nested to any level. When a parent transaction has active child transactions,
+/// it and its cursors may not issue any operations other than Commit and Abort.
+/// 
+/// Possible errors when creating transactions include:
+/// - MDB_PANIC: A fatal error occurred earlier and the environment must be shut down
+/// - MDB_MAP_RESIZED: Another process wrote data beyond this environment's mapsize and the map must be resized
+/// - MDB_READERS_FULL: A read-only transaction was requested but the reader lock table is full
+/// - ENOMEM: Out of memory
+/// 
+/// Cursors created within a transaction cannot span across transactions.
+/// </remarks>
 public sealed class LightningTransaction : IDisposable
 {
     /// <summary>

@@ -9,6 +9,20 @@ namespace LightningDB;
 /// <summary>
 /// Represents a cursor used to navigate and manipulate records within a database in the context of a transaction.
 /// </summary>
+/// <remarks>
+/// A cursor is associated with a specific transaction and database and cannot be used when its database handle
+/// is closed or when its transaction has ended (except with <see cref="LightningTransaction.Renew"/>).
+///
+/// Cursor lifecycle management:
+/// - A cursor in a write-transaction can be closed before its transaction ends, and will otherwise be closed when its transaction ends.
+/// - A cursor in a read-only transaction must be closed explicitly, before or after its transaction ends.
+/// - It can be reused with <see cref="LightningTransaction.Renew"/> before finally closing it.
+///
+/// Cursors cannot span threads - a cursor handle may only be used by a single thread.
+///
+/// A cursor maintains a position in the database and can be used for navigation and
+/// for operations like insertion, deletion, or retrieval of database records.
+/// </remarks>
 public class LightningCursor : IDisposable
 {
     private nint _handle;
@@ -51,7 +65,7 @@ public class LightningCursor : IDisposable
     {
         return Get(CursorOperation.Set, key).resultCode;
     }
-        
+
     /// <summary>
     /// Position at specified key, if key is not found index will be positioned to closest match.
     /// </summary>
@@ -71,7 +85,7 @@ public class LightningCursor : IDisposable
     {
         return Get(CursorOperation.SetKey, key);
     }
-        
+
     /// <summary>
     /// Moves to the key and populates Current with the values stored.
     /// </summary>
@@ -92,7 +106,7 @@ public class LightningCursor : IDisposable
     {
         return Get(CursorOperation.GetBoth, key, value).resultCode;
     }
-        
+
     /// <summary>
     /// Position at key/data pair. Only for MDB_DUPSORT
     /// </summary>
@@ -114,7 +128,7 @@ public class LightningCursor : IDisposable
     {
         return Get(CursorOperation.GetBothRange, key, value).resultCode;
     }
-        
+
     /// <summary>
     /// position at key, nearest data. Only for MDB_DUPSORT
     /// </summary>
@@ -135,7 +149,7 @@ public class LightningCursor : IDisposable
     {
         return Get(CursorOperation.SetRange, key).resultCode;
     }
-        
+
     /// <summary>
     /// Position at first key greater than or equal to specified key.
     /// </summary>
@@ -254,7 +268,7 @@ public class LightningCursor : IDisposable
     {
         return Get(CursorOperation.PreviousNoDuplicate);
     }
-        
+
     private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation)
     {
         var mdbKey = new MDBValue();
@@ -300,7 +314,7 @@ public class LightningCursor : IDisposable
     /// Store by cursor.
     /// This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
     /// Note: Earlier documentation incorrectly said errors would leave the state of the cursor unchanged.
-    /// If the function fails for any reason, the state of the cursor will be unchanged. 
+    /// If the function fails for any reason, the state of the cursor will be unchanged.
     /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
     /// </summary>
     /// <param name="key">The key operated on.</param>
@@ -325,7 +339,7 @@ public class LightningCursor : IDisposable
     /// Store by cursor.
     /// This function stores key/data pairs into the database. The cursor is positioned at the new item, or on failure usually near it.
     /// Note: Earlier documentation incorrectly said errors would leave the state of the cursor unchanged.
-    /// If the function fails for any reason, the state of the cursor will be unchanged. 
+    /// If the function fails for any reason, the state of the cursor will be unchanged.
     /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
     /// </summary>
     /// <param name="key">The key operated on.</param>
@@ -354,8 +368,8 @@ public class LightningCursor : IDisposable
 
     /// <summary>
     /// Store by cursor.
-    /// This function stores key/data pairs into the database. 
-    /// If the function fails for any reason, the state of the cursor will be unchanged. 
+    /// This function stores key/data pairs into the database.
+    /// If the function fails for any reason, the state of the cursor will be unchanged.
     /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
     /// </summary>
     /// <param name="key">The key operated on.</param>
@@ -368,7 +382,7 @@ public class LightningCursor : IDisposable
         var overallLength = values.Sum(arr => arr.Length);//probably allocates but boy is it handy...
 
 
-        //the idea here is to gain some perf by stackallocating the buffer to 
+        //the idea here is to gain some perf by stackallocating the buffer to
         //hold the contiguous keys
         if (overallLength < StackAllocateLimit)
         {
@@ -384,7 +398,7 @@ public class LightningCursor : IDisposable
         }
 
         //these local methods could be made static, but the compiler will emit these closures
-        //as structs with very little overhead. Also static local functions isn't available 
+        //as structs with very little overhead. Also static local functions isn't available
         //until C# 8 so I can't use it anyway...
         MDBResultCode InnerPutMultiple(Span<byte> contiguousValuesBuffer)
         {
@@ -415,7 +429,7 @@ public class LightningCursor : IDisposable
             }
         }
 
-        int GetSize() 
+        int GetSize()
         {
             if (values.Length == 0 || values[0] == null || values[0].Length == 0)
                 return 0;
@@ -465,8 +479,8 @@ public class LightningCursor : IDisposable
 
     /// <summary>
     /// Renew a cursor handle.
-    /// Cursors are associated with a specific transaction and database and may not span threads. 
-    /// Cursors that are only used in read-only transactions may be re-used, to avoid unnecessary malloc/free overhead. 
+    /// Cursors are associated with a specific transaction and database and may not span threads.
+    /// Cursors that are only used in read-only transactions may be re-used, to avoid unnecessary malloc/free overhead.
     /// The cursor may be associated with a new read-only transaction, and referencing the same database handle as it was created with.
     /// </summary>
     /// <returns>Returns <see cref="MDBResultCode"/></returns>
@@ -477,8 +491,8 @@ public class LightningCursor : IDisposable
 
     /// <summary>
     /// Renew a cursor handle.
-    /// Cursors are associated with a specific transaction and database and may not span threads. 
-    /// Cursors that are only used in read-only transactions may be re-used, to avoid unnecessary malloc/free overhead. 
+    /// Cursors are associated with a specific transaction and database and may not span threads.
+    /// Cursors that are only used in read-only transactions may be re-used, to avoid unnecessary malloc/free overhead.
     /// The cursor may be associated with a new read-only transaction, and referencing the same database handle as it was created with.
     /// </summary>
     /// <param name="txn">Transaction to renew in.</param>
@@ -493,11 +507,11 @@ public class LightningCursor : IDisposable
 
         return mdb_cursor_renew(txn._handle, _handle);
     }
-    
+
     /// <summary>
     /// Return count of duplicates for current key.
-    /// 
-    /// This call is only valid on databases that support sorted duplicate data items DatabaseOpenFlags.DuplicatesFixed. 
+    ///
+    /// This call is only valid on databases that support sorted duplicate data items DatabaseOpenFlags.DuplicatesFixed.
     /// </summary>
     /// <param name="value">Output parameter where the duplicate count will be stored.</param>
     /// <returns>Returns <see cref="MDBResultCode"/></returns>
@@ -534,7 +548,7 @@ public class LightningCursor : IDisposable
         {
             throw new InvalidOperationException("The LightningCursor in a read-only transaction must be disposed explicitly.");
         }
-        
+
         if (ShouldCloseCursor())
         {
             mdb_cursor_close(_handle);
