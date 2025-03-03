@@ -36,5 +36,5 @@ class CustomDiscovery : IDiscovery
     public IEnumerable<MethodInfo> TestMethods(IEnumerable<MethodInfo> publicMethods)
         => publicMethods
             .Where(x => !x.IsStatic)
-            .Where(x => !x.Name.EndsWith("OnlyOn64BitPlatform") || RuntimeInformation.OSArchitecture != Architecture.X86);
+            .Where(x => !x.Name.EndsWith("only_on_64bit_platform") || RuntimeInformation.OSArchitecture != Architecture.X86);
 }
