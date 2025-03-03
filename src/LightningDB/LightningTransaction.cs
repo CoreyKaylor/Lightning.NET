@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 using static LightningDB.Native.Lmdb;
 
@@ -101,7 +101,7 @@ public sealed class LightningTransaction : IDisposable
     /// <returns>Requested value's byte array if exists, or null if not.</returns>
     public (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(LightningDatabase db, byte[] key)
     {//argument validation delegated to next call
-            
+
         return Get(db, key.AsSpan());
     }
 
@@ -205,10 +205,10 @@ public sealed class LightningTransaction : IDisposable
 
     /// <summary>
     /// Delete items from a database.
-    /// This function removes key/data pairs from the database. 
-    /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
-    /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted. 
-    /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted. 
+    /// This function removes key/data pairs from the database.
+    /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored.
+    /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted.
+    /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted.
     /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
     /// </summary>
     /// <param name="db">A database handle returned by mdb_dbi_open()</param>
@@ -221,10 +221,10 @@ public sealed class LightningTransaction : IDisposable
 
     /// <summary>
     /// Delete items from a database.
-    /// This function removes key/data pairs from the database. 
-    /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored. 
-    /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted. 
-    /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted. 
+    /// This function removes key/data pairs from the database.
+    /// If the database does not support sorted duplicate data items (MDB_DUPSORT) the data parameter is ignored.
+    /// If the database supports sorted duplicates and the data parameter is NULL, all of the duplicate data items for the key will be deleted.
+    /// Otherwise, if the data parameter is non-NULL only the matching data item will be deleted.
     /// This function will return MDB_NOTFOUND if the specified key/data pair is not in the database.
     /// </summary>
     /// <param name="db">A database handle returned by mdb_dbi_open()</param>
@@ -241,6 +241,19 @@ public sealed class LightningTransaction : IDisposable
     /// Aborts the read-only transaction and resets the transaction handle so it can be
     /// reused after calling <see cref="Renew"/>
     /// </summary>
+    /// <remarks>
+    /// Resetting a transaction releases any internal locks or resources associated with it without
+    /// completely destroying the transaction object. This is more efficient than creating a new
+    /// transaction when you need to perform another read operation after completing one.
+    ///
+    /// After calling Reset, you must call <see cref="Renew"/> before using the transaction again.
+    ///
+    /// This method can only be called on read-only transactions. For read-write transactions,
+    /// you must use <see cref="Commit"/> or <see cref="Abort"/>.
+    ///
+    /// This method also releases the reader slot in the lock table, allowing it to be
+    /// reused immediately instead of waiting for the environment to close or the thread to terminate.
+    /// </remarks>
     public void Reset()
     {
         if (!IsReadOnly)
@@ -255,6 +268,18 @@ public sealed class LightningTransaction : IDisposable
     /// <summary>
     /// Renews a read-only transaction previously released with <see cref="Reset"/>
     /// </summary>
+    /// <remarks>
+    /// This function refreshes the transaction handle and makes it available for reuse.
+    /// It must be called before reusing a read-only transaction that was reset with <see cref="Reset"/>.
+    ///
+    /// Renewing a transaction is much more efficient than creating a new transaction, as it
+    /// reuses the same transaction handle and reader slot.
+    ///
+    /// This function can only be used on read-only transactions that have been reset.
+    ///
+    /// After a successful call to Renew, the transaction will be in the Ready state and
+    /// can be used for database operations again.
+    /// </remarks>
     public MDBResultCode Renew()
     {
         if (!IsReadOnly)
@@ -271,8 +296,6 @@ public sealed class LightningTransaction : IDisposable
 
     /// <summary>
     /// Commit all the operations of a transaction into the database.
-    /// All cursors opened within the transaction will be closed by this call. 
-    /// The cursors and transaction handle will be freed and must not be used again after this call.
     /// </summary>
     public MDBResultCode Commit()
     {
@@ -290,8 +313,6 @@ public sealed class LightningTransaction : IDisposable
 
     /// <summary>
     /// Abandon all the operations of the transaction instead of saving them.
-    /// All cursors opened within the transaction will be closed by this call.
-    /// The cursors and transaction handle will be freed and must not be used again after this call.
     /// </summary>
     public void Abort()
     {
@@ -346,12 +367,12 @@ public sealed class LightningTransaction : IDisposable
     /// Whether this transaction is read-only.
     /// </summary>
     public bool IsReadOnly { get; }
-    
+
     /// <summary>
     /// Gets the transaction ID.
     /// </summary>
     public int Id => mdb_txn_id(_handle);
-    
+
     /// <summary>
     /// Compares two data items according to the database's key comparison function.
     /// </summary>
@@ -363,17 +384,17 @@ public sealed class LightningTransaction : IDisposable
     {
         if (db == null)
             throw new ArgumentNullException(nameof(db));
-            
+
         fixed (byte* aPtr = a)
         fixed (byte* bPtr = b)
         {
             var mdbA = new MDBValue(a.Length, aPtr);
             var mdbB = new MDBValue(b.Length, bPtr);
-            
+
             return mdb_cmp(_handle, db._handle, ref mdbA, ref mdbB);
         }
     }
-    
+
     /// <summary>
     /// Compares two data items according to the database's data comparison function.
     /// </summary>
@@ -385,19 +406,19 @@ public sealed class LightningTransaction : IDisposable
     {
         if (db == null)
             throw new ArgumentNullException(nameof(db));
-            
+
         fixed (byte* aPtr = a)
         fixed (byte* bPtr = b)
         {
             var mdbA = new MDBValue(a.Length, aPtr);
             var mdbB = new MDBValue(b.Length, bPtr);
-            
+
             return mdb_dcmp(_handle, db._handle, ref mdbA, ref mdbB);
         }
     }
 
     /// <summary>
-    /// Abort this transaction and deallocate all resources associated with it (including databases).
+    /// Dispose this transaction and deallocate all resources associated with it.
     /// </summary>
     /// <param name="disposing">True if called from Dispose.</param>
     private void Dispose(bool disposing)
@@ -422,7 +443,7 @@ public sealed class LightningTransaction : IDisposable
     }
 
     /// <summary>
-    /// Dispose this transaction
+    /// Dispose this transaction and deallocate all resources associated with it.
     /// </summary>
     public void Dispose()
     {

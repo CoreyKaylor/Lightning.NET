@@ -25,7 +25,7 @@ public sealed class LightningEnvironment : IDisposable
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Invalid directory name");
-            
+
         var config = configuration ?? _config;
 
         mdb_env_create(out _handle).ThrowOnError();
@@ -49,22 +49,22 @@ public sealed class LightningEnvironment : IDisposable
 
     /// <summary>
     /// Gets or Sets the size of the memory map to use for this environment.
-    /// The size of the memory map is also the maximum size of the database. 
-    /// The size should be a multiple of the OS page size. 
-    /// The default is 10485760 bytes. 
+    /// The size of the memory map is also the maximum size of the database.
+    /// The size should be a multiple of the OS page size.
+    /// The default is 10485760 bytes.
     /// </summary>
     /// <remarks>
-    /// The value should be chosen as large as possible, to accommodate future growth of the database. 
+    /// The value should be chosen as large as possible, to accommodate future growth of the database.
     /// This function may only be called before the environment is opened.
-    /// The size may be changed by closing and reopening the environment.  
-    /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space. 
+    /// The size may be changed by closing and reopening the environment.
+    /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space.
     /// </remarks>
     public unsafe long MapSize
     {
         get => _config.MapSize;
         set
         {
-            if (value == _config.MapSize) 
+            if (value == _config.MapSize)
                 return;
 
             if (_config.AutoReduceMapSizeIn32BitProcess && sizeof(nint) == 4)
@@ -77,8 +77,22 @@ public sealed class LightningEnvironment : IDisposable
     }
 
     /// <summary>
-    /// Get the maximum number of threads for the environment.
+    /// Gets or sets the maximum number of threads/reader slots for the environment.
     /// </summary>
+    /// <remarks>
+    /// This defines the number of slots in the lock table that is used to track readers in the
+    /// environment. The default is 126. Starting a read-only transaction normally ties a lock table
+    /// slot to the current thread until the environment closes or the thread exits. If
+    /// <see cref="LightningTransaction.Reset"/> is called on the transaction, the slot can be reused immediately.
+    ///
+    /// This function may only be called before the environment is opened.
+    ///
+    /// If this function is never called, the default value will be used.
+    ///
+    /// Note that the lock table size is also the maximum number of concurrent read-only transactions
+    /// that can be in progress at once. Any attempt to start a read-only transaction when the lock
+    /// table is full will result in an MDB_READERS_FULL error.
+    /// </remarks>
     public int MaxReaders
     {
         get
@@ -99,8 +113,8 @@ public sealed class LightningEnvironment : IDisposable
 
     /// <summary>
     /// Set the maximum number of named databases for the environment.
-    /// This function is only needed if multiple databases will be used in the environment. 
-    /// Simpler applications that use the environment as a single unnamed database can ignore this option. 
+    /// This function is only needed if multiple databases will be used in the environment.
+    /// Simpler applications that use the environment as a single unnamed database can ignore this option.
     /// This function may only be called before the environment is opened.
     /// </summary>
     public int MaxDatabases
@@ -111,7 +125,7 @@ public sealed class LightningEnvironment : IDisposable
             if (IsOpened)
                 throw new InvalidOperationException("Can't change MaxDatabases of opened environment");
 
-            if (value == _config.MaxDatabases) 
+            if (value == _config.MaxDatabases)
                 return;
 
             mdb_env_set_maxdbs(_handle, (uint)value).ThrowOnError();
@@ -121,7 +135,7 @@ public sealed class LightningEnvironment : IDisposable
     }
 
     /// <summary>
-    /// Get statistics about the LMDB environment. 
+    /// Get statistics about the LMDB environment.
     /// </summary>
     public Stats EnvironmentStats
     {
@@ -141,7 +155,7 @@ public sealed class LightningEnvironment : IDisposable
     }
 
     /// <summary>
-    /// Gets information about the LMDB environment. 
+    /// Gets information about the LMDB environment.
     /// </summary>
     public EnvironmentInfo Info
     {
@@ -156,7 +170,7 @@ public sealed class LightningEnvironment : IDisposable
             };
         }
     }
-    
+
     /// <summary>
     /// Gets the maximum size of keys and MDB_DUPSORT data we can write.
     /// </summary>
@@ -211,12 +225,12 @@ public sealed class LightningEnvironment : IDisposable
     /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
     /// </summary>
     /// <param name="parent">
-    /// If this parameter is non-NULL, the new transaction will be a nested transaction, with the transaction indicated by parent as its parent. 
-    /// Transactions may be nested to any level. 
+    /// If this parameter is non-NULL, the new transaction will be a nested transaction, with the transaction indicated by parent as its parent.
+    /// Transactions may be nested to any level.
     /// A parent transaction may not issue any other operations besides BeginTransaction, Abort, or Commit while it has active child transactions.
     /// </param>
     /// <param name="beginFlags">
-    /// Special options for this transaction. 
+    /// Special options for this transaction.
     /// </param>
     /// <returns>
     /// New LightningTransaction
@@ -237,7 +251,7 @@ public sealed class LightningEnvironment : IDisposable
     /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
     /// </summary>
     /// <param name="beginFlags">
-    /// Special options for this transaction. 
+    /// Special options for this transaction.
     /// </param>
     /// <returns>
     /// New LightningTransaction
@@ -253,28 +267,56 @@ public sealed class LightningEnvironment : IDisposable
     /// </summary>
     /// <param name="path">The directory in which the copy will reside. This directory must already exist and be writable but must otherwise be empty.</param>
     /// <param name="compact">Omit empty pages when copying.</param>
+    /// <remarks>
+    /// This call can trigger a significant file size growth if run in parallel with write transactions,
+    /// because it employs a read-only transaction. If the environment has a large proportion of
+    /// free pages, this can cause the backup to be larger than the actual data set.
+    ///
+    /// It is possible to run this function with writeable transactions in progress. The copy will be
+    /// a consistent snapshot of the environment at the time the copy is made, using a read-only transaction.
+    ///
+    /// When the compact parameter is true (using the MDB_CP_COMPACT flag), the copy will omit free pages
+    /// and use smaller page sizes when possible, resulting in a smaller data file.
+    /// </remarks>
     public MDBResultCode CopyTo(string path, bool compact = false)
     {
         EnsureOpened();
 
-        var flags = compact 
-            ? EnvironmentCopyFlags.Compact 
+        var flags = compact
+            ? EnvironmentCopyFlags.Compact
             : EnvironmentCopyFlags.None;
-            
+
         return mdb_env_copy2(_handle, path, flags);
     }
 
     /// <summary>
-    /// Flush the data buffers to disk. 
-    /// Data is always written to disk when LightningTransaction.Commit is called, but the operating system may keep it buffered. 
+    /// Flush the data buffers to disk.
+    /// Data is always written to disk when LightningTransaction.Commit is called, but the operating system may keep it buffered.
     /// MDB always flushes the OS buffers upon commit as well, unless the environment was opened with EnvironmentOpenFlags.NoSync or in part EnvironmentOpenFlags.NoMetaSync.
     /// </summary>
     /// <param name="force">If true, force a synchronous flush. Otherwise if the environment has the EnvironmentOpenFlags.NoSync flag set the flushes will be omitted, and with MDB_MAPASYNC they will be asynchronous.</param>
+    /// <remarks>
+    /// This call is not needed if your code does not care if/when data is physically written to the disk.
+    /// It is the application's responsibility to ensure the persistence of critical data. The
+    /// actual decision to use synchronous or asynchronous flushes typically depends on:
+    ///
+    /// - Safety: Synchronous flushes guarantee that data has been written to disk before continuing.
+    /// - Performance: Asynchronous flushes allow the OS to schedule disk writes optimally, which can be much faster.
+    ///
+    /// If your environment was opened with <see cref="EnvironmentOpenFlags.NoSync"/>, calling Flush(false) will have no effect,
+    /// while Flush(true) will still force a synchronous flush.
+    ///
+    /// If your environment was opened with <see cref="EnvironmentOpenFlags.MapAsync"/>, calling Flush(false) will perform an
+    /// asynchronous flush, while Flush(true) will still force a synchronous flush.
+    ///
+    /// Even when this method is not called, the data will be persisted to disk when the OS flushes
+    /// its buffers or when the environment is closed properly.
+    /// </remarks>
     public MDBResultCode Flush(bool force)
     {
         return mdb_env_sync(_handle, force);
     }
-    
+
     /// <summary>
     /// Gets or sets the environment flags.
     /// When setting flags, they will be either set or cleared based on the value.
@@ -301,23 +343,23 @@ public sealed class LightningEnvironment : IDisposable
         set
         {
             EnsureOpened();
-            
+
             // Get current flags
             mdb_env_get_flags(_handle, out var currentFlags).ThrowOnError();
-            
+
             // Determine which flags to turn on and which to turn off by converting to uint
             var newFlags = (uint)value;
             var oldFlags = currentFlags;
-            
+
             var flagsToEnable = newFlags & ~oldFlags;   // Flags in new value but not in current
             var flagsToDisable = oldFlags & ~newFlags;  // Flags in current but not in new value
-            
+
             // Turn on new flags
             if (flagsToEnable != 0)
             {
                 mdb_env_set_flags(_handle, flagsToEnable, true).ThrowOnError();
             }
-            
+
             // Turn off removed flags
             if (flagsToDisable != 0)
             {
@@ -325,11 +367,23 @@ public sealed class LightningEnvironment : IDisposable
             }
         }
     }
-    
+
     /// <summary>
     /// Checks for stale readers in the environment and cleans them up.
     /// </summary>
     /// <returns>The number of stale readers that were cleared</returns>
+    /// <remarks>
+    /// Reader slots are tied to a thread for the lifetime of a transaction, but if a thread
+    /// terminates abnormally while a transaction is active, the slot remains "owned" by the thread
+    /// and is unavailable for reuse. This function identifies such stale readers and makes their
+    /// slots available for reuse.
+    ///
+    /// This function should be called periodically in long-running applications or when
+    /// BeginTransaction returns <see cref="MDBResultCode.ReadersFull"/>.
+    ///
+    /// Readers don't use any locks, so stale readers won't cause writers to wait. However, they do
+    /// take up reader slots which could prevent other processes from starting read transactions.
+    /// </remarks>
     public int CheckStaleReaders()
     {
         EnsureOpened();
@@ -338,7 +392,7 @@ public sealed class LightningEnvironment : IDisposable
             throw new LightningException($"Failed to check stale readers", result);
         return deadReaders;
     }
-    
+
     /// <summary>
     /// Gets a read access FileStream for the environment's file descriptor.
     /// </summary>
@@ -346,18 +400,18 @@ public sealed class LightningEnvironment : IDisposable
     public FileStream GetFileStream()
     {
         EnsureOpened();
-        
+
         // Get the raw file descriptor
         mdb_env_get_fd(_handle, out var fd).ThrowOnError();
-        
+
         // Create a SafeFileHandle from the file descriptor
         // Note: We set ownsHandle to false because LMDB owns the file descriptor
         var safeHandle = new Microsoft.Win32.SafeHandles.SafeFileHandle(fd, ownsHandle: false);
-        
+
         // Create a FileStream from the SafeFileHandle
         return new FileStream(safeHandle, FileAccess.Read);
     }
-    
+
     /// <summary>
     /// Copies an LMDB environment to the specified FileStream.
     /// This method accepts a standard .NET FileStream and extracts the file descriptor.
@@ -372,10 +426,10 @@ public sealed class LightningEnvironment : IDisposable
     {
         if (fileStream == null)
             throw new ArgumentNullException(nameof(fileStream));
-            
+
         if (!fileStream.CanWrite)
             throw new ArgumentException("FileStream must be writable", nameof(fileStream));
-            
+
         EnsureOpened();
 
         // Get the SafeFileHandle from the FileStream
@@ -386,8 +440,8 @@ public sealed class LightningEnvironment : IDisposable
         // Get the file descriptor as IntPtr/nint
         var fd = safeHandle.DangerousGetHandle();
 
-        return compact 
-            ? mdb_env_copyfd2(_handle, fd, EnvironmentCopyFlags.Compact) 
+        return compact
+            ? mdb_env_copyfd2(_handle, fd, EnvironmentCopyFlags.Compact)
             : mdb_env_copyfd(_handle, fd);
     }
 
@@ -422,8 +476,8 @@ public sealed class LightningEnvironment : IDisposable
 
     /// <summary>
     /// Dispose the environment and release the memory map.
-    /// Only a single thread may call this function. All transactions, databases, and cursors must already be closed before calling this function. 
-    /// Attempts to use any such handles after calling this function will cause a SIGSEGV. 
+    /// Only a single thread may call this function. All transactions, databases, and cursors must already be closed before calling this function.
+    /// Attempts to use any such handles after calling this function will cause a SIGSEGV.
     /// The environment handle will be freed and must not be used again after this call.
     /// </summary>
     public void Dispose()
