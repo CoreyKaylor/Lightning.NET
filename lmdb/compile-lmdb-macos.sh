@@ -23,6 +23,7 @@ declare -A supported_targets=(
   [android-arm/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-x86/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-x64/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
+  [browser-wasm/native/liblmdb.wasm]="emmake make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
 )
 
 function compile_lib() {
@@ -38,7 +39,7 @@ function compile_lib() {
   echo "$2 $output_hash"
   build_outputs["$output_hash"]="$2"
   cp ./liblmdb.so ../../../../src/LightningDB/runtimes/"$2"
-  sleep 10 
+  sleep 10
   #seems to be a stateful race condition on the docker run processes so this allows everything to succeed
 }
 
