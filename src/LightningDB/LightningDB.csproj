@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>LightningDB</Description>
-    <VersionPrefix>0.18.0</VersionPrefix>
+    <VersionPrefix>0.18.1</VersionPrefix>
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
     <TargetFrameworks>netstandard2.0;net9.0</TargetFrameworks>
     <LangVersion>13</LangVersion>
