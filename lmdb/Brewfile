@@ -1,4 +1,8 @@
 # Using mingw to compile Windows native libs for x86 and x64
 brew "mingw-w64"
+
+# Using llvm-mingw for Windows ARM64 cross-compilation
+brew "llvm-mingw/mingw/llvm-mingw"
+
 brew "emscripten"
 cask "android-ndk"
