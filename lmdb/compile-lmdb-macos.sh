@@ -27,21 +27,53 @@ declare -A supported_targets=(
   [browser-wasm/native/liblmdb.wasm]="emmake make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
 )
 
+# function compile_lib() {
+  # echo "Build starting for $2"
+  # make clean
+  # if ! eval "$1"
+  # then
+    # echo "Build failed for $2"
+    # exit 1
+  # fi
+  # echo "Build succeeded for $2"
+  # output_hash=$(md5 ./liblmdb.so)
+  # echo "$2 $output_hash"
+  # build_outputs["$output_hash"]="$2"
+  # cp ./liblmdb.so ../../../../src/LightningDB/runtimes/"$2"
+  # sleep 10
+  # #seems to be a stateful race condition on the docker run processes so this allows everything to succeed
+# }
 function compile_lib() {
   echo "Build starting for $2"
   make clean
-  if ! eval "$1"
-  then
+  if ! eval "$1"; then
     echo "Build failed for $2"
     exit 1
   fi
   echo "Build succeeded for $2"
-  output_hash=$(md5 ./liblmdb.so)
+
+  # Detect correct artifact name
+  output_file="liblmdb.so"
+  case "$2" in
+    win-*)         output_file="lmdb.dll" ;;
+    osx*|ios*)     output_file="liblmdb.dylib" ;;
+    browser-*)     output_file="liblmdb.wasm" ;;
+  esac
+
+  if [ ! -f "./$output_file" ]; then
+    echo "Expected output $output_file not found!"
+    exit 1
+  fi
+
+  # Calculate hash and copy to target
+  output_hash=$(md5 -q "./$output_file")
   echo "$2 $output_hash"
   build_outputs["$output_hash"]="$2"
-  cp ./liblmdb.so ../../../../src/LightningDB/runtimes/"$2"
+
+  cp "./$output_file" ../../../../src/LightningDB/runtimes/"$2"
+
+  # Avoid race condition between docker runs
   sleep 10
-  #seems to be a stateful race condition on the docker run processes so this allows everything to succeed
 }
 
 for key in "${!supported_targets[@]}"; do
