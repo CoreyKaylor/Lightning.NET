@@ -1,6 +1,117 @@
 #!/bin/bash
 set -e  # Exit on error, but we'll handle errors in the compile function
 
+#=============================================================================
+# LMDB Cross-Platform Compilation Script for Lightning.NET
+#=============================================================================
+#
+# DESCRIPTION:
+# This script compiles LMDB (Lightning Memory-Mapped Database) native libraries 
+# for multiple target platforms to support Lightning.NET, a .NET wrapper for LMDB.
+# The script is designed to run on WSL (Windows Subsystem for Linux) with Ubuntu.
+#
+# FEATURES:
+# - Cross-platform compilation for Windows, Linux, macOS, iOS, Android, and WebAssembly
+# - Automatic tool detection and dependency checking
+# - Colored logging with build status tracking
+# - Hash-based duplicate build detection
+# - Comprehensive error handling and reporting
+# - Build time measurement and performance metrics
+#
+# SUPPORTED TARGETS:
+# - Windows: x64, x86, ARM64 (using MinGW and Clang)
+# - Linux: x64, ARM, ARM64 (using GCC cross-compilers)
+# - macOS: x64, ARM64 (using Clang with minimum version targeting)
+# - iOS: ARM, ARM64, Simulator x64/ARM64 (using Xcode toolchain)
+# - Android: x64, x86, ARM, ARM64 (using Android NDK)
+# - WebAssembly: WASM (using Emscripten)
+#
+# WSL SETUP PREREQUISITES:
+# Before running this script on WSL (Ubuntu), ensure the following are installed:
+#
+# 1. Update system packages and install basic tools:
+#    sudo apt update
+#    sudo apt install build-essential make git dos2unix gcc-mingw-w64 g++-mingw-w64
+#    sudo apt install mingw-w64
+#    sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils
+#    sudo apt install coreutils
+#
+# 2. Install LLVM MinGW for ARM64 Windows targets:
+#    cd ~
+#    wget https://github.com/mstorsjo/llvm-mingw/releases/download/20250709/llvm-mingw-20250709-ucrt-ubuntu-22.04-x86_64.tar.xz
+#    tar -xJf llvm-mingw-20250105-ucrt-ubuntu-20.04-x86_64.tar.xz
+#    mv llvm-mingw-20250105-ucrt-ubuntu-20.04-x86_64 llvm-mingw
+#    echo 'export PATH=$HOME/llvm-mingw/bin:$PATH' >> ~/.bashrc
+#    source ~/.bashrc
+#
+# 3. Install Emscripten for WebAssembly targets (optional):
+#    cd ~
+#    git clone https://github.com/emscripten-core/emsdk.git
+#    cd emsdk
+#    ./emsdk install latest
+#    ./emsdk activate latest
+#    source ./emsdk_env.sh
+#
+# 4. For Android targets (optional):
+#    # Download and extract Android NDK
+#    # Set NDK environment variable: export NDK=/path/to/android-ndk
+#
+# 5. For macOS/iOS targets (only on macOS):
+#    # Requires Xcode Command Line Tools (not available on WSL)
+#
+# COMPILATION FLAGS EXPLANATION:
+# - CC: Compiler command (gcc, clang, or cross-compiler)
+# - AR: Archive tool for creating static libraries
+# - LDFLAGS: Linker flags
+#   -s: Strip symbol table (reduces binary size)
+#   -shared: Create shared library (.so files)
+# - XCFLAGS: Extra C compiler flags
+#   -O2: Optimization level 2 (recommended for production)
+#        Enables most optimizations without significantly increasing compile time
+#        Provides good balance between performance and binary size
+#   -DNDEBUG: Disable debug assertions (production build)
+#   -fPIC: Position Independent Code (required for shared libraries)
+#   -DANDROID: Android-specific compilation flag
+#   -UMDB_USE_ROBUST: Disable robust mutexes (Android compatibility)
+#   -DMDB_USE_POSIX_MUTEX: Use POSIX mutexes (Android/Linux)
+#
+# OPTIMIZATION LEVELS:
+# -O0: No optimization (debug builds)
+# -O1: Basic optimizations
+# -O2: Standard optimizations (RECOMMENDED for production)
+#      - Enables: loop unrolling, instruction scheduling, register allocation
+#      - Good performance with reasonable compile time
+# -O3: Aggressive optimizations (may increase binary size)
+# -Os: Optimize for size
+# -Ofast: Aggressive optimizations that may break standards compliance
+#
+# OUTPUT STRUCTURE:
+# The compiled libraries are placed in:
+# src/LightningDB/runtimes/{platform}-{arch}/native/{library}
+# 
+# Examples:
+# - src/LightningDB/runtimes/win-x64/native/lmdb.dll
+# - src/LightningDB/runtimes/linux-x64/native/liblmdb.so
+# - src/LightningDB/runtimes/osx-arm64/native/lmdb.dylib
+#
+# USAGE:
+# ./compile-lmdb-bash.sh
+#
+# The script will automatically:
+# 1. Clone LMDB source code (if not already present)
+# 2. Check for required compilation tools
+# 3. Build all supported targets
+# 4. Copy binaries to appropriate runtime directories
+# 5. Generate a comprehensive build report
+#
+# TROUBLESHOOTING:
+# - If builds fail due to missing tools, install the required cross-compilers
+# - For permission issues, ensure the script has execute permissions: chmod +x compile-lmdb-bash.sh
+# - Check WSL integration if accessing Windows filesystem paths
+# - Verify environment variables (NDK for Android, EMSDK for WebAssembly)
+#
+#=============================================================================
+
 # Script configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LMDB_REPO="https://git.openldap.org/openldap/openldap.git"
