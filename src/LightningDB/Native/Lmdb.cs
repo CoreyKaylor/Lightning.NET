@@ -697,7 +697,7 @@ public static partial class Lmdb
         internal static MDBResultCode mdb_env_open(nint env, string path, EnvironmentOpenFlags flags,
             UnixAccessMode mode)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(path);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(path + "\0");
             return mdb_env_open(env, bytes, flags, mode);
         }
 
@@ -949,7 +949,7 @@ public static partial class Lmdb
         /// <returns>A result code indicating success or failure</returns>
         public static MDBResultCode mdb_env_copy(nint env, string path)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(path);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(path + "\0");
             return mdb_env_copy(env, bytes);
         }
 
@@ -991,7 +991,7 @@ public static partial class Lmdb
         /// <returns>A result code indicating success or failure</returns>
         public static MDBResultCode mdb_env_copy2(nint env, string path, EnvironmentCopyFlags copyFlags)
         {
-            var bytes = System.Text.Encoding.UTF8.GetBytes(path);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(path + "\0");
             return mdb_env_copy2(env, bytes, copyFlags);
         }
 
