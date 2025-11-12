@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/LightningDB.Benchmarks/LightningDB.Benchmarks.csproj" />
+  <Project Path="src/LightningDB.Tests/LightningDB.Tests.csproj" />
+  <Project Path="src/LightningDB/LightningDB.csproj" />
+  <Project Path="src/SecondProcess/SecondProcess.csproj" />
+</Solution>
