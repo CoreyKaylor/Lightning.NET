@@ -155,6 +155,40 @@ In this example:
 - Using a cursor, we iterate over all values associated with the key "fruit" by moving to the next duplicate entry and see the values retrieved are ordered.
 - Then we demonstrate doing the same thing with IEnumerable instead.
 
+## Custom Key Ordering
+
+LightningDB provides built-in, allocation-free comparers for custom key sorting and duplicate ordering. Use them with `CompareWith()` for keys or `FindDuplicatesWith()` for duplicate values:
+
+```csharp
+var config = new DatabaseConfiguration
+{
+    Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesSort
+};
+
+// Sort keys as signed integers (negative values sort before positive)
+config.CompareWith(SignedIntegerComparer.Instance);
+
+// Sort duplicate values in reverse order
+config.FindDuplicatesWith(ReverseBitwiseComparer.Instance);
+
+using var db = tx.OpenDatabase(configuration: config);
+```
+
+**Available comparers in `LightningDB.Comparers`:**
+
+| Comparer | Description |
+|----------|-------------|
+| `BitwiseComparer` | Lexicographic byte comparison (default LMDB behavior) |
+| `ReverseBitwiseComparer` | Lexicographic descending |
+| `SignedIntegerComparer` | 4/8-byte signed integers with proper negative ordering |
+| `UnsignedIntegerComparer` | 4/8-byte unsigned integers |
+| `Utf8StringComparer` | Ordinal UTF-8 string comparison |
+| `LengthComparer` | Sort by length first, then content |
+| `LengthOnlyComparer` | Sort by length only |
+| `HashCodeComparer` | Hash-based comparison for large values |
+
+Reverse variants are available for most comparers (e.g., `ReverseSignedIntegerComparer`).
+
 ## Additional Resources
 
 For more detailed examples and advanced usage, refer to the unit tests in the [Lightning.NET](https://github.com/CoreyKaylor/Lightning.NET) repository. 
