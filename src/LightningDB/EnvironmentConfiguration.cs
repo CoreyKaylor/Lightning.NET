@@ -10,10 +10,6 @@
 /// </remarks>
 public class EnvironmentConfiguration
 {
-    private long? _mapSize;
-    private int? _maxReaders;
-    private int? _maxDatabases;
-
     /// <summary>
     /// Gets or sets the size of the memory map (in bytes) for a LightningEnvironment.
     /// </summary>
@@ -27,11 +23,7 @@ public class EnvironmentConfiguration
     /// Use caution when setting this value in applications running in 32-bit processes, as the effective addressable memory
     /// space is limited. For such scenarios, auto-adjustments may be applied to ensure compatibility.
     /// </remarks>
-    public long MapSize
-    {
-        get => _mapSize ?? 0;
-        set => _mapSize = value;
-    }
+    public long MapSize { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of reader slots available for a LightningEnvironment instance.
@@ -44,11 +36,7 @@ public class EnvironmentConfiguration
     /// property after the environment is already initialized will result in an exception. Adjust this parameter to match
     /// the requirements of your application's workload and concurrency needs.
     /// </remarks>
-    public int MaxReaders
-    {
-        get => _maxReaders ?? 0;
-        set => _maxReaders = value;
-    }
+    public int MaxReaders { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of databases that can be opened within a LightningEnvironment instance.
@@ -63,11 +51,7 @@ public class EnvironmentConfiguration
     /// Configuring the appropriate <c>MaxDatabases</c> value is particularly relevant for applications requiring concurrency or
     /// multiple named databases.
     /// </remarks>
-    public int MaxDatabases
-    {
-        get => _maxDatabases ?? 0;
-        set => _maxDatabases = value;
-    }
+    public int MaxDatabases { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the map size should be automatically reduced
@@ -86,13 +70,13 @@ public class EnvironmentConfiguration
 
     internal void Configure(LightningEnvironment env)
     {
-        if (_mapSize.HasValue)
-            env.MapSize = _mapSize.Value;
+        if (MapSize > 0)
+            env.MapSize = MapSize;
 
-        if (_maxDatabases.HasValue)
-            env.MaxDatabases = _maxDatabases.Value;
+        if (MaxDatabases > 0)
+            env.MaxDatabases = MaxDatabases;
 
-        if (_maxReaders.HasValue)
-            env.MaxReaders = _maxReaders.Value;
+        if (MaxReaders > 0)
+            env.MaxReaders = MaxReaders;
     }
 }
