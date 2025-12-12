@@ -37,26 +37,16 @@ public class DatabaseConfiguration
         var pinnedComparer = new ComparerKeepAlive();
         if (_comparer != null)
         {
-            CompareFunction compare = Compare;
+            CompareFunction compare = (ref left, ref right) => _comparer.Compare(left, right);
             pinnedComparer.AddComparer(compare);
             mdb_set_compare(tx._handle, db._handle, compare);
         }
 
         if (_duplicatesComparer == null) return pinnedComparer;
-        CompareFunction dupCompare = IsDuplicate;
+        CompareFunction dupCompare = (ref left, ref right) => _duplicatesComparer.Compare(left, right);
         pinnedComparer.AddComparer(dupCompare);
         mdb_set_dupsort(tx._handle, db._handle, dupCompare);
         return pinnedComparer;
-    }
-
-    private int Compare(ref MDBValue left, ref MDBValue right)
-    {
-        return _comparer.Compare(left, right);
-    }
-
-    private int IsDuplicate(ref MDBValue left, ref MDBValue right)
-    {
-        return _duplicatesComparer.Compare(left, right);
     }
 
     /// <summary>
