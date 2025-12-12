@@ -203,7 +203,7 @@ public class TransactionTests : TestBase
     {
         int Comparison(int l, int r) => l.CompareTo(r);
         var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create};
-        int CompareWith(MDBValue l, MDBValue r) => Comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
+        int CompareWith(MDBValue l, MDBValue r) => Comparison(l.Read<int>(), r.Read<int>());
         options.CompareWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));
 
         using var env = CreateEnvironment();
@@ -231,7 +231,7 @@ public class TransactionTests : TestBase
             var order = 0;
             (MDBResultCode, MDBValue, MDBValue) result;
             while ((result = c.Next()).Item1 == MDBResultCode.Success)
-                BitConverter.ToInt32(result.Item2.CopyToNewArray()).ShouldBe(keysSorted[order++]);
+                result.Item2.Read<int>().ShouldBe(keysSorted[order++]);
         }
     }
 
@@ -243,7 +243,7 @@ public class TransactionTests : TestBase
         env.Open();
         using var txn = env.BeginTransaction();
         var options = new DatabaseConfiguration {Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesFixed};
-        int CompareWith(MDBValue l, MDBValue r) => Comparison(BitConverter.ToInt32(l.CopyToNewArray(), 0), BitConverter.ToInt32(r.CopyToNewArray(), 0));
+        int CompareWith(MDBValue l, MDBValue r) => Comparison(l.Read<int>(), r.Read<int>());
         options.FindDuplicatesWith(Comparer<MDBValue>.Create(new Comparison<MDBValue>((Func<MDBValue, MDBValue, int>)CompareWith)));
         using var db = txn.OpenDatabase(configuration: options, closeOnDispose: true);
 
@@ -260,7 +260,7 @@ public class TransactionTests : TestBase
 
             (MDBResultCode, MDBValue, MDBValue) result;
             while ((result = c.Next()).Item1 == MDBResultCode.Success)
-                BitConverter.ToInt32(result.Item3.CopyToNewArray()).ShouldBe(valuesSorted[order++]);
+                result.Item3.Read<int>().ShouldBe(valuesSorted[order++]);
         }
     }
     public void database_should_be_empty_after_truncate()

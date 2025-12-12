@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace LightningDB.Comparers;
 
@@ -21,10 +20,10 @@ public sealed class SignedIntegerComparer : IComparer<MDBValue>
         var right = y.AsSpan();
 
         if (left.Length == 4 && right.Length == 4)
-            return MemoryMarshal.Read<int>(left).CompareTo(MemoryMarshal.Read<int>(right));
+            return x.Read<int>().CompareTo(y.Read<int>());
 
         if (left.Length == 8 && right.Length == 8)
-            return MemoryMarshal.Read<long>(left).CompareTo(MemoryMarshal.Read<long>(right));
+            return x.Read<long>().CompareTo(y.Read<long>());
 
         return left.SequenceCompareTo(right);
     }

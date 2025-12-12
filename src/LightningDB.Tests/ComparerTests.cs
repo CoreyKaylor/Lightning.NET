@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using LightningDB.Comparers;
 using Shouldly;
 
@@ -85,19 +84,19 @@ public class ComparerTests : TestBase
         using var cursor = txn.CreateCursor(db);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(-50);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(-50);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(-10);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(-10);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(0);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(0);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(50);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(50);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(100);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(100);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
     }
@@ -120,13 +119,13 @@ public class ComparerTests : TestBase
         using var cursor = txn.CreateCursor(db);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<long>(cursor.GetCurrent().key.AsSpan()).ShouldBe(-10L);
+        cursor.GetCurrent().key.Read<long>().ShouldBe(-10L);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<long>(cursor.GetCurrent().key.AsSpan()).ShouldBe(0L);
+        cursor.GetCurrent().key.Read<long>().ShouldBe(0L);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<long>(cursor.GetCurrent().key.AsSpan()).ShouldBe(50L);
+        cursor.GetCurrent().key.Read<long>().ShouldBe(50L);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
     }
@@ -149,13 +148,13 @@ public class ComparerTests : TestBase
         using var cursor = txn.CreateCursor(db);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(50);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(50);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(0);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(0);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<int>(cursor.GetCurrent().key.AsSpan()).ShouldBe(-10);
+        cursor.GetCurrent().key.Read<int>().ShouldBe(-10);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
     }
@@ -179,16 +178,16 @@ public class ComparerTests : TestBase
         using var cursor = txn.CreateCursor(db);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(0u);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(0u);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(50u);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(50u);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(100u);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(100u);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(uint.MaxValue);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(uint.MaxValue);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
     }
@@ -211,13 +210,13 @@ public class ComparerTests : TestBase
         using var cursor = txn.CreateCursor(db);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<ulong>(cursor.GetCurrent().key.AsSpan()).ShouldBe(0UL);
+        cursor.GetCurrent().key.Read<ulong>().ShouldBe(0UL);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<ulong>(cursor.GetCurrent().key.AsSpan()).ShouldBe(50UL);
+        cursor.GetCurrent().key.Read<ulong>().ShouldBe(50UL);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<ulong>(cursor.GetCurrent().key.AsSpan()).ShouldBe(ulong.MaxValue);
+        cursor.GetCurrent().key.Read<ulong>().ShouldBe(ulong.MaxValue);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
     }
@@ -240,13 +239,13 @@ public class ComparerTests : TestBase
         using var cursor = txn.CreateCursor(db);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(100u);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(100u);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(50u);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(50u);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
-        MemoryMarshal.Read<uint>(cursor.GetCurrent().key.AsSpan()).ShouldBe(0u);
+        cursor.GetCurrent().key.Read<uint>().ShouldBe(0u);
 
         cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
     }

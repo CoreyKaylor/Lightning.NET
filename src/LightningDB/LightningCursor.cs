@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 
 using static LightningDB.Native.Lmdb;
@@ -377,10 +377,11 @@ public class LightningCursor : IDisposable
     /// <returns>Returns <see cref="MDBResultCode"/></returns>
     public unsafe MDBResultCode Put(byte[] key, byte[][] values)
     {
-        const int StackAllocateLimit = 256;//I just made up a number, this can be much more aggressive -arc
+        const int StackAllocateLimit = 256;
 
-        var overallLength = values.Sum(arr => arr.Length);//probably allocates but boy is it handy...
-
+        var overallLength = 0;
+        for (var i = 0; i < values.Length; i++)
+            overallLength += values[i].Length;
 
         //the idea here is to gain some perf by stackallocating the buffer to
         //hold the contiguous keys
@@ -391,10 +392,15 @@ public class LightningCursor : IDisposable
             return InnerPutMultiple(contiguousValues);
         }
 
-        fixed (byte* contiguousValuesPtr = new byte[overallLength])
+        var rentedArray = ArrayPool<byte>.Shared.Rent(overallLength);
+        try
         {
-            var contiguousValues = new Span<byte>(contiguousValuesPtr, overallLength);
+            var contiguousValues = rentedArray.AsSpan(0, overallLength);
             return InnerPutMultiple(contiguousValues);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rentedArray);
         }
 
         //these local methods could be made static, but the compiler will emit these closures

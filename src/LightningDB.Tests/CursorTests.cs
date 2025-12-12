@@ -275,10 +275,10 @@ public class CursorTests : TestBase
             var result = c.GetBothRange(key, values[1]);
             result.ShouldBe(MDBResultCode.Success);
             var current = c.GetCurrent();
-            current.value.CopyToNewArray().ShouldBe(values[1]);
-        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+            current.value.Read<int>().ShouldBe(2);
+        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
-        
+
     public void should_get_both_range_with_span()
     {
         using var env = CreateEnvironment();
@@ -290,10 +290,10 @@ public class CursorTests : TestBase
             var result = c.GetBothRange(key, values[1].AsSpan());
             result.ShouldBe(MDBResultCode.Success);
             var current = c.GetCurrent();
-            current.value.CopyToNewArray().ShouldBe(values[1]);
-        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+            current.value.Read<int>().ShouldBe(2);
+        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
-        
+
     public void should_move_to_first_duplicate()
     {
         using var env = CreateEnvironment();
@@ -306,10 +306,10 @@ public class CursorTests : TestBase
             result.ShouldBe(MDBResultCode.Success);
             var dupResult = c.FirstDuplicate();
             dupResult.resultCode.ShouldBe(MDBResultCode.Success);
-            dupResult.value.CopyToNewArray().ShouldBe(values[0]);
-        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+            dupResult.value.Read<int>().ShouldBe(1);
+        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
-        
+
     public void should_move_to_last_duplicate()
     {
         using var env = CreateEnvironment();
@@ -321,8 +321,8 @@ public class CursorTests : TestBase
             c.Set(key);
             var result = c.LastDuplicate();
             result.resultCode.ShouldBe(MDBResultCode.Success);
-            result.value.CopyToNewArray().ShouldBe(values[4]);
-        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+            result.value.Read<int>().ShouldBe(5);
+        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
     
     public void all_values_for_should_only_return_matching_key_values()
@@ -364,8 +364,8 @@ public class CursorTests : TestBase
             var values = PopulateMultipleCursorValues(c);
             var result = c.NextNoDuplicate();
             result.resultCode.ShouldBe(MDBResultCode.Success);
-            result.value.CopyToNewArray().ShouldBe(values[0]);
-        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create); 
+            result.value.Read<int>().ShouldBe(1);
+        }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
     
     
@@ -490,7 +490,7 @@ public class CursorTests : TestBase
             result.resultCode.ShouldBe(MDBResultCode.Success);
             
             // Verify we're at the second-to-last value
-            result.value.CopyToNewArray().ShouldBe(values[3]); // Previous of the last (values[4])
+            result.value.Read<int>().ShouldBe(4); // Previous of the last (values[4])
         }, DatabaseOpenFlags.DuplicatesFixed | DatabaseOpenFlags.Create);
     }
     
