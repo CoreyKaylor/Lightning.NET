@@ -5,6 +5,7 @@ bin
 artifacts/
 results/
 logs/
+BenchmarkDotNet.Artifacts/
 lmdb/lmdb/
 testrun/
 buildlog
