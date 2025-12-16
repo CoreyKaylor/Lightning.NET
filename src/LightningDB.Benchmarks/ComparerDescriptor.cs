@@ -37,6 +37,8 @@ public readonly struct ComparerDescriptor
         new ComparerDescriptor("ReverseLength", ReverseLengthComparer.Instance),
         new ComparerDescriptor("LengthOnly", LengthOnlyComparer.Instance),
         new ComparerDescriptor("HashCode", HashCodeComparer.Instance),
+        new ComparerDescriptor("Guid", GuidComparer.Instance),
+        new ComparerDescriptor("ReverseGuid", ReverseGuidComparer.Instance),
     };
 
     /// <summary>
@@ -49,5 +51,16 @@ public readonly struct ComparerDescriptor
         new ComparerDescriptor("ReverseSignedInt", ReverseSignedIntegerComparer.Instance),
         new ComparerDescriptor("UnsignedInt", UnsignedIntegerComparer.Instance),
         new ComparerDescriptor("ReverseUnsignedInt", ReverseUnsignedIntegerComparer.Instance),
+    };
+
+    /// <summary>
+    /// GUID comparers only (for focused 16-byte key benchmarks).
+    /// </summary>
+    public static IEnumerable<ComparerDescriptor> GuidComparers => new[]
+    {
+        new ComparerDescriptor("Default", null),
+        new ComparerDescriptor("Bitwise", BitwiseComparer.Instance),
+        new ComparerDescriptor("Guid", GuidComparer.Instance),
+        new ComparerDescriptor("ReverseGuid", ReverseGuidComparer.Instance),
     };
 }

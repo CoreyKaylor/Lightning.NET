@@ -461,4 +461,171 @@ public class ComparerTests : TestBase
 
         cursor.NextDuplicate().Item1.ShouldBe(MDBResultCode.NotFound);
     }
+
+    public void guid_comparer_sorts_guids_by_byte_order()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        var config = new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create };
+        config.CompareWith(GuidComparer.Instance);
+
+        using var txn = env.BeginTransaction();
+        using var db = txn.OpenDatabase(configuration: config);
+
+        // Create GUIDs with known byte patterns for predictable ordering
+        // First byte differs: 0x01 < 0x02 < 0xFF
+        var guid1 = new Guid(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var guid2 = new Guid(new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var guid3 = new Guid(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+
+        txn.Put(db, guid2.ToByteArray(), new byte[] { 2 });
+        txn.Put(db, guid3.ToByteArray(), new byte[] { 3 });
+        txn.Put(db, guid1.ToByteArray(), new byte[] { 1 });
+
+        using var cursor = txn.CreateCursor(db);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid1);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid2);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid3);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
+    }
+
+    public void guid_comparer_sorts_by_second_half_when_first_half_equal()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        var config = new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create };
+        config.CompareWith(GuidComparer.Instance);
+
+        using var txn = env.BeginTransaction();
+        using var db = txn.OpenDatabase(configuration: config);
+
+        // Same first 8 bytes, differ in second half (byte 8)
+        var guid1 = new Guid(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var guid2 = new Guid(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var guid3 = new Guid(new byte[] { 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x00, 0x11, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+
+        txn.Put(db, guid3.ToByteArray(), new byte[] { 3 });
+        txn.Put(db, guid1.ToByteArray(), new byte[] { 1 });
+        txn.Put(db, guid2.ToByteArray(), new byte[] { 2 });
+
+        using var cursor = txn.CreateCursor(db);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid1);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid2);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid3);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
+    }
+
+    public void reverse_guid_comparer_sorts_guids_descending()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        var config = new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create };
+        config.CompareWith(ReverseGuidComparer.Instance);
+
+        using var txn = env.BeginTransaction();
+        using var db = txn.OpenDatabase(configuration: config);
+
+        var guid1 = new Guid(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var guid2 = new Guid(new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var guid3 = new Guid(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+
+        txn.Put(db, guid1.ToByteArray(), new byte[] { 1 });
+        txn.Put(db, guid2.ToByteArray(), new byte[] { 2 });
+        txn.Put(db, guid3.ToByteArray(), new byte[] { 3 });
+
+        using var cursor = txn.CreateCursor(db);
+
+        // Reverse order: FF, 02, 01
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid3);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid2);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().key.CopyToNewArray()).ShouldBe(guid1);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
+    }
+
+    public void guid_comparer_falls_back_for_non_16_byte_values()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        var config = new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create };
+        config.CompareWith(GuidComparer.Instance);
+
+        using var txn = env.BeginTransaction();
+        using var db = txn.OpenDatabase(configuration: config);
+
+        // Non-16-byte keys should still work via fallback to SequenceCompareTo
+        txn.Put(db, new byte[] { 0xFF, 0xFF }, new byte[] { 1 });
+        txn.Put(db, new byte[] { 0x00, 0x00 }, new byte[] { 2 });
+        txn.Put(db, new byte[] { 0x80, 0x80 }, new byte[] { 3 });
+
+        using var cursor = txn.CreateCursor(db);
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        cursor.GetCurrent().key.CopyToNewArray().ShouldBe(new byte[] { 0x00, 0x00 });
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        cursor.GetCurrent().key.CopyToNewArray().ShouldBe(new byte[] { 0x80, 0x80 });
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.Success);
+        cursor.GetCurrent().key.CopyToNewArray().ShouldBe(new byte[] { 0xFF, 0xFF });
+
+        cursor.Next().Item1.ShouldBe(MDBResultCode.NotFound);
+    }
+
+    public void guid_comparer_works_with_duplicate_values()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        var config = new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create | DatabaseOpenFlags.DuplicatesSort };
+        config.FindDuplicatesWith(GuidComparer.Instance);
+
+        using var txn = env.BeginTransaction();
+        using var db = txn.OpenDatabase(configuration: config);
+
+        var key = new byte[] { 1 };
+        var val1 = new Guid(new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var val2 = new Guid(new byte[] { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var val3 = new Guid(new byte[] { 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+
+        txn.Put(db, key, val3.ToByteArray());
+        txn.Put(db, key, val1.ToByteArray());
+        txn.Put(db, key, val2.ToByteArray());
+
+        using var cursor = txn.CreateCursor(db);
+        cursor.SetKey(key);
+
+        new Guid(cursor.GetCurrent().value.CopyToNewArray()).ShouldBe(val1);
+
+        cursor.NextDuplicate().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().value.CopyToNewArray()).ShouldBe(val2);
+
+        cursor.NextDuplicate().Item1.ShouldBe(MDBResultCode.Success);
+        new Guid(cursor.GetCurrent().value.CopyToNewArray()).ShouldBe(val3);
+
+        cursor.NextDuplicate().Item1.ShouldBe(MDBResultCode.NotFound);
+    }
 }
