@@ -15,7 +15,7 @@ namespace LightningDB;
 #if NET5_0_OR_GREATER
 [SkipLocalsInit]
 #endif
-public unsafe struct MDBValue
+public readonly unsafe struct MDBValue
 {
     /// <remarks>
     /// We only expose this shape constructor to basically force you to use
@@ -36,10 +36,10 @@ public unsafe struct MDBValue
         data = pinnedOrStackAllocBuffer;
     }
     //DO NOT REORDER
-    internal nint size;
+    internal readonly nint size;
 
     //DO NOT REORDER
-    internal byte* data;
+    internal readonly byte* data;
 
     /// <summary>
     /// Gets a read-only span representation of the buffer
