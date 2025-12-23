@@ -4,7 +4,7 @@ using static LightningDB.Native.Lmdb;
 namespace LightningDB;
 
 /// <summary>
-/// Represents lmdb version information.
+/// Represents LMDB version information.
 /// </summary>
 public class LightningVersionInfo
 {
