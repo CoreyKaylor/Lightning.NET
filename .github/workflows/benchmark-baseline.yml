@@ -1,0 +1,67 @@
+name: Benchmark Baseline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/LightningDB/**'
+      - 'src/LightningDB.Benchmarks/**'
+  workflow_dispatch:
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build Release
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run Benchmarks
+        working-directory: src/LightningDB.Benchmarks
+        run: |
+          dotnet run -c Release --no-build -- \
+            --filter "*" \
+            --job short \
+            --exporters json \
+            --iterationCount 3 \
+            --warmupCount 1 \
+            --launchCount 1
+
+      - name: Combine benchmark results
+        run: |
+          mkdir -p benchmark-cache
+          # Find all JSON result files and combine them
+          find src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results \
+            -name "*-report-full-compressed.json" \
+            -exec cat {} + > benchmark-cache/baseline.json
+
+      - name: Cache baseline results
+        uses: actions/cache/save@v4
+        with:
+          path: benchmark-cache
+          key: benchmark-baseline-${{ runner.os }}-${{ github.sha }}
+
+      - name: Cache baseline results (latest)
+        uses: actions/cache/save@v4
+        with:
+          path: benchmark-cache
+          key: benchmark-baseline-${{ runner.os }}-latest
+
+      - name: Upload baseline artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-baseline-${{ github.sha }}
+          path: benchmark-cache/
+          retention-days: 30

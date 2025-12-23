@@ -1,0 +1,271 @@
+name: Benchmark PR Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/LightningDB/**'
+      - 'src/LightningDB.Benchmarks/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build Release
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Restore baseline cache
+        id: cache-baseline
+        uses: actions/cache/restore@v4
+        with:
+          path: benchmark-cache
+          key: benchmark-baseline-${{ runner.os }}-latest
+          restore-keys: |
+            benchmark-baseline-${{ runner.os }}-
+
+      - name: Check baseline exists
+        id: check-baseline
+        run: |
+          if [ -f "benchmark-cache/baseline.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Baseline found from cache"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "::warning::No baseline cache found. Benchmarks will run but comparison will be skipped."
+          fi
+
+      - name: Run Benchmarks
+        working-directory: src/LightningDB.Benchmarks
+        run: |
+          dotnet run -c Release --no-build -- \
+            --filter "*" \
+            --job short \
+            --exporters json \
+            --iterationCount 3 \
+            --warmupCount 1 \
+            --launchCount 1
+
+      - name: Combine PR benchmark results
+        run: |
+          mkdir -p pr-results
+          find src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results \
+            -name "*-report-full-compressed.json" \
+            -exec cat {} + > pr-results/current.json
+
+      - name: Compare benchmarks and check for regressions
+        if: steps.check-baseline.outputs.exists == 'true'
+        id: compare
+        run: |
+          python3 << 'EOF'
+          import json
+          import sys
+          import os
+
+          THRESHOLD = 20.0  # 20% regression threshold
+
+          def parse_benchmarks(file_path):
+              """Parse concatenated BenchmarkDotNet JSON files."""
+              benchmarks = {}
+              with open(file_path, 'r') as f:
+                  content = f.read()
+
+              # Handle concatenated JSON objects (one per benchmark class)
+              decoder = json.JSONDecoder()
+              pos = 0
+              while pos < len(content):
+                  # Skip whitespace
+                  while pos < len(content) and content[pos] in ' \t\n\r':
+                      pos += 1
+                  if pos >= len(content):
+                      break
+                  try:
+                      obj, end = decoder.raw_decode(content, pos)
+                      pos = end
+                      if 'Benchmarks' in obj:
+                          for b in obj['Benchmarks']:
+                              name = b.get('FullName', b.get('Method', 'unknown'))
+                              if 'Statistics' in b and 'Mean' in b['Statistics']:
+                                  benchmarks[name] = b['Statistics']['Mean']
+                  except json.JSONDecodeError:
+                      pos += 1
+
+              return benchmarks
+
+          baseline = parse_benchmarks('benchmark-cache/baseline.json')
+          current = parse_benchmarks('pr-results/current.json')
+
+          print(f"Baseline benchmarks: {len(baseline)}")
+          print(f"Current benchmarks: {len(current)}")
+
+          regressions = []
+          improvements = []
+          results = []
+
+          for name, current_mean in current.items():
+              if name in baseline:
+                  baseline_mean = baseline[name]
+                  if baseline_mean > 0:
+                      change_pct = ((current_mean - baseline_mean) / baseline_mean) * 100
+
+                      results.append({
+                          'name': name,
+                          'baseline': baseline_mean,
+                          'current': current_mean,
+                          'change': change_pct
+                      })
+
+                      if change_pct > THRESHOLD:
+                          regressions.append({
+                              'name': name,
+                              'baseline': baseline_mean,
+                              'current': current_mean,
+                              'change': change_pct
+                          })
+                      elif change_pct < -THRESHOLD:
+                          improvements.append({
+                              'name': name,
+                              'change': change_pct
+                          })
+
+          # Write results for PR comment
+          with open('pr-results/comparison.json', 'w') as f:
+              json.dump(results, f, indent=2)
+
+          # Generate summary
+          print(f"\nCompared {len(results)} benchmarks")
+          print(f"Regressions (>{THRESHOLD}%): {len(regressions)}")
+          print(f"Improvements (<-{THRESHOLD}%): {len(improvements)}")
+
+          if regressions:
+              print("\n::error::Performance regressions detected!")
+              for r in sorted(regressions, key=lambda x: -x['change']):
+                  print(f"  - {r['name']}: +{r['change']:.1f}% slower ({r['baseline']:.2f}ns -> {r['current']:.2f}ns)")
+
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("has_regressions=true\n")
+                  f.write(f"regression_count={len(regressions)}\n")
+              sys.exit(1)
+          else:
+              print("\nNo significant performance regressions detected.")
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write("has_regressions=false\n")
+          EOF
+
+      - name: Comment PR with benchmark results
+        if: always() && steps.check-baseline.outputs.exists == 'true' && hashFiles('pr-results/comparison.json') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            let body = '## Benchmark Results\n\n';
+
+            try {
+              const results = JSON.parse(fs.readFileSync('pr-results/comparison.json', 'utf8'));
+
+              // Sort by change percentage (worst regressions first)
+              results.sort((a, b) => b.change - a.change);
+
+              const regressions = results.filter(r => r.change > 20);
+              const warnings = results.filter(r => r.change > 10 && r.change <= 20);
+              const improvements = results.filter(r => r.change < -10);
+
+              if (regressions.length > 0) {
+                body += ':x: **Performance regressions detected (>20%)**\n\n';
+                body += '| Benchmark | Baseline | Current | Change |\n';
+                body += '|-----------|----------|---------|--------|\n';
+                for (const r of regressions.slice(0, 10)) {
+                  const shortName = r.name.split('.').slice(-2).join('.');
+                  body += `| ${shortName} | ${r.baseline.toFixed(2)}ns | ${r.current.toFixed(2)}ns | :x: +${r.change.toFixed(1)}% |\n`;
+                }
+                if (regressions.length > 10) {
+                  body += `\n*...and ${regressions.length - 10} more regressions*\n`;
+                }
+              } else {
+                body += ':white_check_mark: **No significant performance regressions detected**\n\n';
+              }
+
+              if (warnings.length > 0) {
+                body += `\n### :warning: Minor regressions (10-20%)\n`;
+                body += `${warnings.length} benchmarks showed minor slowdown\n`;
+              }
+
+              if (improvements.length > 0) {
+                body += `\n### :rocket: Improvements\n`;
+                body += `${improvements.length} benchmarks showed improvement (>10% faster)\n`;
+              }
+
+              body += `\n<details><summary>All results (${results.length} benchmarks)</summary>\n\n`;
+              body += '| Benchmark | Change |\n|-----------|--------|\n';
+              for (const r of results) {
+                const shortName = r.name.split('.').slice(-2).join('.');
+                const emoji = r.change > 20 ? ':x:' : r.change > 10 ? ':warning:' : r.change < -10 ? ':rocket:' : ':white_check_mark:';
+                const sign = r.change > 0 ? '+' : '';
+                body += `| ${shortName} | ${emoji} ${sign}${r.change.toFixed(1)}% |\n`;
+              }
+              body += '</details>\n';
+
+            } catch (e) {
+              body += ':warning: Could not parse benchmark comparison results.\n';
+              body += `Error: ${e.message}\n`;
+            }
+
+            // Find existing comment to update
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('## Benchmark Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
+            }
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-pr-${{ github.event.pull_request.number }}
+          path: |
+            pr-results/
+            src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results/
+          retention-days: 14
+
+      - name: Fail if regressions detected
+        if: steps.compare.outputs.has_regressions == 'true'
+        run: |
+          echo "::error::PR blocked due to performance regressions exceeding 20% threshold"
+          exit 1
