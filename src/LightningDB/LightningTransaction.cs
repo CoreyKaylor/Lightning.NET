@@ -41,7 +41,7 @@ public sealed class LightningTransaction : IDisposable
     /// <param name="environment">Environment.</param>
     /// <param name="parent">Parent transaction or null.</param>
     /// <param name="flags">Transaction open options.</param>
-    internal LightningTransaction(LightningEnvironment environment, LightningTransaction parent, TransactionBeginFlags flags)
+    internal LightningTransaction(LightningEnvironment environment, LightningTransaction? parent, TransactionBeginFlags flags)
     {
         Environment = environment ?? throw new ArgumentNullException(nameof(environment));
         ParentTransaction = parent;
@@ -71,11 +71,11 @@ public sealed class LightningTransaction : IDisposable
     /// <summary>
     /// Opens a database in context of this transaction.
     /// </summary>
-    /// <param name="name">Database name (optional). If null then the default name is used.</param>
+    /// <param name="name">Database name (optional). If null then the default/unnamed database is used.</param>
     /// <param name="configuration">Database open options.</param>
     /// <param name="closeOnDispose">Close database handle on dispose</param>
     /// <returns>Created database wrapper.</returns>
-    public LightningDatabase OpenDatabase(string name = null, DatabaseConfiguration configuration = null, bool closeOnDispose = false)
+    public LightningDatabase OpenDatabase(string? name = null, DatabaseConfiguration? configuration = null, bool closeOnDispose = false)
     {
         configuration ??= new DatabaseConfiguration();
         var db = new LightningDatabase(name, this, configuration, closeOnDispose);
@@ -376,7 +376,7 @@ public sealed class LightningTransaction : IDisposable
     /// <summary>
     /// Parent transaction of this transaction.
     /// </summary>
-    public LightningTransaction ParentTransaction { get; }
+    public LightningTransaction? ParentTransaction { get; }
 
     /// <summary>
     /// Whether this transaction is read-only.
@@ -475,7 +475,7 @@ public sealed class LightningTransaction : IDisposable
         return _originalHandle.GetHashCode();
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         var tran = obj as LightningTransaction;
         return tran != null && _handle.Equals(tran._handle);

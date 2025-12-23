@@ -52,7 +52,7 @@ public static class LightningExtensions
     private static string mdb_strerror(int err)
     {
         var ptr = Lmdb.mdb_strerror(err);
-        return Marshal.PtrToStringAnsi(ptr);
+        return Marshal.PtrToStringAnsi(ptr) ?? $"Unknown error {err}";
     }
 
     /// <summary>
@@ -124,11 +124,11 @@ public static class LightningExtensions
     /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
     /// <returns>True if key exists, false if not.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGet(this LightningTransaction tx, LightningDatabase db, byte[] key, out byte[] value)
+    public static bool TryGet(this LightningTransaction tx, LightningDatabase db, byte[] key, out byte[]? value)
     {
         return TryGet(tx, db, key.AsSpan(), out value);
     }
-        
+
     /// <summary>
     /// Tries to get a value by its key.
     /// </summary>
@@ -138,7 +138,7 @@ public static class LightningExtensions
     /// <param name="value">A byte array containing the value found in the database, if it exists.</param>
     /// <returns>True if key exists, false if not.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGet(this LightningTransaction tx, LightningDatabase db, ReadOnlySpan<byte> key, out byte[] value)
+    public static bool TryGet(this LightningTransaction tx, LightningDatabase db, ReadOnlySpan<byte> key, out byte[]? value)
     {
         var (resultCode, _, mdbValue) = tx.Get(db, key);
         if (resultCode == MDBResultCode.Success)

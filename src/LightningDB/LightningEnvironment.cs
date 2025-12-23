@@ -20,8 +20,8 @@ public sealed class LightningEnvironment : IDisposable
     /// Creates a new instance of LightningEnvironment.
     /// </summary>
     /// <param name="path">Directory for storing database files.</param>
-    /// <param name="configuration">Configuration for the environment.</param>
-    public LightningEnvironment(string path, EnvironmentConfiguration configuration = null)
+    /// <param name="configuration">Configuration for the environment. If null, default configuration is used.</param>
+    public LightningEnvironment(string path, EnvironmentConfiguration? configuration = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Invalid directory name");
@@ -225,7 +225,7 @@ public sealed class LightningEnvironment : IDisposable
     /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
     /// </summary>
     /// <param name="parent">
-    /// If this parameter is non-NULL, the new transaction will be a nested transaction, with the transaction indicated by parent as its parent.
+    /// If this parameter is non-null, the new transaction will be a nested transaction, with the transaction indicated by parent as its parent.
     /// Transactions may be nested to any level.
     /// A parent transaction may not issue any other operations besides BeginTransaction, Abort, or Commit while it has active child transactions.
     /// </param>
@@ -235,7 +235,7 @@ public sealed class LightningEnvironment : IDisposable
     /// <returns>
     /// New LightningTransaction
     /// </returns>
-    public LightningTransaction BeginTransaction(LightningTransaction parent = null, TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
+    public LightningTransaction BeginTransaction(LightningTransaction? parent = null, TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
     {
         if (!IsOpened)
             throw new InvalidOperationException("Environment must be opened before starting a transaction");
@@ -245,7 +245,7 @@ public sealed class LightningEnvironment : IDisposable
 
     /// <summary>
     /// Create a transaction for use with the environment.
-    /// The transaction handle may be discarded usingAbort() or Commit().
+    /// The transaction handle may be discarded using Abort() or Commit().
     /// Note:
     /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
     /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.

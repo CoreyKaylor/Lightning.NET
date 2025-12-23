@@ -24,7 +24,7 @@ public sealed class LightningDatabase : IDisposable
     /// <param name="transaction">Active transaction.</param>
     /// <param name="configuration">Options for the database, like encoding, option flags, and comparison logic.</param>
     /// <param name="closeOnDispose">Close database handle on dispose</param>
-    internal LightningDatabase(string name, LightningTransaction transaction, DatabaseConfiguration configuration,
+    internal LightningDatabase(string? name, LightningTransaction transaction, DatabaseConfiguration configuration,
         bool closeOnDispose)
     {
         if (transaction == null)
@@ -55,7 +55,7 @@ public sealed class LightningDatabase : IDisposable
     /// <summary>
     /// Database name.
     /// </summary>
-    public string Name { get; }
+    public string? Name { get; }
 
     /// <summary>
     /// Environment in which the database was opened.

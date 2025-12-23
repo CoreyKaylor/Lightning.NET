@@ -263,7 +263,7 @@ public class EnvironmentTests : TestBase
         var tempFilePath = Path.Combine(TempPath(), "env_copy.mdb");
 
         // Ensure directory exists
-        Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath));
+        Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath)!);
 
         // Create a FileStream to the destination file
         using (var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.ReadWrite))
@@ -310,7 +310,7 @@ public class EnvironmentTests : TestBase
         var tempFilePath = Path.Combine(TempPath(), "env_copy_compact.mdb");
 
         // Ensure directory exists
-        Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath));
+        Directory.CreateDirectory(Path.GetDirectoryName(tempFilePath)!);
 
         // Create a FileStream to the destination file
         using (var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.ReadWrite))
@@ -360,8 +360,8 @@ public class EnvironmentTests : TestBase
         using var env = CreateEnvironment();
         env.Open();
 
-        // Null FileStream
-        Should.Throw<ArgumentNullException>(() => env.CopyToStream(null));
+        // Null FileStream - intentionally passing null to verify exception behavior
+        Should.Throw<ArgumentNullException>(() => env.CopyToStream(null!));
     }
 
     public void stream_throws_exception_for_read_only_file_stream()

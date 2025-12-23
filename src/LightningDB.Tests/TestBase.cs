@@ -13,7 +13,7 @@ public class TestBase
       Directory.CreateDirectory(path);
       return path;
    }
-   protected LightningEnvironment CreateEnvironment(string path = null, EnvironmentConfiguration config = null) => 
+   protected LightningEnvironment CreateEnvironment(string? path = null, EnvironmentConfiguration? config = null) =>
       new(path ?? TempPath(), config);
    
    public static void CleanupSession()

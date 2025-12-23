@@ -12,8 +12,8 @@ namespace LightningDB;
 /// </summary>
 public class DatabaseConfiguration
 {
-    private IComparer<MDBValue> _comparer;
-    private IComparer<MDBValue> _duplicatesComparer;
+    private IComparer<MDBValue>? _comparer;
+    private IComparer<MDBValue>? _duplicatesComparer;
 
     public DatabaseConfiguration()
     {
@@ -51,12 +51,12 @@ public class DatabaseConfiguration
 
     private int Compare(ref MDBValue left, ref MDBValue right)
     {
-        return _comparer.Compare(left, right);
+        return _comparer!.Compare(left, right);
     }
 
     private int IsDuplicate(ref MDBValue left, ref MDBValue right)
     {
-        return _duplicatesComparer.Compare(left, right);
+        return _duplicatesComparer!.Compare(left, right);
     }
 
     /// <summary>

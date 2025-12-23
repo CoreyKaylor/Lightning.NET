@@ -42,5 +42,5 @@ public class LightningVersionInfo
     /// <summary>
     /// Version string.
     /// </summary>
-    public string Version { get; private set; }
+    public string? Version { get; private set; }
 }

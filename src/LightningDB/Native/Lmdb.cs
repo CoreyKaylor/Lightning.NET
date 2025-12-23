@@ -168,7 +168,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME, StringMarshalling = StringMarshalling.Utf8)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_dbi_open(nint txn, string name, DatabaseOpenFlags flags, out uint db);
+    public static partial MDBResultCode mdb_dbi_open(nint txn, string? name, DatabaseOpenFlags flags, out uint db);
 
     /// <summary>
     /// Closes a database handle in the environment.
@@ -817,7 +817,7 @@ public static partial class Lmdb
         /// <param name="db">Address where the database handle will be stored</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_dbi_open(nint txn, string name, DatabaseOpenFlags flags, out uint db);
+        public static extern MDBResultCode mdb_dbi_open(nint txn, string? name, DatabaseOpenFlags flags, out uint db);
 
         /// <summary>
         /// Closes a database handle in the environment.

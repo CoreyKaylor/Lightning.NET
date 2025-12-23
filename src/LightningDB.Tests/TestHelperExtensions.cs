@@ -31,11 +31,11 @@ public static class TestHelperExtensions
         return tx.ContainsKey(db, enc.GetBytes(key));
     }
 
-    public static bool TryGet(this LightningTransaction tx, LightningDatabase db, string key, out string value)
+    public static bool TryGet(this LightningTransaction tx, LightningDatabase db, string key, out string? value)
     {
         var enc = System.Text.Encoding.UTF8;
         var found = tx.TryGet(db, enc.GetBytes(key), out var result);
-        value = enc.GetString(result);
+        value = result is not null ? enc.GetString(result) : null;
         return found;
     }
 

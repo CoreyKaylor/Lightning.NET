@@ -6,6 +6,7 @@
     <Authors>Ilya Lukyanov;Corey Kaylor</Authors>
     <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>14</LangVersion>
+    <Nullable>enable</Nullable>
     <AssemblyName>LightningDB</AssemblyName>
     <PackageId>LightningDB</PackageId>
     <PackageIcon>lightningdb.png</PackageIcon>
@@ -34,5 +35,6 @@
 
   <ItemGroup>
     <PackageReference Include="System.Memory" Version="4.6.0" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
+    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="all" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
   </ItemGroup>
 </Project>
