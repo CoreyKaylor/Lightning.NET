@@ -135,7 +135,7 @@ public sealed class LightningTransaction : IDisposable
         {
             var mdbKey = new MDBValue(key.Length, keyBuffer);
 
-            return (mdb_get(_handle, db._handle, in mdbKey, out var mdbValue), mdbKey, mdbValue);
+            return (mdb_get(_handle, db._handle, ref mdbKey, out var mdbValue), mdbKey, mdbValue);
         }
     }
 
@@ -406,7 +406,7 @@ public sealed class LightningTransaction : IDisposable
             var mdbA = new MDBValue(a.Length, aPtr);
             var mdbB = new MDBValue(b.Length, bPtr);
 
-            return mdb_cmp(_handle, db._handle, in mdbA, in mdbB);
+            return mdb_cmp(_handle, db._handle, ref mdbA, ref mdbB);
         }
     }
 
@@ -428,7 +428,7 @@ public sealed class LightningTransaction : IDisposable
             var mdbA = new MDBValue(a.Length, aPtr);
             var mdbB = new MDBValue(b.Length, bPtr);
 
-            return mdb_dcmp(_handle, db._handle, in mdbA, in mdbB);
+            return mdb_dcmp(_handle, db._handle, ref mdbA, ref mdbB);
         }
     }
 

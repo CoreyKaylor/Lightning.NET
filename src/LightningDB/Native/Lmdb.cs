@@ -378,7 +378,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_get(nint txn, uint dbi, in MDBValue key, out MDBValue data);
+    public static partial MDBResultCode mdb_get(nint txn, uint dbi, ref MDBValue key, out MDBValue data);
 
     /// <summary>
     /// Returns count of duplicates for the current key in a cursor.
@@ -401,7 +401,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_put(nint txn, uint dbi, in MDBValue key, in MDBValue data, PutOptions flags);
+    public static partial MDBResultCode mdb_put(nint txn, uint dbi, ref MDBValue key, ref MDBValue data, PutOptions flags);
 
     /// <summary>
     /// Deletes items from a database.
@@ -413,7 +413,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_del(nint txn, uint dbi, in MDBValue key, in MDBValue data);
+    public static partial MDBResultCode mdb_del(nint txn, uint dbi, ref MDBValue key, ref MDBValue data);
 
     /// <summary>
     /// Deletes items from a database.
@@ -425,7 +425,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_del(nint txn, uint dbi, in MDBValue key, nint data);
+    public static partial MDBResultCode mdb_del(nint txn, uint dbi, ref MDBValue key, nint data);
 
     /// <summary>
     /// Creates a cursor handle for the specified transaction and database.
@@ -496,7 +496,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_cursor_put(nint cursor, in MDBValue key, in MDBValue mdbValue, CursorPutOptions flags);
+    public static partial MDBResultCode mdb_cursor_put(nint cursor, ref MDBValue key, ref MDBValue mdbValue, CursorPutOptions flags);
 
     /// <summary>
     /// Deletes the current key/data pair to which the cursor refers.
@@ -539,7 +539,7 @@ public static partial class Lmdb
     /// <param name="b">The second item to compare</param>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial int mdb_cmp(nint txn, uint dbi, in MDBValue a, in MDBValue b);
+    public static partial int mdb_cmp(nint txn, uint dbi, ref MDBValue a, ref MDBValue b);
 
     /// <summary>
     /// Compares two data items according to a database's data comparison function.
@@ -550,7 +550,7 @@ public static partial class Lmdb
     /// <param name="b">The second item to compare</param>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial int mdb_dcmp(nint txn, uint dbi, in MDBValue a, in MDBValue b);
+    public static partial int mdb_dcmp(nint txn, uint dbi, ref MDBValue a, ref MDBValue b);
 
     /// <summary>
     /// Lists all the readers in the environment and the transaction they're holding.
@@ -601,7 +601,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     public static MDBResultCode mdb_put(nint txn, uint dbi, MDBValue key, MDBValue value, PutOptions flags)
     {
-        return mdb_put(txn, dbi, in key, in value, flags);
+        return mdb_put(txn, dbi, ref key, ref value, flags);
     }
 
     /// <summary>
@@ -614,7 +614,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     public static MDBResultCode mdb_del(nint txn, uint dbi, MDBValue key, MDBValue value)
     {
-        return mdb_del(txn, dbi, in key, in value);
+        return mdb_del(txn, dbi, ref key, ref value);
     }
 
     /// <summary>
@@ -626,7 +626,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     public static MDBResultCode mdb_del(nint txn, uint dbi, MDBValue key)
     {
-        return mdb_del(txn, dbi, in key, 0);
+        return mdb_del(txn, dbi, ref key, 0);
     }
 
     /// <summary>
@@ -639,7 +639,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     public static MDBResultCode mdb_cursor_put(nint cursor, MDBValue key, MDBValue value, CursorPutOptions flags)
     {
-        return mdb_cursor_put(cursor, in key, in value, flags);
+        return mdb_cursor_put(cursor, ref key, ref value, flags);
     }
 
     /// <summary>
@@ -655,7 +655,7 @@ public static partial class Lmdb
         CursorPutOptions flags)
     {
         ref var dataRef = ref MemoryMarshal.GetReference(data);
-        return mdb_cursor_put(cursor, in key, in dataRef, flags);
+        return mdb_cursor_put(cursor, ref key, ref dataRef, flags);
     }
 
 #if !NET7_0_OR_GREATER
@@ -1031,7 +1031,7 @@ public static partial class Lmdb
         /// <param name="data">Address where the retrieved data will be stored</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_get(nint txn, uint dbi, in MDBValue key, out MDBValue data);
+        public static extern MDBResultCode mdb_get(nint txn, uint dbi, ref MDBValue key, out MDBValue data);
 
         /// <summary>
         /// Returns count of duplicates for the current key in a cursor.
@@ -1052,7 +1052,7 @@ public static partial class Lmdb
         /// <param name="flags">Special options for this operation</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_put(nint txn, uint dbi, in MDBValue key, in MDBValue data, PutOptions flags);
+        public static extern MDBResultCode mdb_put(nint txn, uint dbi, ref MDBValue key, ref MDBValue data, PutOptions flags);
 
         /// <summary>
         /// Deletes items from a database.
@@ -1063,7 +1063,7 @@ public static partial class Lmdb
         /// <param name="data">The data to delete (only needed for MDB_DUPSORT)</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_del(nint txn, uint dbi, in MDBValue key, in MDBValue data);
+        public static extern MDBResultCode mdb_del(nint txn, uint dbi, ref MDBValue key, ref MDBValue data);
 
         /// <summary>
         /// Deletes items from a database.
@@ -1074,7 +1074,7 @@ public static partial class Lmdb
         /// <param name="data">NULL pointer to delete all of the data items for the key</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_del(nint txn, uint dbi, in MDBValue key, nint data);
+        public static extern MDBResultCode mdb_del(nint txn, uint dbi, ref MDBValue key, nint data);
 
         /// <summary>
         /// Creates a cursor handle for the specified transaction and database.
@@ -1122,7 +1122,7 @@ public static partial class Lmdb
         /// <param name="flags">Special options for this operation</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_cursor_put(nint cursor, in MDBValue key, in MDBValue mdbValue, CursorPutOptions flags);
+        public static extern MDBResultCode mdb_cursor_put(nint cursor, ref MDBValue key, ref MDBValue mdbValue, CursorPutOptions flags);
 
         /// <summary>
         /// Deletes the current key/data pair to which the cursor refers.
@@ -1161,7 +1161,7 @@ public static partial class Lmdb
         /// <param name="a">The first item to compare</param>
         /// <param name="b">The second item to compare</param>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_cmp(nint txn, uint dbi, in MDBValue a, in MDBValue b);
+        public static extern int mdb_cmp(nint txn, uint dbi, ref MDBValue a, ref MDBValue b);
 
         /// <summary>
         /// Compares two data items according to a database's data comparison function.
@@ -1171,7 +1171,7 @@ public static partial class Lmdb
         /// <param name="a">The first item to compare</param>
         /// <param name="b">The second item to compare</param>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_dcmp(nint txn, uint dbi, in MDBValue a, in MDBValue b);
+        public static extern int mdb_dcmp(nint txn, uint dbi, ref MDBValue a, ref MDBValue b);
 
         /// <summary>
         /// Lists all the readers in the environment and the transaction they're holding.
