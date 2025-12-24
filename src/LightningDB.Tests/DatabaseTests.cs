@@ -203,7 +203,7 @@ public class DatabaseTests : TestBase
         // Test default database (should have no special flags)
         using (var txn = env.BeginTransaction())
         {
-            using var db = txn.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            using var db = txn.OpenDatabase(new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
             
             var flags = db.GetFlags(txn);
             flags.ShouldBe(DatabaseOpenFlags.None);

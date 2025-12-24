@@ -115,7 +115,7 @@ public class EnvironmentTests : TestBase
         env.Open();
 
         using var tx = env.BeginTransaction();
-        using var db = tx.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+        using var db = tx.OpenDatabase(new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
 
         for (int i = 0; i < 5; i++)
         {
@@ -250,7 +250,7 @@ public class EnvironmentTests : TestBase
 
         // Add some data to the source environment
         using (var tx = sourceEnv.BeginTransaction())
-        using (var db = tx.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+        using (var db = tx.OpenDatabase(new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
         {
             for (int i = 0; i < 5; i++)
             {
@@ -286,7 +286,7 @@ public class EnvironmentTests : TestBase
 
         // Add some data to the source environment and then delete half of it to create free space
         using (var tx = sourceEnv.BeginTransaction())
-        using (var db = tx.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+        using (var db = tx.OpenDatabase(new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
         {
             for (int i = 0; i < 10; i++)
             {
@@ -333,7 +333,7 @@ public class EnvironmentTests : TestBase
 
         // Add some data to make sure the file has content
         using (var tx = env.BeginTransaction())
-        using (var db = tx.OpenDatabase(null, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+        using (var db = tx.OpenDatabase(new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
         {
             tx.Put(db, "testkey", "testvalue");
             tx.Commit();

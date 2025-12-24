@@ -69,15 +69,51 @@ public sealed class LightningTransaction : IDisposable
     }
 
     /// <summary>
-    /// Opens a database in context of this transaction.
+    /// Opens the default (unnamed) database in context of this transaction with default configuration.
     /// </summary>
-    /// <param name="name">Database name (optional). If null then the default/unnamed database is used.</param>
+    /// <param name="closeOnDispose">Close database handle on dispose</param>
+    /// <returns>Created database wrapper.</returns>
+    public LightningDatabase OpenDatabase(bool closeOnDispose = false)
+    {
+        return OpenDatabaseImpl(null, new DatabaseConfiguration(), closeOnDispose);
+    }
+
+    /// <summary>
+    /// Opens the default (unnamed) database in context of this transaction.
+    /// </summary>
     /// <param name="configuration">Database open options.</param>
     /// <param name="closeOnDispose">Close database handle on dispose</param>
     /// <returns>Created database wrapper.</returns>
-    public LightningDatabase OpenDatabase(string? name = null, DatabaseConfiguration? configuration = null, bool closeOnDispose = false)
+    public LightningDatabase OpenDatabase(DatabaseConfiguration configuration, bool closeOnDispose = false)
     {
-        configuration ??= new DatabaseConfiguration();
+        return OpenDatabaseImpl(null, configuration, closeOnDispose);
+    }
+
+    /// <summary>
+    /// Opens a named database in context of this transaction with default configuration.
+    /// </summary>
+    /// <param name="name">Database name.</param>
+    /// <param name="closeOnDispose">Close database handle on dispose</param>
+    /// <returns>Created database wrapper.</returns>
+    public LightningDatabase OpenDatabase(string name, bool closeOnDispose = false)
+    {
+        return OpenDatabaseImpl(name, new DatabaseConfiguration(), closeOnDispose);
+    }
+
+    /// <summary>
+    /// Opens a named database in context of this transaction.
+    /// </summary>
+    /// <param name="name">Database name.</param>
+    /// <param name="configuration">Database open options.</param>
+    /// <param name="closeOnDispose">Close database handle on dispose</param>
+    /// <returns>Created database wrapper.</returns>
+    public LightningDatabase OpenDatabase(string name, DatabaseConfiguration configuration, bool closeOnDispose = false)
+    {
+        return OpenDatabaseImpl(name, configuration, closeOnDispose);
+    }
+
+    private LightningDatabase OpenDatabaseImpl(string? name, DatabaseConfiguration configuration, bool closeOnDispose)
+    {
         var db = new LightningDatabase(name, this, configuration, closeOnDispose);
         return db;
     }

@@ -14,7 +14,7 @@ public class TestBase
       return path;
    }
    protected LightningEnvironment CreateEnvironment(string? path = null, EnvironmentConfiguration? config = null) =>
-      new(path ?? TempPath(), config);
+      config is null ? new(path ?? TempPath()) : new(path ?? TempPath(), config);
    
    public static void CleanupSession()
    {

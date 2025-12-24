@@ -17,23 +17,37 @@ public sealed class LightningEnvironment : IDisposable
     internal nint _handle;
 
     /// <summary>
-    /// Creates a new instance of LightningEnvironment.
+    /// Creates a new instance of LightningEnvironment with default configuration.
     /// </summary>
     /// <param name="path">Directory for storing database files.</param>
-    /// <param name="configuration">Configuration for the environment. If null, default configuration is used.</param>
-    public LightningEnvironment(string path, EnvironmentConfiguration? configuration = null)
+    public LightningEnvironment(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Invalid directory name");
 
-        var config = configuration ?? _config;
-
         mdb_env_create(out _handle).ThrowOnError();
-        config.Configure(this);
-        _config = config;
+        _config.Configure(this);
 
         Path = path;
+    }
 
+    /// <summary>
+    /// Creates a new instance of LightningEnvironment.
+    /// </summary>
+    /// <param name="path">Directory for storing database files.</param>
+    /// <param name="configuration">Configuration for the environment.</param>
+    public LightningEnvironment(string path, EnvironmentConfiguration configuration)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            throw new ArgumentException("Invalid directory name");
+        if (configuration == null)
+            throw new ArgumentNullException(nameof(configuration));
+
+        mdb_env_create(out _handle).ThrowOnError();
+        configuration.Configure(this);
+        _config = configuration;
+
+        Path = path;
     }
 
     /// <summary>
@@ -218,14 +232,32 @@ public sealed class LightningEnvironment : IDisposable
     }
 
     /// <summary>
-    /// Create a transaction for use with the environment.
+    /// Create a top-level transaction for use with the environment.
+    /// The transaction handle may be discarded using Abort() or Commit().
+    /// Note:
+    /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
+    /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
+    /// </summary>
+    /// <param name="beginFlags">
+    /// Special options for this transaction.
+    /// </param>
+    /// <returns>
+    /// New LightningTransaction
+    /// </returns>
+    public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
+    {
+        return BeginTransactionImpl(null, beginFlags);
+    }
+
+    /// <summary>
+    /// Create a nested transaction for use with the environment.
     /// The transaction handle may be discarded using Abort() or Commit().
     /// Note:
     /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
     /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
     /// </summary>
     /// <param name="parent">
-    /// If this parameter is non-null, the new transaction will be a nested transaction, with the transaction indicated by parent as its parent.
+    /// The parent transaction. The new transaction will be a nested transaction.
     /// Transactions may be nested to any level.
     /// A parent transaction may not issue any other operations besides BeginTransaction, Abort, or Commit while it has active child transactions.
     /// </param>
@@ -235,30 +267,17 @@ public sealed class LightningEnvironment : IDisposable
     /// <returns>
     /// New LightningTransaction
     /// </returns>
-    public LightningTransaction BeginTransaction(LightningTransaction? parent = null, TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
+    public LightningTransaction BeginTransaction(LightningTransaction parent, TransactionBeginFlags beginFlags = LightningTransaction.DefaultTransactionBeginFlags)
+    {
+        return BeginTransactionImpl(parent, beginFlags);
+    }
+
+    private LightningTransaction BeginTransactionImpl(LightningTransaction? parent, TransactionBeginFlags beginFlags)
     {
         if (!IsOpened)
             throw new InvalidOperationException("Environment must be opened before starting a transaction");
 
         return new LightningTransaction(this, parent, beginFlags);
-    }
-
-    /// <summary>
-    /// Create a transaction for use with the environment.
-    /// The transaction handle may be discarded using Abort() or Commit().
-    /// Note:
-    /// Transactions may not span threads; a transaction must only be used by a single thread. Also, a thread may only have a single transaction.
-    /// Cursors may not span transactions; each cursor must be opened and closed within a single transaction.
-    /// </summary>
-    /// <param name="beginFlags">
-    /// Special options for this transaction.
-    /// </param>
-    /// <returns>
-    /// New LightningTransaction
-    /// </returns>
-    public LightningTransaction BeginTransaction(TransactionBeginFlags beginFlags)
-    {
-        return BeginTransaction(null, beginFlags);
     }
 
     /// <summary>

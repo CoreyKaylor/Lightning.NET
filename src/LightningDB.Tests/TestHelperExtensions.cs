@@ -52,7 +52,7 @@ public static class TestHelperExtensions
         DatabaseOpenFlags flags = DatabaseOpenFlags.Create, TransactionBeginFlags transactionFlags = TransactionBeginFlags.None)
     {
         using var tx = env.BeginTransaction(transactionFlags);
-        using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = flags });
+        using var db = tx.OpenDatabase(new DatabaseConfiguration { Flags = flags });
         using var cursor = tx.CreateCursor(db);
         scenario(tx, db, cursor);
     }
@@ -62,7 +62,7 @@ public static class TestHelperExtensions
         DatabaseOpenFlags flags = DatabaseOpenFlags.Create, TransactionBeginFlags transactionFlags = TransactionBeginFlags.None)
     {
         using var tx = env.BeginTransaction(transactionFlags);
-        using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = flags });
+        using var db = tx.OpenDatabase(new DatabaseConfiguration { Flags = flags });
         scenario(tx, db);
     }
 }
