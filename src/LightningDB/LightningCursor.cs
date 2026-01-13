@@ -521,9 +521,11 @@ public class LightningCursor : IDisposable
     /// </summary>
     /// <param name="value">Output parameter where the duplicate count will be stored.</param>
     /// <returns>Returns <see cref="MDBResultCode"/></returns>
-    public MDBResultCode Count(out int value)
+    public MDBResultCode Count(out long value)
     {
-        return mdb_cursor_count(_handle, out value);
+        var result = mdb_cursor_count(_handle, out var count);
+        value = (long)count;
+        return result;
     }
 
     private bool ShouldCloseCursor()

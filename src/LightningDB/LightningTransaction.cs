@@ -422,7 +422,7 @@ public sealed class LightningTransaction : IDisposable
     /// <summary>
     /// Gets the transaction ID.
     /// </summary>
-    public int Id => mdb_txn_id(_handle);
+    public nuint Id => mdb_txn_id(_handle);
 
     /// <summary>
     /// Compares two data items according to the database's key comparison function.

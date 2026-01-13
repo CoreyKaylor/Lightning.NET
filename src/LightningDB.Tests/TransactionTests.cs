@@ -294,7 +294,7 @@ public class TransactionTests : TestBase
 
         env.RunTransactionScenario((tx, _) =>
         {
-            tx.Id.ShouldBeGreaterThan(0);
+            tx.Id.ShouldBeGreaterThan((nuint)0);
         });
     }
 

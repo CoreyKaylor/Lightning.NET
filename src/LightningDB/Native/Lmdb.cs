@@ -229,7 +229,7 @@ public static partial class Lmdb
     /// <returns>The transaction ID</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial int mdb_txn_id(nint txn);
+    public static partial nuint mdb_txn_id(nint txn);
 
     /// <summary>
     /// Commits all the operations of a transaction into the database.
@@ -388,7 +388,7 @@ public static partial class Lmdb
     /// <returns>A result code indicating success or failure</returns>
     [LibraryImport(MDB_DLL_NAME)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    public static partial MDBResultCode mdb_cursor_count(nint cursor, out int countp);
+    public static partial MDBResultCode mdb_cursor_count(nint cursor, out nuint countp);
 
     /// <summary>
     /// Stores key/data pairs in a database.
@@ -872,7 +872,7 @@ public static partial class Lmdb
         /// <param name="txn">A transaction handle</param>
         /// <returns>The transaction ID</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int mdb_txn_id(nint txn);
+        public static extern nuint mdb_txn_id(nint txn);
 
         /// <summary>
         /// Commits all the operations of a transaction into the database.
@@ -1040,7 +1040,7 @@ public static partial class Lmdb
         /// <param name="countp">Address where the count will be stored</param>
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
-        public static extern MDBResultCode mdb_cursor_count(nint cursor, out int countp);
+        public static extern MDBResultCode mdb_cursor_count(nint cursor, out nuint countp);
 
         /// <summary>
         /// Stores key/data pairs in a database.
