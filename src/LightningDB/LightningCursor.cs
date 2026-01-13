@@ -524,7 +524,7 @@ public class LightningCursor : IDisposable
     public MDBResultCode Count(out long value)
     {
         var result = mdb_cursor_count(_handle, out var count);
-        value = (long)count;
+        value = checked((long)count);
         return result;
     }
 
