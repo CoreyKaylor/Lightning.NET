@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
-
+using System.Runtime.InteropServices;
 using static LightningDB.Native.Lmdb;
 
 namespace LightningDB;
@@ -441,6 +441,35 @@ public class LightningCursor : IDisposable
                 return 0;
 
             return values[0].Length;
+        }
+    }
+
+    /// <summary>
+    /// Store by cursor.
+    /// This function stores key/data pairs into the database.
+    /// If the function fails for any reason, the state of the cursor will be unchanged.
+    /// If the function succeeds and an item is inserted into the database, the cursor is always positioned to refer to the newly inserted item.
+    /// </summary>
+    /// <param name="key">The key operated on.</param>
+    /// <param name="values">The data items operated on.</param>
+    /// <returns>Returns <see cref="MDBResultCode"/></returns>
+    public unsafe MDBResultCode PutMultiple<T>(ReadOnlySpan<byte> key, ReadOnlySpan<T> values)
+        where T : unmanaged
+    {
+        var valuesBytes = MemoryMarshal.AsBytes(values);
+
+        fixed (byte* keyPtr = key)
+        fixed (byte* valuesPtr = valuesBytes)
+        {
+            var mdbKey = new MDBValue(key.Length, keyPtr);
+
+            Span<MDBValue> dataBuffer =
+            [
+                new (Unsafe.SizeOf<T>(), valuesPtr),
+                new (values.Length, null)
+            ];
+
+            return mdb_cursor_put(_handle, ref mdbKey, ref dataBuffer[0], CursorPutOptions.MultipleData);
         }
     }
 
