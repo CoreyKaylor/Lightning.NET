@@ -1,9 +1,12 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <LightningDBTargetRuntimeRelativePath Condition=" '$(LightningDBTargetRuntimeRelativePath)' == '' ">\..\</LightningDBTargetRuntimeRelativePath>
   </PropertyGroup>
-  <Target Name="LightningDBIncludeNativeDll" AfterTargets="BeforeResolveReferences">
+  <!-- Desktop-only: on browser-wasm the native library is compiled from source
+       via buildTransitive/LightningDB.targets, and copying a host-OS binary to
+       the output would be wrong. -->
+  <Target Name="LightningDBIncludeNativeDll" AfterTargets="BeforeResolveReferences" Condition="'$(RuntimeIdentifier)' != 'browser-wasm'">
     <PropertyGroup>
       <_LightningDBEffectiveRuntimeIdentifier>$(RuntimeIdentifier)</_LightningDBEffectiveRuntimeIdentifier>
 

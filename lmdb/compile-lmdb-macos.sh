@@ -11,6 +11,14 @@ cd ./lmdb/libraries/liblmdb || exit
 git fetch origin tag LMDB_1.0.1 --no-tags
 git checkout -f LMDB_1.0.1
 
+# browser-wasm ships as compilable source in the nupkg (consumers' wasm-tools
+# workload compiles it; no prebuilt binary works there — mono-wasm cannot load
+# side modules). Refresh the committed copies from the pinned tree.
+# See src/LightningDB/wasm/README.md.
+WASM_SRC=../../../../src/LightningDB/wasm
+cp mdb.c midl.c lmdb.h midl.h "$WASM_SRC/"
+echo "wasm sources refreshed from $(git rev-parse --short HEAD)"
+
 declare -A build_outputs
 declare -A supported_targets=(
   [ios-arm64/native/lmdb.dylib]="make CC='xcrun --sdk iphoneos clang -arch arm64 -miphoneos-version-min=12.0' LDFLAGS='-s' XCFLAGS='-DNDEBUG' VERSION_OPT='-Wl,-current_version,1.0'"
@@ -28,7 +36,6 @@ declare -A supported_targets=(
   [android-arm/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-x86/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-x64/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
-  [browser-wasm/native/liblmdb.wasm]="emcc -O2 -pthread -fPIC -DNDEBUG -sSIDE_MODULE=1 -o liblmdb.so mdb.c midl.c module.c"
 )
 
 function compile_lib() {

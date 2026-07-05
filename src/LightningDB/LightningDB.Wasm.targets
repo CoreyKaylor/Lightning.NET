@@ -1,0 +1,32 @@
+<Project>
+  <!-- Packed as buildTransitive/LightningDB.targets: NuGet imports this for
+       direct AND transitive consumers. Desktop native-copy logic lives only in
+       build/LightningDB.targets (direct consumers import both files) - keep
+       wasm logic here and desktop logic there to avoid double-imports.
+
+       On browser-wasm there is no runtime loading of native libraries; LMDB is
+       compiled from the packaged source into dotnet.native.wasm by the
+       consumer's wasm-tools workload. The presence of a NativeFileReference
+       makes the SDK enable WasmBuildNative automatically. The lmdb.c file name
+       is load-bearing: the wasm pinvoke module name is the file basename and
+       must match DllImport("lmdb"). -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <NativeFileReference Include="$(MSBuildThisFileDirectory)..\wasm\lmdb.c" />
+  </ItemGroup>
+
+  <!-- Link emscripten's IDBFS (IndexedDB-backed file system) so
+       LightningBrowserStorage can persist data across page reloads. Opt out
+       with <WasmEnableIDBFS>false</WasmEnableIDBFS>. The append happens inside
+       a target because EmccExtraLDFlags is read at link-target execution time;
+       the two BeforeTargets names are the targets that actually read the
+       property: net8 (_WasmWriteRspFilesForLinking in WasmApp.Native.targets)
+       and net9/net10 (_BrowserWasmWriteRspForLinking in BrowserWasmApp.targets).
+       Missing names are ignored. -->
+  <Target Name="_LightningDBEnableIdbfs"
+          Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(WasmEnableIDBFS)' != 'false'"
+          BeforeTargets="_WasmWriteRspFilesForLinking;_BrowserWasmWriteRspForLinking">
+    <PropertyGroup Condition="!$(EmccExtraLDFlags.Contains('-lidbfs.js'))">
+      <EmccExtraLDFlags>$(EmccExtraLDFlags) -lidbfs.js</EmccExtraLDFlags>
+    </PropertyGroup>
+  </Target>
+</Project>

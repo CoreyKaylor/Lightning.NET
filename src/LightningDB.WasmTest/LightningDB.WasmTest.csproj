@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <!-- WasmBuildNative is intentionally NOT set: the SDK enables it
+         automatically when a NativeFileReference is present, which is the
+         behavior nupkg consumers rely on. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../LightningDB/LightningDB.csproj" />
+    <!-- Direct wire-up of the packaged wasm source: buildTransitive targets in
+         the nupkg do this for package consumers, but do not apply to
+         ProjectReferences. -->
+    <NativeFileReference Include="../LightningDB/wasm/lmdb.c" />
+  </ItemGroup>
+
+  <!-- Mirrors _LightningDBEnableIdbfs from LightningDB.Wasm.targets: nupkg
+       consumers get it from buildTransitive, but that does not apply to
+       ProjectReferences, so the test app wires the IDBFS link flag itself. -->
+  <Target Name="_LightningDBEnableIdbfs"
+          Condition="'$(WasmEnableIDBFS)' != 'false'"
+          BeforeTargets="_WasmWriteRspFilesForLinking;_BrowserWasmWriteRspForLinking">
+    <PropertyGroup Condition="!$(EmccExtraLDFlags.Contains('-lidbfs.js'))">
+      <EmccExtraLDFlags>$(EmccExtraLDFlags) -lidbfs.js</EmccExtraLDFlags>
+    </PropertyGroup>
+  </Target>
+
+</Project>

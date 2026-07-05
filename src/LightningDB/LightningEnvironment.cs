@@ -27,7 +27,20 @@ public sealed class LightningEnvironment : IDisposable
             throw new ArgumentException("Invalid directory name");
 
         mdb_env_create(out _handle).ThrowOnError();
-        _config.Configure(this);
+        try
+        {
+            _config.Configure(this);
+        }
+        catch
+        {
+            // A failed constructor must not leave a live finalizer (it would throw
+            // on the finalizer thread and abort the process) or a native handle leak.
+            mdb_env_close(_handle);
+            _handle = 0;
+            _disposed = true;
+            GC.SuppressFinalize(this);
+            throw;
+        }
 
         Path = path;
     }
@@ -45,7 +58,20 @@ public sealed class LightningEnvironment : IDisposable
             throw new ArgumentNullException(nameof(configuration));
 
         mdb_env_create(out _handle).ThrowOnError();
-        configuration.Configure(this);
+        try
+        {
+            configuration.Configure(this);
+        }
+        catch
+        {
+            // A failed constructor must not leave a live finalizer (it would throw
+            // on the finalizer thread and abort the process) or a native handle leak.
+            mdb_env_close(_handle);
+            _handle = 0;
+            _disposed = true;
+            GC.SuppressFinalize(this);
+            throw;
+        }
         _config = configuration;
 
         Path = path;
@@ -175,6 +201,45 @@ public sealed class LightningEnvironment : IDisposable
 
     internal void ConfigurePageCallbacks(EncryptionConfiguration? encryption, LightningChecksum? checksum)
     {
+        var nativeCipher = encryption?.Cipher is NativeChaCha20Poly1305Cipher;
+        var nativeChecksum = checksum is NativeBlake2bChecksum;
+        if (nativeCipher || nativeChecksum)
+        {
+#if !NET8_0_OR_GREATER
+            // The netstandard2.0 asset never runs on browser-wasm.
+            throw new PlatformNotSupportedException(
+                "NativeChaCha20Poly1305Cipher and NativeBlake2bChecksum execute inside the native library and are only supported on browser-wasm. " +
+                "Use a custom LightningCipher/LightningChecksum implementation on other platforms.");
+#else
+            if (!OperatingSystem.IsBrowser())
+                throw new PlatformNotSupportedException(
+                    "NativeChaCha20Poly1305Cipher and NativeBlake2bChecksum execute inside the native library and are only supported on browser-wasm. " +
+                    "Use AesGcmCipher/Sha256Checksum (or a custom implementation) on other platforms.");
+            if (encryption is not null && !nativeCipher)
+                throw new NotSupportedException(
+                    "Managed ciphers cannot be combined with NativeBlake2bChecksum on browser-wasm; use NativeChaCha20Poly1305Cipher.");
+            if (nativeCipher && checksum is not null && !nativeChecksum)
+                throw new NotSupportedException(
+                    "Managed checksums cannot be combined with NativeChaCha20Poly1305Cipher on browser-wasm; use NativeBlake2bChecksum.");
+
+            if (encryption is not null)
+            {
+                if (encryption.Key.Length != NativeChaCha20Poly1305Cipher.KeySize)
+                    throw new ArgumentException(
+                        $"NativeChaCha20Poly1305Cipher requires a {NativeChaCha20Poly1305Cipher.KeySize}-byte key.");
+                // The native library copies the key at set time and frees it on env close,
+                // so no keep-alive or unmanaged copy is needed.
+                lmdb_setup_encryption(_handle, ref encryption.Key[0], encryption.Key.Length,
+                    nativeChecksum ? 1 : 0).ThrowOnError();
+            }
+            else
+            {
+                lmdb_setup_checksum(_handle).ThrowOnError();
+            }
+            return;
+#endif
+        }
+
         _pageCallbacks = new Native.PageCallbackKeepAlive(encryption, checksum);
         _pageCallbacks.Install(_handle);
     }

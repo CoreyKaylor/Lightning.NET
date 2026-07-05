@@ -143,4 +143,24 @@ public class EncryptionTests : TestBase
             Encoding.UTF8.GetString(value.CopyToNewArray()).ShouldBe("verified");
         }
     }
+
+    public void native_cipher_throws_off_browser()
+    {
+        // NativeChaCha20Poly1305Cipher is implemented inside the wasm build of the
+        // native library; configuring it anywhere else must fail clearly.
+        Should.Throw<PlatformNotSupportedException>(() =>
+            CreateEnvironment(TempPath(), new EnvironmentConfiguration
+            {
+                Encryption = new EncryptionConfiguration(new NativeChaCha20Poly1305Cipher(), Key())
+            }));
+    }
+
+    public void native_checksum_throws_off_browser()
+    {
+        Should.Throw<PlatformNotSupportedException>(() =>
+            CreateEnvironment(TempPath(), new EnvironmentConfiguration
+            {
+                Checksum = new NativeBlake2bChecksum()
+            }));
+    }
 }

@@ -40,3 +40,23 @@ public sealed class Sha256Checksum : LightningChecksum
         => System.Security.Cryptography.SHA256.HashData(source, destination);
 }
 #endif
+
+/// <summary>
+/// BLAKE2b-256 page checksum implemented inside the native LMDB library. Only
+/// functional on browser-wasm, where managed page callbacks are unavailable
+/// (the .NET WebAssembly runtime cannot marshal delegates as native callbacks).
+/// When combined with <see cref="NativeChaCha20Poly1305Cipher"/>, the hash is
+/// keyed with the encryption key.
+/// </summary>
+/// <remarks>
+/// <see cref="Compute"/> is never invoked from managed code; the hashing runs
+/// entirely inside the native library.
+/// </remarks>
+public sealed class NativeBlake2bChecksum : LightningChecksum
+{
+    public override int Size => 32;
+
+    public override void Compute(ReadOnlySpan<byte> source, Span<byte> destination, ReadOnlySpan<byte> key)
+        => throw new PlatformNotSupportedException(
+            $"{nameof(NativeBlake2bChecksum)} executes inside the native library and is only supported on browser-wasm.");
+}

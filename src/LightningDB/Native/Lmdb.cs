@@ -373,6 +373,31 @@ public static partial class Lmdb
     public static partial MDBResultCode mdb_env_set_checksum(nint env, ChecksumFunction func, uint size);
 
     /// <summary>
+    /// Installs the natively-implemented ChaCha20-Poly1305 page cipher (and optionally the
+    /// BLAKE2b-256 checksum) on the environment. Must be called before mdb_env_open.
+    /// Only available in browser-wasm builds, where the cipher is statically compiled into
+    /// the native library (see wasm/lmdb_wasm_crypto.c).
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="key">The 32-byte encryption key (copied by the native library)</param>
+    /// <param name="keyLength">The key length; must be 32</param>
+    /// <param name="withChecksum">Non-zero to also install the keyed BLAKE2b-256 checksum</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode lmdb_setup_encryption(nint env, ref byte key, int keyLength, int withChecksum);
+
+    /// <summary>
+    /// Installs the natively-implemented BLAKE2b-256 page checksum on the environment.
+    /// Must be called before mdb_env_open. Only available in browser-wasm builds.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode lmdb_setup_checksum(nint env);
+
+    /// <summary>
     /// Prepares (first phase of a two-phase commit) all the operations of a transaction.
     /// </summary>
     /// <param name="txn">The transaction handle</param>
@@ -1110,6 +1135,27 @@ public static partial class Lmdb
         /// <returns>A result code indicating success or failure</returns>
         [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
         public static extern MDBResultCode mdb_env_set_checksum(nint env, ChecksumFunction func, uint size);
+
+        /// <summary>
+        /// Installs the natively-implemented ChaCha20-Poly1305 page cipher (and optionally the
+        /// BLAKE2b-256 checksum) on the environment. Only available in browser-wasm builds.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="key">The 32-byte encryption key (copied by the native library)</param>
+        /// <param name="keyLength">The key length; must be 32</param>
+        /// <param name="withChecksum">Non-zero to also install the keyed BLAKE2b-256 checksum</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode lmdb_setup_encryption(nint env, ref byte key, int keyLength, int withChecksum);
+
+        /// <summary>
+        /// Installs the natively-implemented BLAKE2b-256 page checksum on the environment.
+        /// Only available in browser-wasm builds.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode lmdb_setup_checksum(nint env);
 
         /// <summary>
         /// Prepares (first phase of a two-phase commit) all the operations of a transaction.

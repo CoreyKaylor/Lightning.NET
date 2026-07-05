@@ -44,6 +44,86 @@ simulator slice requires iOS 14.0):
   release/App Store builds. On older Unity versions, use the device slice
   (`ios-arm64/lmdb.framework`) on its own instead.
 
+### Browser (WebAssembly)
+
+LightningDB has experimental support for browser-wasm (Blazor WebAssembly,
+Uno Platform). There is no prebuilt binary for the browser — the .NET
+WebAssembly runtime statically links native code at app build time — so the
+package ships LMDB as compilable C source and wires it up automatically when
+your app's `RuntimeIdentifier` is `browser-wasm`. The only prerequisite:
+
+```bash
+dotnet workload install wasm-tools
+```
+
+The first build performs a one-time native relink (~15 s, cached afterwards).
+
+**Required open flags.** Each is load-bearing on the browser's in-memory file
+system (MEMFS); any other configuration is broken in ways verified by the
+test suite in `src/LightningDB.WasmTest`:
+
+```csharp
+using var env = new LightningEnvironment("/db", new EnvironmentConfiguration { MapSize = 16 * 1024 * 1024 });
+env.Open(EnvironmentOpenFlags.WriteMap |               // MEMFS mmaps are copies; without WriteMap,
+         EnvironmentOpenFlags.NoLock |                 //   committed data is silently invisible to readers
+         EnvironmentOpenFlags.NoThreadLocalStorage |   // no file locking / robust mutexes in the sandbox
+         EnvironmentOpenFlags.NoSync);                 // emscripten msync only accepts mapping base
+                                                       //   addresses; sync-at-commit would poison the env
+// ... transactions as usual ...
+env.Flush(force: true); // the durability point (replaces sync-at-commit)
+```
+
+**Persistence with IndexedDB.** The browser file system (MEMFS) is in-memory —
+by itself it does not survive a page reload. `LightningBrowserStorage` mounts a
+directory backed by IndexedDB (emscripten IDBFS; the package links it
+automatically, opt out with the `WasmEnableIDBFS=false` MSBuild property):
+
+```csharp
+await LightningBrowserStorage.MountAsync("/persist"); // restore from IndexedDB — BEFORE opening
+using var env = new LightningEnvironment("/persist/db", new EnvironmentConfiguration { MapSize = 16 * 1024 * 1024 });
+env.Open(/* the required flags above */);
+// ... transactions ...
+env.Flush(force: true);                        // LMDB -> browser file system
+await LightningBrowserStorage.PersistAsync();  // browser file system -> IndexedDB
+```
+
+- This is **checkpoint durability**: data survives a reload after each
+  successful `PersistAsync()` (always preceded by `Flush(true)`), not after
+  every commit. IndexedDB writes are asynchronous and explicit by nature.
+- The environment must be opened only after `MountAsync` completes — the
+  restore pass makes the mounted directory mirror IndexedDB, deleting files
+  created under the mount point beforehand.
+- One tab at a time: concurrent tabs share the IndexedDB store but not the
+  in-memory copy, and the last persist wins wholesale.
+- IndexedDB is best-effort storage; browsers may evict it under pressure.
+  Consider requesting `navigator.storage.persist()`. `PersistAsync` faults if
+  the browser rejects the write (e.g. quota exceeded).
+- Strict `script-src` content security policies block the embedded `data:`
+  module import; host `LightningBrowserStorage.JavaScriptModuleSource`
+  yourself and set `LightningBrowserStorage.JavaScriptModuleUrl`.
+
+**What to expect:**
+
+- Single process, single writer; the page size is 64 KB (emscripten), and the
+  address space is 32-bit — keep map sizes modest.
+- `AesGcmCipher` and `Sha256Checksum` are unavailable in the browser (no
+  platform AEAD, and managed page callbacks can't cross the wasm boundary).
+  Use the wasm-only `NativeChaCha20Poly1305Cipher` (RFC 8439, 32-byte key,
+  16-byte tag) and `NativeBlake2bChecksum` (keyed BLAKE2b-256 when combined
+  with encryption); the crypto is compiled into the native library and runs
+  at native speed.
+- **Encryption is experimental** with a known limitation: data committed in
+  one transaction is not visible to later read transactions in the same
+  environment session (encrypted environments bypass WriteMap). The supported
+  encrypted pattern is write → `Flush(true)` → dispose → reopen → read; reads
+  inside the writing transaction work normally. Unencrypted environments have
+  no such limitation.
+- Encrypted database files are not portable to 64-bit desktop builds (raw
+  LMDB files never are across 32/64-bit).
+
+`src/LightningDB.WasmTest` is a runnable Blazor sample and the verification
+suite for all of the above.
+
 ## Basic Usage
 
 Here's a simple example demonstrating how to create an environment, open a database, and perform basic put and get operations:
@@ -224,7 +304,9 @@ New capabilities exposed by LightningDB:
 Every page can be encrypted and/or checksummed. LMDB itself ships no cipher — the
 application supplies one; LightningDB includes hardware-accelerated AES-256-GCM and
 SHA-256 implementations out of the box (custom `LightningCipher`/`LightningChecksum`
-implementations are also supported, and required on netstandard2.0 or browser-wasm):
+implementations are also supported, and required on netstandard2.0; on browser-wasm
+use `NativeChaCha20Poly1305Cipher`/`NativeBlake2bChecksum` — see
+[Browser (WebAssembly)](#browser-webassembly)):
 
 ```csharp
 var config = new EnvironmentConfiguration

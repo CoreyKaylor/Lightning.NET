@@ -1,0 +1,545 @@
+@page "/"
+@using System.Text
+@using LightningDB
+@inject NavigationManager Nav
+
+@* The title carries the final result so headless harnesses can poll it via the
+   DevTools /json/list endpoint (virtual-time budgets stall on IndexedDB). *@
+<PageTitle>@(_done ? _doneText : "LightningDB WASM Tests")</PageTitle>
+
+<h1>LightningDB WASM Tests</h1>
+
+<ul id="results">
+    @foreach (var r in _results)
+    {
+        <li>@r</li>
+    }
+</ul>
+
+@if (_done)
+{
+    <div id="done">@_doneText</div>
+}
+
+@code {
+    private readonly List<string> _results = new();
+    private bool _done;
+    private string _doneText = "";
+    private int _passCount;
+    private int _failCount;
+
+    private const EnvironmentOpenFlags WasmFlags =
+        EnvironmentOpenFlags.WriteMap |
+        EnvironmentOpenFlags.NoLock |
+        EnvironmentOpenFlags.NoThreadLocalStorage |
+        EnvironmentOpenFlags.NoSync;
+
+    private const EnvironmentOpenFlags WasmFlagsSync =
+        EnvironmentOpenFlags.WriteMap |
+        EnvironmentOpenFlags.NoLock |
+        EnvironmentOpenFlags.NoThreadLocalStorage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // ?phase=write|verify runs the cross-reload IndexedDB persistence halves
+        // (see README); no query string runs the full suite.
+        var query = new Uri(Nav.Uri).Query.TrimStart('?');
+        var phase = query.Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Split('=', 2))
+            .Where(kv => kv[0] == "phase" && kv.Length == 2)
+            .Select(kv => kv[1])
+            .FirstOrDefault();
+        if (phase is "write" or "verify")
+        {
+            await RunPhase(phase);
+            return;
+        }
+
+        await RunTest("0-version", TestVersion);
+        await RunTest("a-open-put-get-same-txn", TestOpenPutGet);
+        await RunTest("b-read-after-commit-new-txn", TestReadAfterCommit);
+        await RunTest("c-cursor-1000", TestCursor1000);
+        await RunTest("d-map-growth", TestMapGrowth);
+        await RunTest("e-flush-reopen", TestFlushReopen);
+        await RunTest("f-default-mode-breaks-as-expected", TestDefaultMode);
+        await RunTest("g-del-stats", TestDelStats);
+        await RunTest("h-sync-commit-breaks-as-expected", TestSyncCommit);
+        await RunTest("i-encrypt-roundtrip", TestEncryptRoundtrip);
+        await RunTest("i2-encrypt-same-env-read-breaks-as-expected", TestEncryptReadSameEnv);
+        await RunTest("j-encrypt-wrong-key", TestEncryptWrongKey);
+        await RunTest("k-encrypt-with-checksum", TestEncryptWithChecksum);
+        await RunTest("l-checksum-only", TestChecksumOnly);
+        await RunTestAsync("m-idbfs-roundtrip", TestIdbfsRoundtrip);
+        _done = true;
+        _doneText = $"DONE: {_passCount} passed, {_failCount} failed";
+        Console.WriteLine("SPIKE-" + _doneText);
+        StateHasChanged();
+    }
+
+    private async Task RunPhase(string phase)
+    {
+        try
+        {
+            _doneText = phase == "write" ? await PhaseWrite() : await PhaseVerify();
+        }
+        catch (Exception ex)
+        {
+            _doneText = $"PHASE-{phase.ToUpperInvariant()}-FAIL: {ex.GetType().Name}: {ex.Message}";
+        }
+        _done = true;
+        Console.WriteLine("SPIKE " + _doneText);
+        StateHasChanged();
+    }
+
+    private Task RunTest(string name, Func<string> test)
+        => RunTestAsync(name, () => Task.FromResult(test()));
+
+    private async Task RunTestAsync(string name, Func<Task<string>> test)
+    {
+        string line;
+        try
+        {
+            var detail = await test();
+            _passCount++;
+            line = $"PASS: {name} — {detail}";
+        }
+        catch (Exception ex)
+        {
+            _failCount++;
+            line = $"FAIL: {name} — {ex.GetType().Name}: {ex.Message} | {ex.StackTrace?.Replace('\n', ' ')}";
+        }
+        _results.Add(line);
+        Console.WriteLine("SPIKE " + line);
+        StateHasChanged();
+        await Task.Delay(1); // let the UI paint before a potential native abort in the next test
+    }
+
+    private static LightningEnvironment OpenEnv(string path, long mapSize = 16 * 1024 * 1024,
+        EnvironmentOpenFlags flags = WasmFlags)
+    {
+        var env = new LightningEnvironment(path, new EnvironmentConfiguration
+        {
+            MapSize = mapSize,
+            MaxDatabases = 2
+        });
+        env.Open(flags);
+        return env;
+    }
+
+    private static string TestVersion()
+    {
+        using var env = new LightningEnvironment("/db-version");
+        var v = env.Version;
+        return $"lmdb {v.Major}.{v.Minor}.{v.Patch}";
+    }
+
+    private static string TestOpenPutGet()
+    {
+        using var env = OpenEnv("/db");
+        using var tx = env.BeginTransaction();
+        using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+        tx.Put(db, "k1"u8.ToArray(), "v1"u8.ToArray()).ThrowOnError();
+        var (rc, _, value) = tx.Get(db, "k1"u8.ToArray());
+        rc.ThrowOnError();
+        var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+        if (got != "v1") throw new Exception($"expected v1, got {got}");
+        tx.Commit().ThrowOnError();
+        return "put/get within txn ok, commit ok";
+    }
+
+    private static string TestReadAfterCommit()
+    {
+        // MAP_SHARED coherence make-or-break: commit in one txn, read in a brand-new txn
+        using var env = OpenEnv("/db");
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            tx.Put(db, "k2"u8.ToArray(), "v2"u8.ToArray()).ThrowOnError();
+            tx.Commit().ThrowOnError();
+        }
+        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+        {
+            using var db = tx.OpenDatabase();
+            var (rc, _, value) = tx.Get(db, "k2"u8.ToArray());
+            rc.ThrowOnError();
+            var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+            if (got != "v2") throw new Exception($"expected v2, got {got}");
+        }
+        return "read-after-commit in new read txn ok";
+    }
+
+    private static string TestCursor1000()
+    {
+        using var env = OpenEnv("/db-cursor");
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            for (var i = 0; i < 1000; i++)
+            {
+                tx.Put(db, Encoding.UTF8.GetBytes($"key{i:D5}"), Encoding.UTF8.GetBytes($"val{i}")).ThrowOnError();
+            }
+            tx.Commit().ThrowOnError();
+        }
+        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+        {
+            using var db = tx.OpenDatabase();
+            using var cursor = tx.CreateCursor(db);
+            var count = 0;
+            string? prev = null;
+            var (rc, key, _) = cursor.First();
+            while (rc == MDBResultCode.Success)
+            {
+                var k = Encoding.UTF8.GetString(key.CopyToNewArray());
+                if (prev != null && string.CompareOrdinal(prev, k) >= 0)
+                    throw new Exception($"order violation: {prev} >= {k}");
+                prev = k;
+                count++;
+                (rc, key, _) = cursor.Next();
+            }
+            if (count != 1000) throw new Exception($"expected 1000 entries, got {count}");
+        }
+        return "1000 entries, ordered iteration ok";
+    }
+
+    private static string TestMapGrowth()
+    {
+        var detail = new StringBuilder();
+        using var env = OpenEnv("/db-grow", mapSize: 1024 * 1024);
+        var value = new byte[4096];
+        var i = 0;
+        var full = false;
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            for (; i < 1000; i++)
+            {
+                var rc = tx.Put(db, Encoding.UTF8.GetBytes($"grow{i:D5}"), value);
+                if (rc == MDBResultCode.MapFull) { full = true; break; }
+                rc.ThrowOnError();
+            }
+            if (full) tx.Abort(); else tx.Commit().ThrowOnError();
+        }
+        if (!full) throw new Exception($"never hit MapFull after {i} x 4KB puts in 1MB map");
+        detail.Append($"MapFull at put #{i}; ");
+
+        // grow via mdb_env_set_mapsize post-open
+        env.MapSize = 8 * 1024 * 1024;
+        detail.Append("set_mapsize(8MB) ok; ");
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            for (var j = 0; j < 400; j++)
+            {
+                tx.Put(db, Encoding.UTF8.GetBytes($"grow2-{j:D5}"), value).ThrowOnError();
+            }
+            tx.Commit().ThrowOnError();
+        }
+        detail.Append("400 x 4KB puts after growth ok");
+        return detail.ToString();
+    }
+
+    private static string TestFlushReopen()
+    {
+        using (var env = OpenEnv("/db-reopen"))
+        {
+            using (var tx = env.BeginTransaction())
+            {
+                using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+                tx.Put(db, "persist"u8.ToArray(), "yes"u8.ToArray()).ThrowOnError();
+                tx.Commit().ThrowOnError();
+            }
+            env.Flush(force: true).ThrowOnError(); // msync — the only MEMFS write-back
+        }
+        using (var env = OpenEnv("/db-reopen"))
+        {
+            using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            var (rc, _, value) = tx.Get(db, "persist"u8.ToArray());
+            rc.ThrowOnError();
+            var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+            if (got != "yes") throw new Exception($"expected yes, got {got}");
+        }
+        return "flush + dispose + reopen + read ok";
+    }
+
+    private static string TestDefaultMode()
+    {
+        // Control test: default (non-WriteMap) mode is expected broken on MEMFS —
+        // reads go via mmap but commits via pwrite, which MEMFS does not reflect
+        // into existing mappings. PASS means it broke in the documented way.
+        using var env = OpenEnv("/db-default", flags: EnvironmentOpenFlags.NoLock | EnvironmentOpenFlags.NoThreadLocalStorage);
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            tx.Put(db, "dk"u8.ToArray(), "dv"u8.ToArray()).ThrowOnError();
+            tx.Commit().ThrowOnError();
+        }
+        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+        {
+            using var db = tx.OpenDatabase();
+            var (rc, _, value) = tx.Get(db, "dk"u8.ToArray());
+            if (rc == MDBResultCode.NotFound)
+                return "confirmed: committed key invisible to new txn without WriteMap (stale mmap)";
+            var got = rc == MDBResultCode.Success ? Encoding.UTF8.GetString(value.CopyToNewArray()) : rc.ToString();
+            if (got != "dv") return $"confirmed broken (stale read: '{got}')";
+            throw new Exception("default (non-WriteMap) mode unexpectedly works — docs may need updating");
+        }
+    }
+
+    private static string TestSyncCommit()
+    {
+        // Control test: without NoSync, commit-time msync hits emscripten's
+        // base-address-only msync when LMDB syncs the alternating meta page,
+        // failing with EINVAL and poisoning the env. PASS means it broke in
+        // the documented way.
+        var detail = new StringBuilder();
+        using var env = OpenEnv("/db-sync", flags: WasmFlagsSync);
+        var sawFailure = false;
+        for (var attempt = 1; attempt <= 2 && !sawFailure; attempt++)
+        {
+            try
+            {
+                using var tx = env.BeginTransaction();
+                using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+                tx.Put(db, Encoding.UTF8.GetBytes($"s{attempt}"), "v"u8.ToArray()).ThrowOnError();
+                var rc = tx.Commit();
+                detail.Append($"commit#{attempt}={rc}; ");
+                sawFailure |= rc != MDBResultCode.Success;
+            }
+            catch (LightningException ex)
+            {
+                detail.Append($"commit#{attempt} threw {ex.Message}; ");
+                sawFailure = true;
+            }
+        }
+        if (!sawFailure)
+            throw new Exception($"sync-at-commit unexpectedly works ({detail}) — docs may need updating");
+        return $"confirmed: sync-at-commit fails without NoSync ({detail.ToString().TrimEnd(' ', ';')})";
+    }
+
+    private static readonly byte[] EncKey = Enumerable.Range(0, 32).Select(i => (byte)(i * 7 + 1)).ToArray();
+
+    private static LightningEnvironment OpenEncryptedEnv(string path, byte[] key, LightningChecksum? checksum = null)
+    {
+        var env = new LightningEnvironment(path, new EnvironmentConfiguration
+        {
+            MapSize = 16 * 1024 * 1024,
+            MaxDatabases = 2,
+            Encryption = new EncryptionConfiguration(new NativeChaCha20Poly1305Cipher(), key),
+            Checksum = checksum
+        });
+        env.Open(WasmFlags);
+        return env;
+    }
+
+    private static string EncryptRoundtrip(string path, LightningChecksum? checksumA = null, LightningChecksum? checksumB = null)
+    {
+        var big = new byte[100_000]; // > one 64 KB page: overflow pages exercise mdb_rpage_decrypt
+        for (var i = 0; i < big.Length; i++) big[i] = (byte)(i % 251);
+
+        using (var env = OpenEncryptedEnv(path, EncKey, checksumA))
+        {
+            using (var tx = env.BeginTransaction())
+            {
+                using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+                for (var i = 0; i < 50; i++)
+                    tx.Put(db, Encoding.UTF8.GetBytes($"enc{i:D3}"), Encoding.UTF8.GetBytes($"value-{i}")).ThrowOnError();
+                tx.Put(db, "big"u8.ToArray(), big).ThrowOnError();
+                tx.Commit().ThrowOnError();
+            }
+            env.Flush(force: true).ThrowOnError();
+        }
+
+        using (var env = OpenEncryptedEnv(path, EncKey, checksumB))
+        {
+            using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            for (var i = 0; i < 50; i++)
+            {
+                var (rc, _, value) = tx.Get(db, Encoding.UTF8.GetBytes($"enc{i:D3}"));
+                rc.ThrowOnError();
+                var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+                if (got != $"value-{i}") throw new Exception($"enc{i:D3}: expected value-{i}, got {got}");
+            }
+            var (rcBig, _, bigVal) = tx.Get(db, "big"u8.ToArray());
+            rcBig.ThrowOnError();
+            var gotBig = bigVal.CopyToNewArray();
+            if (!gotBig.AsSpan().SequenceEqual(big))
+                throw new Exception($"big value mismatch (len {gotBig.Length} vs {big.Length})");
+        }
+        return "50 entries + 100 KB overflow value roundtripped through reopen";
+    }
+
+    private static string TestEncryptRoundtrip() => EncryptRoundtrip("/db-enc");
+
+    private static string TestEncryptReadSameEnv()
+    {
+        // Control test: read-after-commit within the SAME env session under
+        // encryption is expected broken. Encrypted envs run LMDB's chunked
+        // page-cache I/O model (WriteMap is ignored); meta pages are read
+        // through a mapping created at open, and MEMFS mappings never reflect
+        // later pwrites — so a post-commit read txn sees the pre-commit meta.
+        // The supported encrypted pattern is write → Flush(true) → dispose →
+        // reopen → read (tests i/k). PASS means it broke in the documented way.
+        using var env = OpenEncryptedEnv("/db-enc2", EncKey);
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            tx.Put(db, "same"u8.ToArray(), "env"u8.ToArray()).ThrowOnError();
+            tx.Commit().ThrowOnError();
+        }
+        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+        {
+            using var db = tx.OpenDatabase();
+            var (rc, _, value) = tx.Get(db, "same"u8.ToArray());
+            if (rc == MDBResultCode.NotFound)
+                return "confirmed: committed key invisible to same-session read txn under encryption (stale meta mapping)";
+            if (rc != MDBResultCode.Success)
+                return $"confirmed broken (rc={rc})";
+            var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+            throw new Exception($"same-session encrypted read unexpectedly works (got '{got}') — docs may need updating");
+        }
+    }
+
+    private static string TestEncryptWrongKey()
+    {
+        // /db-enc was created by test i with EncKey; a different key must not read it.
+        var wrongKey = new byte[32];
+        for (var i = 0; i < 32; i++) wrongKey[i] = (byte)(EncKey[i] ^ 0xFF);
+        try
+        {
+            using var env = OpenEncryptedEnv("/db-enc", wrongKey);
+            using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            var (rc, _, value) = tx.Get(db, "enc000"u8.ToArray());
+            if (rc == MDBResultCode.Success)
+                throw new Exception($"wrong key unexpectedly read plaintext '{Encoding.UTF8.GetString(value.CopyToNewArray())}'");
+            return $"confirmed: wrong key rejected (rc={rc})";
+        }
+        catch (LightningException ex)
+        {
+            return $"confirmed: wrong key rejected ({ex.Message})";
+        }
+    }
+
+    private static string TestEncryptWithChecksum()
+        => EncryptRoundtrip("/db-enc-sum", new NativeBlake2bChecksum(), new NativeBlake2bChecksum());
+
+    private static string TestChecksumOnly()
+    {
+        using (var env = new LightningEnvironment("/db-sum", new EnvironmentConfiguration
+               {
+                   MapSize = 16 * 1024 * 1024,
+                   MaxDatabases = 2,
+                   Checksum = new NativeBlake2bChecksum()
+               }))
+        {
+            env.Open(WasmFlags);
+            using (var tx = env.BeginTransaction())
+            {
+                using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+                for (var i = 0; i < 20; i++)
+                    tx.Put(db, Encoding.UTF8.GetBytes($"sum{i:D3}"), Encoding.UTF8.GetBytes($"value-{i}")).ThrowOnError();
+                tx.Commit().ThrowOnError();
+            }
+            env.Flush(force: true).ThrowOnError();
+        }
+
+        using (var env = new LightningEnvironment("/db-sum", new EnvironmentConfiguration
+               {
+                   MapSize = 16 * 1024 * 1024,
+                   MaxDatabases = 2,
+                   Checksum = new NativeBlake2bChecksum()
+               }))
+        {
+            env.Open(WasmFlags);
+            using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            var (rc, _, value) = tx.Get(db, "sum007"u8.ToArray());
+            rc.ThrowOnError();
+            var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+            if (got != "value-7") throw new Exception($"expected value-7, got {got}");
+        }
+        return "20 checksummed entries roundtripped through reopen";
+    }
+
+    private static string TestDelStats()
+    {
+        using var env = OpenEnv("/db");
+        using var tx = env.BeginTransaction();
+        using var db = tx.OpenDatabase();
+        tx.Delete(db, "k1"u8.ToArray()).ThrowOnError();
+        var (rc, _, _) = tx.Get(db, "k1"u8.ToArray());
+        if (rc != MDBResultCode.NotFound) throw new Exception($"expected NotFound after delete, got {rc}");
+        var stats = tx.GetStats(db);
+        tx.Commit().ThrowOnError();
+        return $"delete ok; entries={stats.Entries}, depth={stats.BTreeDepth}, pageSize={stats.PageSize}";
+    }
+
+    private static string PersistedDbPath(string mount) => mount + "/db";
+
+    private static void WriteMarkerData(string dbPath, int count)
+    {
+        using var env = OpenEnv(dbPath);
+        using (var tx = env.BeginTransaction())
+        {
+            using var db = tx.OpenDatabase(configuration: new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            for (var i = 0; i < count; i++)
+                tx.Put(db, Encoding.UTF8.GetBytes($"p{i:D3}"), Encoding.UTF8.GetBytes($"persisted-{i}")).ThrowOnError();
+            tx.Commit().ThrowOnError();
+        }
+        env.Flush(force: true).ThrowOnError(); // LMDB -> MEMFS; PersistAsync then moves MEMFS -> IndexedDB
+    }
+
+    private static int ReadMarkerData(string dbPath, int count)
+    {
+        using var env = OpenEnv(dbPath);
+        using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        using var db = tx.OpenDatabase();
+        for (var i = 0; i < count; i++)
+        {
+            var (rc, _, value) = tx.Get(db, Encoding.UTF8.GetBytes($"p{i:D3}"));
+            rc.ThrowOnError();
+            var got = Encoding.UTF8.GetString(value.CopyToNewArray());
+            if (got != $"persisted-{i}") throw new Exception($"p{i:D3}: expected persisted-{i}, got {got}");
+        }
+        return count;
+    }
+
+    private static async Task<string> TestIdbfsRoundtrip()
+    {
+        // Full IndexedDB cycle within one page load: write + persist, wipe the
+        // in-memory copy, restore from IndexedDB, read back.
+        const string mount = "/persist-rt";
+        await LightningBrowserStorage.MountAsync(mount);
+        WriteMarkerData(PersistedDbPath(mount), 25);
+        await LightningBrowserStorage.PersistAsync();
+
+        Directory.Delete(PersistedDbPath(mount), recursive: true);
+        if (Directory.Exists(PersistedDbPath(mount)))
+            throw new Exception("MEMFS copy still present after delete");
+
+        await LightningBrowserStorage.MountAsync(mount); // idempotent: restore only
+        var n = ReadMarkerData(PersistedDbPath(mount), 25);
+        return $"{n} entries persisted to IndexedDB, MEMFS wiped, restored and read back";
+    }
+
+    private async Task<string> PhaseWrite()
+    {
+        const string mount = "/persist";
+        await LightningBrowserStorage.MountAsync(mount);
+        WriteMarkerData(PersistedDbPath(mount), 25);
+        await LightningBrowserStorage.PersistAsync();
+        return "PHASE-WRITE-OK: 25 entries persisted";
+    }
+
+    private async Task<string> PhaseVerify()
+    {
+        const string mount = "/persist";
+        await LightningBrowserStorage.MountAsync(mount);
+        var n = ReadMarkerData(PersistedDbPath(mount), 25);
+        return $"PHASE-VERIFY-OK: {n} entries restored from IndexedDB";
+    }
+}

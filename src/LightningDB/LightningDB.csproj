@@ -32,6 +32,11 @@
       <PackagePath>runtimes</PackagePath>
     </None>
     <None Include="LightningDB.targets" Pack="true" PackagePath="build" />
+    <!-- browser-wasm ships as compilable source (see wasm/README.md); the
+         buildTransitive targets file wires it up for direct AND transitive
+         consumers. The filename inside the package must match the package id. -->
+    <None Include="wasm\**\*" Pack="true" PackagePath="wasm" Visible="false" />
+    <None Include="LightningDB.Wasm.targets" Pack="true" PackagePath="buildTransitive\LightningDB.targets" />
     <None Include="ios\lmdb.xcframework\**\*" Pack="true" PackagePath="ios\lmdb.xcframework" Visible="false" />
   </ItemGroup>
 

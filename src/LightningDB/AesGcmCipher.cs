@@ -13,8 +13,8 @@ namespace LightningDB;
 /// <remarks>
 /// The 12-byte GCM nonce is derived from LMDB's per-page IV (page number + transaction id,
 /// unique per page write) and the 16-byte tag is stored as the page's authentication data.
-/// Not available on platforms where <see cref="AesGcm.IsSupported"/> is false (e.g.
-/// browser-wasm); supply a custom <see cref="LightningCipher"/> there.
+/// Not available on platforms where <see cref="AesGcm.IsSupported"/> is false; on
+/// browser-wasm use <see cref="NativeChaCha20Poly1305Cipher"/> instead.
 /// </remarks>
 public sealed class AesGcmCipher : LightningCipher, IDisposable
 {
@@ -29,7 +29,7 @@ public sealed class AesGcmCipher : LightningCipher, IDisposable
     {
         if (!AesGcm.IsSupported)
             throw new PlatformNotSupportedException(
-                "AES-GCM is not supported on this platform; supply a custom LightningCipher instead.");
+                "AES-GCM is not supported on this platform; on browser-wasm use NativeChaCha20Poly1305Cipher, otherwise supply a custom LightningCipher.");
         _aes = new ThreadLocal<AesGcm>(trackAllValues: true);
     }
 

@@ -1,0 +1,66 @@
+name: WASM
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    paths:
+      - 'src/LightningDB/**'
+      - 'src/LightningDB.WasmTest/**'
+      - '.github/workflows/wasm.yml'
+
+jobs:
+  wasm:
+    runs-on: ubuntu-latest # Chrome preinstalled
+    steps:
+      - name: Checkout Lightning.NET
+        uses: actions/checkout@v5
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Install wasm-tools workload
+        run: dotnet workload install wasm-tools
+      # The publish alone catches native-link and pinvoke-table regressions.
+      - name: Publish wasm test app
+        run: dotnet publish src/LightningDB.WasmTest -c Release -o ./wasm-publish
+      - name: Serve app
+        run: |
+          (cd ./wasm-publish/wwwroot && python3 -m http.server 8080 &)
+          sleep 2
+      # The test page publishes its final result in document.title, polled via
+      # the DevTools /json/list HTTP endpoint. (--virtual-time-budget with
+      # --dump-dom cannot be used: virtual time stalls on IndexedDB.)
+      # run_page URL EXPECTED_TITLE_PREFIX PROFILE_DIR -> prints "result: <title>"
+      - name: Define harness
+        run: |
+          cat > /tmp/run_page.sh <<'EOF'
+          run_page() {
+            local title="" pid
+            google-chrome --headless=new --disable-gpu --no-first-run \
+              --user-data-dir="$3" --remote-debugging-port=9222 "$1" >/dev/null 2>&1 &
+            pid=$!
+            for i in $(seq 1 60); do
+              sleep 3
+              title=$(curl -s http://localhost:9222/json/list | python3 -c \
+                "import sys,json; ts=json.load(sys.stdin); print(next((t['title'] for t in ts if t['type']=='page'), ''))" \
+                2>/dev/null || true)
+              case "$title" in DONE:*|PHASE-*) break;; esac
+            done
+            kill $pid 2>/dev/null; wait $pid 2>/dev/null || true
+            echo "result: $title"
+            case "$title" in "$2"*) return 0;; *) return 1;; esac
+          }
+          EOF
+      - name: Run test suite in headless Chrome
+        run: |
+          source /tmp/run_page.sh
+          run_page "http://localhost:8080/" "DONE:" "$(mktemp -d)" | tee /tmp/suite.txt
+          grep -qE 'DONE: [0-9]+ passed, 0 failed' /tmp/suite.txt
+      - name: Cross-reload IndexedDB persistence (two browser processes, shared profile)
+        run: |
+          source /tmp/run_page.sh
+          PROFILE=$(mktemp -d)
+          run_page "http://localhost:8080/?phase=write" "PHASE-WRITE-OK" "$PROFILE"
+          sleep 2
+          run_page "http://localhost:8080/?phase=verify" "PHASE-VERIFY-OK" "$PROFILE"
