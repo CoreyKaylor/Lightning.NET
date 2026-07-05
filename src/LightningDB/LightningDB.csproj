@@ -32,6 +32,7 @@
       <PackagePath>runtimes</PackagePath>
     </None>
     <None Include="LightningDB.targets" Pack="true" PackagePath="build" />
+    <None Include="ios\lmdb.xcframework\**\*" Pack="true" PackagePath="ios\lmdb.xcframework" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>

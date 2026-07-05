@@ -25,6 +25,25 @@ Alternatively, you can install it via the .NET CLI:
 dotnet add package LightningDB
 ```
 
+### iOS
+
+The package ships iOS binaries in two forms (minimum iOS 12.0; the arm64
+simulator slice requires iOS 14.0):
+
+- **.NET for iOS / MAUI**: works automatically. The dylibs under
+  `runtimes/ios-arm64` and `runtimes/iossimulator-*` carry an
+  `@rpath/lmdb.dylib` install name and an ad-hoc signature; the .NET iOS SDK
+  embeds them in the app bundle and re-signs them with your app identity at
+  build time.
+- **Unity (and other Xcode-based pipelines)**: use the bundled
+  `ios/lmdb.xcframework`. A nupkg is a zip archive, so extract
+  `ios/lmdb.xcframework` from it and copy it into `Assets/Plugins/iOS`
+  (Unity 2021.3+ imports xcframework plugins directly). In the plugin
+  importer, enable the iOS platform and "Add to Embedded Binaries" so Xcode
+  embeds and re-signs the framework during the app build — required for
+  release/App Store builds. On older Unity versions, use the device slice
+  (`ios-arm64/lmdb.framework`) on its own instead.
+
 ## Basic Usage
 
 Here's a simple example demonstrating how to create an environment, open a database, and perform basic put and get operations:
