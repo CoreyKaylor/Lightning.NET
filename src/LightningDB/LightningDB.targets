@@ -3,30 +3,45 @@
   <PropertyGroup>
     <LightningDBTargetRuntimeRelativePath Condition=" '$(LightningDBTargetRuntimeRelativePath)' == '' ">\..\</LightningDBTargetRuntimeRelativePath>
   </PropertyGroup>
-	<Target Name="LightningDBIncludeNativeDll" AfterTargets="BeforeResolveReferences">
-  <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x86\native\*" 
-          CopyToOutputDirectory="PreserveNewest" 
-          Condition="'$([MSBuild]::IsOsPlatform(Windows))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X86'" />
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\win-x64\native\*"
-          CopyToOutputDirectory="PreserveNewest"
-          Condition="'$([MSBuild]::IsOsPlatform(Windows))' And ('$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64' OR '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64')" />
-          <!-- ^^ This simply makes it easier to test for Mac M1 -> Parallels but needs -arch x64 explicitly set, currently there is no cross compile toolset for Win ARM for GCC -->
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\osx-arm64\native\*"
-          CopyToOutputDirectory="PreserveNewest"
-          Condition="'$([MSBuild]::IsOsPlatform(OSX))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64'" />
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\osx\native\*"
-          CopyToOutputDirectory="PreserveNewest"
-          Condition="'$([MSBuild]::IsOsPlatform(OSX))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64'" />
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\linux-arm\native\*"
-          CopyToOutputDirectory="PreserveNewest"
-          Condition="'$([MSBuild]::IsOsPlatform(Linux))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm'" />
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\linux-arm64\native\*"
-          CopyToOutputDirectory="PreserveNewest"
-          Condition="'$([MSBuild]::IsOsPlatform(Linux))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='Arm64'" />
-    <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\linux-x64\native\*"
-          CopyToOutputDirectory="PreserveNewest"
-          Condition="'$([MSBuild]::IsOsPlatform(Linux))' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)'=='X64'" />
-  </ItemGroup>
-	</Target>
+  <Target Name="LightningDBIncludeNativeDll" AfterTargets="BeforeResolveReferences">
+    <PropertyGroup>
+      <_LightningDBEffectiveRuntimeIdentifier>$(RuntimeIdentifier)</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'x86' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true'">win-x86</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'x64' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true'">win-x64</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'ARM64' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true'">win-arm64</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'x64' And '$([MSBuild]::IsOsPlatform(OSX))' == 'true'">osx-x64</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'ARM64' And '$([MSBuild]::IsOsPlatform(OSX))' == 'true'">osx-arm64</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'x64' And '$([MSBuild]::IsOsPlatform(Linux))' == 'true'">linux-x64</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'ARM' And '$([MSBuild]::IsOsPlatform(Linux))' == 'true'">linux-arm</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(PlatformTarget)' == 'ARM64' And '$([MSBuild]::IsOsPlatform(Linux))' == 'true'">linux-arm64</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(Prefer32Bit)' == 'true' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true'">win-x86</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBUsingHostRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == ''">true</_LightningDBUsingHostRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$(NETCoreSdkRuntimeIdentifier)' != ''">$(NETCoreSdkRuntimeIdentifier)</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X86'">win-x86</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">win-x64</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(Windows))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">win-arm64</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(OSX))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">osx-x64</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(OSX))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">osx-arm64</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(Linux))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">linux-x64</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(Linux))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm'">linux-arm</_LightningDBEffectiveRuntimeIdentifier>
+      <_LightningDBEffectiveRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == '' And '$([MSBuild]::IsOsPlatform(Linux))' == 'true' And '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">linux-arm64</_LightningDBEffectiveRuntimeIdentifier>
+
+      <_LightningDBNativeAssetRuntimeIdentifier>$(_LightningDBEffectiveRuntimeIdentifier)</_LightningDBNativeAssetRuntimeIdentifier>
+      <_LightningDBNativeAssetRuntimeIdentifier Condition="'$(_LightningDBEffectiveRuntimeIdentifier)' == 'osx-x64'">osx</_LightningDBNativeAssetRuntimeIdentifier>
+    </PropertyGroup>
+
+    <!-- A RID-less library must not propagate a host-native file into a consuming app's cross-RID publish. -->
+    <ItemGroup Condition="'$(_LightningDBNativeAssetRuntimeIdentifier)' != '' And ('$(_LightningDBUsingHostRuntimeIdentifier)' != 'true' Or '$(OutputType)' != 'Library')">
+      <None Include="$(MSBuildThisFileDirectory)$(LightningDBTargetRuntimeRelativePath)runtimes\$(_LightningDBNativeAssetRuntimeIdentifier)\native\*"
+            CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
 </Project>
