@@ -12,6 +12,7 @@ namespace LightningDB;
 public sealed class LightningEnvironment : IDisposable
 {
     private readonly EnvironmentConfiguration _config = new();
+    private Native.PageCallbackKeepAlive? _pageCallbacks;
     private bool _disposed;
 
     internal nint _handle;
@@ -146,6 +147,36 @@ public sealed class LightningEnvironment : IDisposable
 
             _config.MaxDatabases = value;
         }
+    }
+
+    /// <summary>
+    /// Gets or sets the database page size in bytes, a power of 2 from 512 to 65536.
+    /// Zero (the default) uses the operating system page size.
+    /// This may only be set before the environment is opened; the page size is stored
+    /// persistently in the environment when it is first created.
+    /// </summary>
+    public int PageSize
+    {
+        get => _config.PageSize;
+        set
+        {
+            if (IsOpened)
+                throw new InvalidOperationException("Can't change PageSize of opened environment");
+
+            if (value < 512 || value > 65536 || (value & (value - 1)) != 0)
+                throw new ArgumentOutOfRangeException(nameof(value), value,
+                    "PageSize must be a power of 2 from 512 to 65536");
+
+            mdb_env_set_pagesize(_handle, value).ThrowOnError();
+
+            _config.PageSize = value;
+        }
+    }
+
+    internal void ConfigurePageCallbacks(EncryptionConfiguration? encryption, LightningChecksum? checksum)
+    {
+        _pageCallbacks = new Native.PageCallbackKeepAlive(encryption, checksum);
+        _pageCallbacks.Install(_handle);
     }
 
     /// <summary>
@@ -464,6 +495,105 @@ public sealed class LightningEnvironment : IDisposable
             : mdb_env_copyfd(_handle, fd);
     }
 
+    /// <summary>
+    /// Rolls back the last committed transaction in the environment, for example when a
+    /// remote participant of a two-phase commit (see <see cref="LightningTransaction.Prepare"/>)
+    /// successfully prepared but failed to commit.
+    /// </summary>
+    /// <param name="transactionId">The ID of the transaction to roll back, obtained from
+    /// <see cref="LightningTransaction.Id"/> of that transaction or
+    /// <see cref="Info"/>.LastTransactionId</param>
+    /// <returns><see cref="MDBResultCode.Success"/> on success;
+    /// <see cref="MDBResultCode.CantRollback"/> when a rollback was already performed
+    /// (only the single last transaction can be rolled back) or when the ID doesn't
+    /// match the last committed transaction</returns>
+    /// <remarks>
+    /// The rollback takes effect immediately in the running environment. As of LMDB 1.0,
+    /// at least one write transaction must be committed after a rollback before the
+    /// environment is closed, otherwise the environment cannot be reopened.
+    /// </remarks>
+    public MDBResultCode RollbackLastTransaction(ulong transactionId)
+    {
+        EnsureOpened();
+        return mdb_env_rollback(_handle, (nuint)transactionId);
+    }
+
+    /// <summary>
+    /// Dumps pages newer than the given transaction ID to a new file at the specified path,
+    /// creating an incremental backup. Capture <see cref="Info"/>.LastTransactionId at the
+    /// time of the previous (full or incremental) backup and pass it here.
+    /// </summary>
+    /// <param name="path">The file in which the incremental dump will reside; must not already exist</param>
+    /// <param name="sinceTransactionId">Dump pages newer than this transaction ID; must be greater than zero</param>
+    /// <returns>A result code indicating success or failure</returns>
+    public MDBResultCode IncrementalCopyTo(string path, ulong sinceTransactionId)
+    {
+        if (path == null)
+            throw new ArgumentNullException(nameof(path));
+        if (sinceTransactionId == 0)
+            throw new ArgumentOutOfRangeException(nameof(sinceTransactionId),
+                "sinceTransactionId must be greater than zero; use CopyTo for a full backup");
+
+        EnsureOpened();
+
+        return mdb_env_incr_dump(_handle, path, (nuint)sinceTransactionId);
+    }
+
+    /// <summary>
+    /// Dumps pages newer than the given transaction ID to the specified FileStream,
+    /// creating an incremental backup. Capture <see cref="Info"/>.LastTransactionId at the
+    /// time of the previous (full or incremental) backup and pass it here.
+    /// </summary>
+    /// <param name="fileStream">The FileStream to write to</param>
+    /// <param name="sinceTransactionId">Dump pages newer than this transaction ID; must be greater than zero</param>
+    /// <returns>A result code indicating success or failure</returns>
+    public MDBResultCode IncrementalCopyToStream(FileStream fileStream, ulong sinceTransactionId)
+    {
+        if (fileStream == null)
+            throw new ArgumentNullException(nameof(fileStream));
+        if (!fileStream.CanWrite)
+            throw new ArgumentException("FileStream must be writable", nameof(fileStream));
+        if (sinceTransactionId == 0)
+            throw new ArgumentOutOfRangeException(nameof(sinceTransactionId),
+                "sinceTransactionId must be greater than zero; use CopyToStream for a full backup");
+
+        EnsureOpened();
+
+        var safeHandle = fileStream.SafeFileHandle;
+        if (safeHandle == null || safeHandle.IsInvalid)
+            throw new ArgumentException("Invalid file handle from FileStream", nameof(fileStream));
+
+        return mdb_env_incr_dumpfd(_handle, safeHandle.DangerousGetHandle(), (nuint)sinceTransactionId);
+    }
+
+    /// <summary>
+    /// Applies an incremental dump produced by <see cref="IncrementalCopyTo"/> or
+    /// <see cref="IncrementalCopyToStream"/> to this environment.
+    /// </summary>
+    /// <param name="fileStream">The FileStream to read the incremental dump from</param>
+    /// <returns>A result code indicating success or failure</returns>
+    /// <remarks>
+    /// No other operations may run on the environment while the load is in progress, and
+    /// the environment must be closed and reopened afterwards before the loaded data is
+    /// visible (mirroring the behavior of the mdb_load -i tool, which opens the
+    /// environment solely for the load).
+    /// </remarks>
+    public MDBResultCode LoadIncrementalFromStream(FileStream fileStream)
+    {
+        if (fileStream == null)
+            throw new ArgumentNullException(nameof(fileStream));
+        if (!fileStream.CanRead)
+            throw new ArgumentException("FileStream must be readable", nameof(fileStream));
+
+        EnsureOpened();
+
+        var safeHandle = fileStream.SafeFileHandle;
+        if (safeHandle == null || safeHandle.IsInvalid)
+            throw new ArgumentException("Invalid file handle from FileStream", nameof(fileStream));
+
+        return mdb_env_incr_loadfd(_handle, safeHandle.DangerousGetHandle());
+    }
+
     private void EnsureOpened()
     {
         if (!IsOpened)
@@ -488,6 +618,11 @@ public sealed class LightningEnvironment : IDisposable
             mdb_env_close(_handle);
             IsOpened = false;
         }
+
+        //must outlive mdb_env_close: native code may invoke the page callbacks
+        //and read the key memory until the environment is closed
+        _pageCallbacks?.Dispose();
+        _pageCallbacks = null;
 
         _handle = 0;
         GC.SuppressFinalize(this);

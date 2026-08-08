@@ -339,6 +339,91 @@ public static partial class Lmdb
     public static partial MDBResultCode mdb_env_copyfd2(nint env, nint fd, EnvironmentCopyFlags copyFlags);
 
     /// <summary>
+    /// Sets the page size for the environment. Must be called before mdb_env_open.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="size">The page size in bytes, a power of 2 from 512 to 65536</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_set_pagesize(nint env, int size);
+
+    /// <summary>
+    /// Sets encryption on the environment. Must be called before mdb_env_open.
+    /// Implicitly sets MDB_REMAP_CHUNKS on the environment.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="func">The encryption callback</param>
+    /// <param name="key">The encryption key</param>
+    /// <param name="size">The size of per-page authentication data in bytes, zero for unauthenticated ciphers</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_set_encrypt(nint env, EncryptFunction func, ref MDBValue key, uint size);
+
+    /// <summary>
+    /// Sets checksums on the environment. Must be called before mdb_env_open.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="func">The checksum callback</param>
+    /// <param name="size">The size of computed checksum values in bytes</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_set_checksum(nint env, ChecksumFunction func, uint size);
+
+    /// <summary>
+    /// Prepares (first phase of a two-phase commit) all the operations of a transaction.
+    /// </summary>
+    /// <param name="txn">The transaction handle</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_txn_prepare(nint txn);
+
+    /// <summary>
+    /// Rolls back the last committed transaction in the environment.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="txnid">The ID of the transaction to roll back</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_rollback(nint env, nuint txnid);
+
+    /// <summary>
+    /// Dumps pages newer than the given transaction ID to a new file at the specified path.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="path">The file in which the incremental dump will reside; must not exist</param>
+    /// <param name="txnid">Dump pages newer than this transaction ID</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME, StringMarshalling = StringMarshalling.Utf8)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_incr_dump(nint env, string path, nuint txnid);
+
+    /// <summary>
+    /// Dumps pages newer than the given transaction ID to the specified file descriptor.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="fd">The file descriptor to write to</param>
+    /// <param name="txnid">Dump pages newer than this transaction ID</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_incr_dumpfd(nint env, nint fd, nuint txnid);
+
+    /// <summary>
+    /// Applies an incremental dump read from the specified file descriptor to the environment.
+    /// </summary>
+    /// <param name="env">The environment handle</param>
+    /// <param name="fd">The file descriptor to read from</param>
+    /// <returns>A result code indicating success or failure</returns>
+    [LibraryImport(MDB_DLL_NAME)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    public static partial MDBResultCode mdb_env_incr_loadfd(nint env, nint fd);
+
+    /// <summary>
     /// Returns information about the LMDB environment.
     /// </summary>
     /// <param name="env">The environment handle</param>
@@ -994,6 +1079,96 @@ public static partial class Lmdb
             var bytes = System.Text.Encoding.UTF8.GetBytes(path + "\0");
             return mdb_env_copy2(env, bytes, copyFlags);
         }
+
+        /// <summary>
+        /// Sets the page size for the environment. Must be called before mdb_env_open.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="size">The page size in bytes, a power of 2 from 512 to 65536</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_set_pagesize(nint env, int size);
+
+        /// <summary>
+        /// Sets encryption on the environment. Must be called before mdb_env_open.
+        /// Implicitly sets MDB_REMAP_CHUNKS on the environment.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="func">The encryption callback</param>
+        /// <param name="key">The encryption key</param>
+        /// <param name="size">The size of per-page authentication data in bytes, zero for unauthenticated ciphers</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_set_encrypt(nint env, EncryptFunction func, ref MDBValue key, uint size);
+
+        /// <summary>
+        /// Sets checksums on the environment. Must be called before mdb_env_open.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="func">The checksum callback</param>
+        /// <param name="size">The size of computed checksum values in bytes</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_set_checksum(nint env, ChecksumFunction func, uint size);
+
+        /// <summary>
+        /// Prepares (first phase of a two-phase commit) all the operations of a transaction.
+        /// </summary>
+        /// <param name="txn">The transaction handle</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_txn_prepare(nint txn);
+
+        /// <summary>
+        /// Rolls back the last committed transaction in the environment.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="txnid">The ID of the transaction to roll back</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_rollback(nint env, nuint txnid);
+
+        /// <summary>
+        /// Dumps pages newer than the given transaction ID to a new file at the specified path.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="path">The file in which the incremental dump will reside; must not exist</param>
+        /// <param name="txnid">Dump pages newer than this transaction ID</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_incr_dump(nint env, byte[] path, nuint txnid);
+
+        /// <summary>
+        /// Dumps pages newer than the given transaction ID to a new file at the specified path.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="path">The file in which the incremental dump will reside; must not exist</param>
+        /// <param name="txnid">Dump pages newer than this transaction ID</param>
+        /// <returns>A result code indicating success or failure</returns>
+        public static MDBResultCode mdb_env_incr_dump(nint env, string path, nuint txnid)
+        {
+            var bytes = System.Text.Encoding.UTF8.GetBytes(path + "\0");
+            return mdb_env_incr_dump(env, bytes, txnid);
+        }
+
+        /// <summary>
+        /// Dumps pages newer than the given transaction ID to the specified file descriptor.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="fd">The file descriptor to write to</param>
+        /// <param name="txnid">Dump pages newer than this transaction ID</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_incr_dumpfd(nint env, nint fd, nuint txnid);
+
+        /// <summary>
+        /// Applies an incremental dump read from the specified file descriptor to the environment.
+        /// </summary>
+        /// <param name="env">The environment handle</param>
+        /// <param name="fd">The file descriptor to read from</param>
+        /// <returns>A result code indicating success or failure</returns>
+        [DllImport(MDB_DLL_NAME, CallingConvention = CallingConvention.Cdecl)]
+        public static extern MDBResultCode mdb_env_incr_loadfd(nint env, nint fd);
 
         /// <summary>
         /// Returns information about the LMDB environment.

@@ -19,6 +19,7 @@ public enum TransactionBeginFlags
     /// Note that (MDB_NOSYNC | MDB_WRITEMAP) leaves the system with no hint for when to write transactions to disk, unless mdb_env_sync() is called.
     /// (MDB_MAPASYNC | MDB_WRITEMAP) may be preferable.
     /// This flag may be changed at any time using mdb_env_set_flags().
+    /// As of LMDB 1.0 this flag is honored per-transaction when passed to BeginTransaction.
     /// </summary>
     NoSync = 0x10000,
 

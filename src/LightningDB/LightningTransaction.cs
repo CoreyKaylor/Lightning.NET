@@ -346,11 +346,34 @@ public sealed class LightningTransaction : IDisposable
     }
 
     /// <summary>
+    /// Prepares all the operations of a transaction as the first phase of a two-phase commit.
+    /// </summary>
+    /// <remarks>
+    /// After a successful prepare, the only legal operations on the transaction are
+    /// <see cref="Commit"/> and <see cref="Abort"/>; the effect of any data operation on a
+    /// prepared transaction is undefined. A prepared transaction that was committed can
+    /// later be undone with <see cref="LightningEnvironment.RollbackLastTransaction"/>, for
+    /// example when a remote participant of the two-phase commit failed to commit.
+    /// </remarks>
+    public MDBResultCode Prepare()
+    {
+        if (IsReadOnly)
+            throw new InvalidOperationException("Can't prepare a read-only transaction");
+        if (State != LightningTransactionState.Ready)
+            throw new InvalidOperationException("Transaction that is not ready cannot be prepared");
+
+        var result = mdb_txn_prepare(_handle);
+        if (result == MDBResultCode.Success)
+            State = LightningTransactionState.Prepared;
+        return result;
+    }
+
+    /// <summary>
     /// Commit all the operations of a transaction into the database.
     /// </summary>
     public MDBResultCode Commit()
     {
-        if(State != LightningTransactionState.Ready)
+        if(State != LightningTransactionState.Ready && State != LightningTransactionState.Prepared)
             throw new InvalidOperationException("Transaction that is not ready cannot be committed");
         if (ParentTransaction != null && ParentTransaction.State != LightningTransactionState.Ready)
         {
@@ -367,7 +390,7 @@ public sealed class LightningTransaction : IDisposable
     /// </summary>
     public void Abort()
     {
-        if(State != LightningTransactionState.Ready)
+        if(State != LightningTransactionState.Ready && State != LightningTransactionState.Prepared)
             throw new InvalidOperationException("Transaction that is not ready cannot be committed");
         State = LightningTransactionState.Done;
         mdb_txn_abort(_handle);
@@ -479,7 +502,7 @@ public sealed class LightningTransaction : IDisposable
         _disposed = true;
         if (!Environment.IsOpened)
             throw new InvalidOperationException("A transaction must be disposed before closing the environment");
-        if (State == LightningTransactionState.Ready && Environment.IsOpened)
+        if (State is LightningTransactionState.Ready or LightningTransactionState.Prepared && Environment.IsOpened)
         {
             Abort();
         }

@@ -68,6 +68,32 @@ public class EnvironmentConfiguration
     /// </remarks>
     public bool AutoReduceMapSizeIn32BitProcess { get; set; }
 
+    /// <summary>
+    /// Gets or sets the database page size in bytes, a power of 2 from 512 to 65536.
+    /// Zero (the default) uses the operating system page size.
+    /// </summary>
+    /// <remarks>
+    /// The page size is stored persistently in the environment when it is first created;
+    /// it cannot be changed for an existing environment. Larger pages can improve
+    /// sequential-read throughput; smaller pages can reduce write amplification.
+    /// </remarks>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the encryption settings for the environment. Null (the default)
+    /// leaves the environment unencrypted. When set, every page is encrypted with the
+    /// configured cipher before being written and decrypted when read, and the same
+    /// cipher and key must be configured every time the environment is opened.
+    /// </summary>
+    public EncryptionConfiguration? Encryption { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page checksum for the environment. Null (the default) disables
+    /// checksums. When set, every page is checksummed when written and verified when
+    /// read; a mismatch surfaces as <see cref="MDBResultCode.BadChecksum"/>.
+    /// </summary>
+    public LightningChecksum? Checksum { get; set; }
+
     internal void Configure(LightningEnvironment env)
     {
         if (MapSize > 0)
@@ -78,5 +104,11 @@ public class EnvironmentConfiguration
 
         if (MaxReaders > 0)
             env.MaxReaders = MaxReaders;
+
+        if (PageSize > 0)
+            env.PageSize = PageSize;
+
+        if (Encryption != null || Checksum != null)
+            env.ConfigurePageCallbacks(Encryption, Checksum);
     }
 }

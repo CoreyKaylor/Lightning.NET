@@ -90,6 +90,26 @@ public enum EnvironmentOpenFlags
     /// <summary>
     /// MDB_NOMEMINIT. don't initialize malloc'd memory before writing to datafile
     /// </summary>
-    NoMemoryInitialization = 0x1000000
+    NoMemoryInitialization = 0x1000000,
 
+    /// <summary>
+    /// MDB_ENCRYPT. Informational flag set internally by the library when encryption is
+    /// configured via <see cref="EnvironmentConfiguration"/>; visible when reading the
+    /// environment's flags. Do not pass this flag when opening an environment.
+    /// </summary>
+    Encrypted = 0x2000,
+
+    /// <summary>
+    /// MDB_PREVSNAPSHOT. Open the environment using the previous snapshot (meta page),
+    /// losing the latest transaction. Useful for recovery after an application error.
+    /// If opened with write access this process must be the only one using the environment;
+    /// the flag is automatically reset after a successful write commit.
+    /// </summary>
+    PreviousSnapshot = 0x2000000,
+
+    /// <summary>
+    /// MDB_REMAP_CHUNKS. Don't use a single memory map; remap individual chunks on demand.
+    /// Implied when encryption is configured.
+    /// </summary>
+    RemapChunks = 0x4000000
 }

@@ -189,6 +189,54 @@ using var db = tx.OpenDatabase(configuration: config);
 
 Reverse variants are available for most comparers (e.g., `ReverseSignedIntegerComparer`).
 
+## LMDB 1.0
+
+Starting with LightningDB 0.23.0, the bundled native library is from the LMDB 1.0 line.
+
+> **⚠️ Data migration required:** the LMDB 1.0 on-disk format is incompatible with 0.9.x.
+> Existing environments created by earlier LightningDB versions cannot be opened; migrate
+> them once by dumping with the 0.9 `mdb_dump` tool and loading with the 1.0 `mdb_load`
+> tool. Named-database (DBI) names are also stored differently (NUL-terminated) in 1.0.
+
+New capabilities exposed by LightningDB:
+
+### Encryption and checksums (opt-in)
+
+Every page can be encrypted and/or checksummed. LMDB itself ships no cipher — the
+application supplies one; LightningDB includes hardware-accelerated AES-256-GCM and
+SHA-256 implementations out of the box (custom `LightningCipher`/`LightningChecksum`
+implementations are also supported, and required on netstandard2.0 or browser-wasm):
+
+```csharp
+var config = new EnvironmentConfiguration
+{
+    Encryption = new EncryptionConfiguration(new AesGcmCipher(), key), // key: e.g. 32 random bytes
+    Checksum = new Sha256Checksum(), // independent of encryption; either can be used alone
+};
+using var env = new LightningEnvironment("path_to_your_database", config);
+env.Open();
+```
+
+The same cipher and key must be configured every time the environment is opened.
+
+### Two-phase commit
+
+`tx.Prepare()` performs the first phase of a two-phase commit; follow with `Commit()` or
+`Abort()`. If a remote participant fails after a local commit, the last committed
+transaction can be undone with `env.RollbackLastTransaction(txId)`.
+
+### Incremental backup
+
+`env.CopyTo(path)` remains the full-backup primitive; `env.IncrementalCopyTo(file, sinceTxnId)`
+dumps only pages newer than a previous backup's `env.Info.LastTransactionId`, and
+`env.LoadIncrementalFromStream(stream)` applies the dump to a restored copy.
+
+### Other additions
+
+- `EnvironmentConfiguration.PageSize` — set the database page size (power of 2, 512–65536) at creation time.
+- `EnvironmentOpenFlags.PreviousSnapshot` — open using the previous snapshot, recovering from a bad last transaction.
+- `TransactionBeginFlags.NoSync`/`NoMetaSync` are now honored per-transaction.
+
 ## Additional Resources
 
 For more detailed examples and advanced usage, refer to the unit tests in the [Lightning.NET](https://github.com/CoreyKaylor/Lightning.NET) repository. 

@@ -11,7 +11,8 @@ public class EnvironmentTests : TestBase
         using var env = CreateEnvironment();
         var version = env.Version;
         version.ShouldNotBeNull();
-        version.Minor.ShouldBeGreaterThan(0);
+        //0.9.x and the 1.0 dev line (0.9.90) have Minor > 0; a 1.0 release has Major > 0
+        (version.Major + version.Minor).ShouldBeGreaterThan(0);
     }
 
     public void environment_should_be_created_if_without_flags()
@@ -215,7 +216,8 @@ public class EnvironmentTests : TestBase
         // Verify version info properties are valid
         versionInfo.ShouldNotBeNull();
         versionInfo.Major.ShouldBeGreaterThanOrEqualTo(0);
-        versionInfo.Minor.ShouldBeGreaterThan(0);
+        //0.9.x and the 1.0 dev line (0.9.90) have Minor > 0; a 1.0 release has Major > 0
+        (versionInfo.Major + versionInfo.Minor).ShouldBeGreaterThan(0);
         versionInfo.Patch.ShouldBeGreaterThanOrEqualTo(0);
     }
 
@@ -402,5 +404,137 @@ public class EnvironmentTests : TestBase
 
         // Attempting to get MaxKeySize should throw, as the environment must be opened
         Should.Throw<InvalidOperationException>(() => { _ = env.MaxKeySize; });
+    }
+
+    public void can_set_page_size_before_open()
+    {
+        using var env = CreateEnvironment(config: new EnvironmentConfiguration { PageSize = 8192 });
+        env.Open();
+        env.EnvironmentStats.PageSize.ShouldBe(8192u);
+    }
+
+    public void setting_page_size_after_open_throws()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        Should.Throw<InvalidOperationException>(() => env.PageSize = 8192);
+    }
+
+    public void invalid_page_size_throws()
+    {
+        using var env = CreateEnvironment();
+        Should.Throw<ArgumentOutOfRangeException>(() => env.PageSize = 1000);
+        Should.Throw<ArgumentOutOfRangeException>(() => env.PageSize = 256);
+        Should.Throw<ArgumentOutOfRangeException>(() => env.PageSize = 131072);
+    }
+
+    public void can_open_previous_snapshot()
+    {
+        var path = TempPath();
+        using (var env = CreateEnvironment(path))
+        {
+            env.Open();
+
+            using (var tx = env.BeginTransaction())
+            using (var db = tx.OpenDatabase())
+            {
+                tx.Put(db, "first"u8.ToArray(), "kept"u8.ToArray());
+                tx.Commit().ThrowOnError();
+            }
+
+            using (var tx = env.BeginTransaction())
+            using (var db = tx.OpenDatabase())
+            {
+                tx.Put(db, "second"u8.ToArray(), "lost"u8.ToArray());
+                tx.Commit().ThrowOnError();
+            }
+        }
+
+        using (var env = CreateEnvironment(path))
+        {
+            env.Open(EnvironmentOpenFlags.PreviousSnapshot);
+            using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            tx.ContainsKey(db, "first"u8.ToArray()).ShouldBeTrue();
+            tx.ContainsKey(db, "second"u8.ToArray()).ShouldBeFalse();
+        }
+    }
+
+    public void incremental_backup_and_restore_round_trip()
+    {
+        var sourcePath = TempPath();
+        var backupPath = TempPath();
+        var incrementalFile = Path.Combine(TempPath(), "incremental.dump");
+
+        using var env = CreateEnvironment(sourcePath);
+        env.Open();
+
+        using (var tx = env.BeginTransaction())
+        using (var db = tx.OpenDatabase())
+        {
+            tx.Put(db, "before"u8.ToArray(), "full backup"u8.ToArray());
+            tx.Commit().ThrowOnError();
+        }
+
+        env.CopyTo(backupPath).ThrowOnError();
+        var baselineTxnId = (ulong)env.Info.LastTransactionId;
+
+        using (var tx = env.BeginTransaction())
+        using (var db = tx.OpenDatabase())
+        {
+            tx.Put(db, "after"u8.ToArray(), "incremental"u8.ToArray());
+            tx.Commit().ThrowOnError();
+        }
+
+        env.IncrementalCopyTo(incrementalFile, baselineTxnId).ThrowOnError();
+        new FileInfo(incrementalFile).Length.ShouldBeGreaterThan(0);
+
+        //apply the incremental dump, then reopen the environment to observe the result
+        using (var restored = CreateEnvironment(backupPath))
+        {
+            restored.Open();
+            using var dumpStream = File.OpenRead(incrementalFile);
+            restored.LoadIncrementalFromStream(dumpStream).ThrowOnError();
+        }
+
+        using (var restored = CreateEnvironment(backupPath))
+        {
+            restored.Open();
+            using var tx = restored.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            tx.ContainsKey(db, "before"u8.ToArray()).ShouldBeTrue();
+            tx.ContainsKey(db, "after"u8.ToArray()).ShouldBeTrue();
+        }
+    }
+
+    public void incremental_copy_to_stream_works()
+    {
+        var incrementalFile = Path.Combine(TempPath(), "incremental.dump");
+
+        using var env = CreateEnvironment();
+        env.Open();
+
+        using (var tx = env.BeginTransaction())
+        using (var db = tx.OpenDatabase())
+        {
+            tx.Put(db, "base"u8.ToArray(), "line"u8.ToArray());
+            tx.Commit().ThrowOnError();
+        }
+
+        var baselineTxnId = (ulong)env.Info.LastTransactionId;
+
+        using (var tx = env.BeginTransaction())
+        using (var db = tx.OpenDatabase())
+        {
+            tx.Put(db, "more"u8.ToArray(), "data"u8.ToArray());
+            tx.Commit().ThrowOnError();
+        }
+
+        using (var stream = File.Open(incrementalFile, FileMode.CreateNew, FileAccess.Write))
+        {
+            env.IncrementalCopyToStream(stream, baselineTxnId).ThrowOnError();
+        }
+
+        new FileInfo(incrementalFile).Length.ShouldBeGreaterThan(0);
     }
 }

@@ -23,5 +23,11 @@ public enum LightningTransactionState
     /// <summary>
     /// Transaction is committed.
     /// </summary>
-    Released
+    Released,
+
+    /// <summary>
+    /// Transaction has been prepared (first phase of a two-phase commit) and is awaiting
+    /// Commit or Abort.
+    /// </summary>
+    Prepared
 }

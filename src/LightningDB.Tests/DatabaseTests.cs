@@ -74,7 +74,8 @@ public class DatabaseTests : TestBase
             using (var cursor = tx.CreateCursor(db))
             {
                 cursor.Next();
-                UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray())
+                //LMDB 1.0 stores DBI names with their NUL terminator
+                UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()).TrimEnd('\0')
                     .ShouldBe("customdb");
             }
         }

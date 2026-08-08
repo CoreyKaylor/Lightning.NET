@@ -95,6 +95,46 @@ public enum MDBResultCode
     /// </summary>
     Problem = -30779,
     /// <summary>
+    /// Page checksum incorrect
+    /// </summary>
+    BadChecksum = -30778,
+    /// <summary>
+    /// Encryption/decryption failed
+    /// </summary>
+    CryptoFail = -30777,
+    /// <summary>
+    /// Environment encryption mismatch
+    /// </summary>
+    EnvEncryption = -30776,
+    /// <summary>
+    /// Transaction was already prepared
+    /// </summary>
+    TxnPending = -30775,
+    /// <summary>
+    /// Environment can't rollback the last transaction
+    /// </summary>
+    CantRollback = -30774,
+    /// <summary>
+    /// Can't drop the main DBI while other DBIs are open
+    /// </summary>
+    DbisBusy = -30773,
+    /// <summary>
+    /// Write was incomplete
+    /// </summary>
+    ShortWrite = -30772,
+    /// <summary>
+    /// Environment is busy, can't use previous snapshot
+    /// </summary>
+    EnvBusy = -30771,
+    /// <summary>
+    /// Environment or transaction is read-only, can't write
+    /// </summary>
+    ReadOnly = -30770,
+    /// <summary>
+    /// The requested map address is unavailable
+    /// </summary>
+    AddressBusy = -30769,
+    /// <summary>
     /// ENOENT error from C-runtime
     /// </summary>
     FileNotFound = 2,

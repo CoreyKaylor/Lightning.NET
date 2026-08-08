@@ -4,26 +4,31 @@ if [ ! -d "lmdb" ]; then
   git clone https://git.openldap.org/openldap/openldap.git lmdb
 fi
 cd ./lmdb/libraries/liblmdb || exit
-git checkout LMDB_0.9.35
+# Pinned LMDB 1.0.1: includes Windows build fixes (ITS#10539, ITS#10553) and
+# post-1.0.0 work (encryption/checksum/backup, ITS#10515/10518-10523/10538/10542,
+# ITS#10529/10551). ITS#10553 fixed the mingw SIZE_T MAP() issue that previously
+# needed mingw-map-len-type.patch.
+git fetch origin tag LMDB_1.0.1 --no-tags
+git checkout -f LMDB_1.0.1
 
 declare -A build_outputs
 declare -A supported_targets=(
-  [ios-arm64/native/liblmdb.dylib]="make CC='xcrun --sdk iphoneos --toolchain iphoneos clang -arch arm64' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [iossimulator-arm64/native/liblmdb.dylib]="make CC='xcrun --sdk iphonesimulator --toolchain iphoneos clang -arch arm64' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [iossimulator-x64/native/liblmdb.dylib]="make CC='xcrun --sdk iphonesimulator --toolchain iphoneos clang -arch x86_64' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [osx-arm64/native/lmdb.dylib]="make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [osx/native/lmdb.dylib]="make CC='clang -mmacosx-version-min=10.15 -arch x86_64' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
+  [ios-arm64/native/liblmdb.dylib]="make CC='xcrun --sdk iphoneos --toolchain iphoneos clang -arch arm64' LDFLAGS='-s' XCFLAGS='-DNDEBUG' VERSION_OPT='-Wl,-current_version,1.0'"
+  [iossimulator-arm64/native/liblmdb.dylib]="make CC='xcrun --sdk iphonesimulator --toolchain iphoneos clang -arch arm64' LDFLAGS='-s' XCFLAGS='-DNDEBUG' VERSION_OPT='-Wl,-current_version,1.0'"
+  [iossimulator-x64/native/liblmdb.dylib]="make CC='xcrun --sdk iphonesimulator --toolchain iphoneos clang -arch x86_64' LDFLAGS='-s' XCFLAGS='-DNDEBUG' VERSION_OPT='-Wl,-current_version,1.0'"
+  [osx-arm64/native/lmdb.dylib]="make LDFLAGS='-s' XCFLAGS='-DNDEBUG' VERSION_OPT='-Wl,-current_version,1.0'"
+  [osx/native/lmdb.dylib]="make CC='clang -mmacosx-version-min=10.15 -arch x86_64' LDFLAGS='-s' XCFLAGS='-DNDEBUG' VERSION_OPT='-Wl,-current_version,1.0'"
   [linux-arm/native/liblmdb.so]="docker run --mount type=bind,source=$(pwd),target=/lmdb --rm --platform=linux/arm/7 -w /lmdb gcc:latest make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
   [linux-arm64/native/liblmdb.so]="docker run --mount type=bind,source=$(pwd),target=/lmdb --rm --platform=linux/arm64 -w /lmdb gcc:latest make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
   [linux-x64/native/liblmdb.so]="docker run --mount type=bind,source=$(pwd),target=/lmdb --rm --platform=linux/amd64 -w /lmdb gcc:latest make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [win-x64/native/lmdb.dll]="make CC='x86_64-w64-mingw32-gcc' AR='x86_64-w64-mingw32-gcc-ar' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [win-x86/native/lmdb.dll]="make CC='i686-w64-mingw32-gcc' AR='i686-w64-mingw32-gcc-ar' LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
-  [win-arm64/native/lmdb.dll]="docker run --mount type=bind,source='$(pwd)',target=/lmdb --rm -w /lmdb dockcross/windows-arm64 bash -c 'make CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar LDFLAGS=-s XCFLAGS=-DNDEBUG'"
+  [win-x64/native/lmdb.dll]="make CC='x86_64-w64-mingw32-gcc' AR='x86_64-w64-mingw32-gcc-ar' LDFLAGS='-s' XCFLAGS='-DNDEBUG' LDL= VERSION_OPT="
+  [win-x86/native/lmdb.dll]="make CC='i686-w64-mingw32-gcc' AR='i686-w64-mingw32-gcc-ar' LDFLAGS='-s' XCFLAGS='-DNDEBUG' LDL= VERSION_OPT="
+  [win-arm64/native/lmdb.dll]="docker run --mount type=bind,source='$(pwd)',target=/lmdb --rm -w /lmdb dockcross/windows-arm64 bash -c 'make CC=aarch64-w64-mingw32-gcc AR=aarch64-w64-mingw32-ar LDFLAGS=-s XCFLAGS=-DNDEBUG LDL= VERSION_OPT='"
   [android-arm64/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-arm/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-x86/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
   [android-x64/native/liblmdb.so]="make CC=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android21-clang AR=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar LDFLAGS='-s' XCFLAGS='-UMDB_USE_ROBUST -DMDB_USE_POSIX_MUTEX -DANDROID -DNDEBUG'"
-  [browser-wasm/native/liblmdb.wasm]="emmake make LDFLAGS='-s' XCFLAGS='-DNDEBUG'"
+  [browser-wasm/native/liblmdb.wasm]="emcc -O2 -pthread -fPIC -DNDEBUG -sSIDE_MODULE=1 -o liblmdb.so mdb.c midl.c module.c"
 )
 
 function compile_lib() {

@@ -605,4 +605,123 @@ public class TransactionTests : TestBase
             tx.ContainsKey(db, key).ShouldBeTrue();
         });
     }
+
+    public void can_prepare_and_commit_transaction()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        using (var tx = env.BeginTransaction())
+        using (var db = tx.OpenDatabase())
+        {
+            tx.Put(db, "prepared"u8.ToArray(), "committed"u8.ToArray());
+            tx.Prepare().ShouldBe(MDBResultCode.Success);
+            tx.State.ShouldBe(LightningTransactionState.Prepared);
+            tx.Commit().ShouldBe(MDBResultCode.Success);
+        }
+
+        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+        using (var db = tx.OpenDatabase())
+        {
+            var (resultCode, _, value) = tx.Get(db, "prepared"u8.ToArray());
+            resultCode.ShouldBe(MDBResultCode.Success);
+            value.CopyToNewArray().ShouldBe("committed"u8.ToArray());
+        }
+    }
+
+    public void can_prepare_and_abort_transaction()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+
+        using (var tx = env.BeginTransaction())
+        using (var db = tx.OpenDatabase())
+        {
+            tx.Put(db, "prepared"u8.ToArray(), "aborted"u8.ToArray());
+            tx.Prepare().ShouldBe(MDBResultCode.Success);
+            tx.Abort();
+        }
+
+        using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+        using (var db = tx.OpenDatabase())
+        {
+            var (resultCode, _, _) = tx.Get(db, "prepared"u8.ToArray());
+            resultCode.ShouldBe(MDBResultCode.NotFound);
+        }
+    }
+
+    public void prepare_on_readonly_transaction_throws()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        Should.Throw<InvalidOperationException>(() => tx.Prepare());
+    }
+
+    public void prepare_twice_throws()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        using var tx = env.BeginTransaction();
+        using var db = tx.OpenDatabase();
+        tx.Put(db, "key"u8.ToArray(), "value"u8.ToArray());
+        tx.Prepare().ShouldBe(MDBResultCode.Success);
+        Should.Throw<InvalidOperationException>(() => tx.Prepare());
+        tx.Abort();
+    }
+
+    public void can_rollback_last_committed_transaction()
+    {
+        var path = TempPath();
+        using (var env = CreateEnvironment(path))
+        {
+            env.Open();
+
+            using (var tx = env.BeginTransaction())
+            using (var db = tx.OpenDatabase())
+            {
+                tx.Put(db, "first"u8.ToArray(), "kept"u8.ToArray());
+                tx.Commit().ThrowOnError();
+            }
+
+            ulong lastId;
+            using (var tx = env.BeginTransaction())
+            using (var db = tx.OpenDatabase())
+            {
+                tx.Put(db, "second"u8.ToArray(), "rolled back"u8.ToArray());
+                lastId = tx.Id;
+                tx.Commit().ThrowOnError();
+            }
+
+            env.RollbackLastTransaction(lastId).ShouldBe(MDBResultCode.Success);
+            env.RollbackLastTransaction(lastId).ShouldBe(MDBResultCode.CantRollback);
+
+            //the rollback takes effect immediately in the running environment
+            using (var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly))
+            using (var db = tx.OpenDatabase())
+            {
+                tx.ContainsKey(db, "first"u8.ToArray()).ShouldBeTrue();
+                tx.ContainsKey(db, "second"u8.ToArray()).ShouldBeFalse();
+            }
+
+            //a write commit is required after a rollback before the environment
+            //can be closed and reopened (see RollbackLastTransaction remarks)
+            using (var tx = env.BeginTransaction())
+            using (var db = tx.OpenDatabase())
+            {
+                tx.Put(db, "third"u8.ToArray(), "after rollback"u8.ToArray());
+                tx.Commit().ThrowOnError();
+            }
+        }
+
+        using (var env = CreateEnvironment(path))
+        {
+            env.Open();
+            using var tx = env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+            using var db = tx.OpenDatabase();
+            tx.ContainsKey(db, "first"u8.ToArray()).ShouldBeTrue();
+            tx.ContainsKey(db, "second"u8.ToArray()).ShouldBeFalse();
+            tx.ContainsKey(db, "third"u8.ToArray()).ShouldBeTrue();
+        }
+    }
 }
