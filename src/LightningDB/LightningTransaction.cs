@@ -49,7 +49,19 @@ public sealed class LightningTransaction : IDisposable
         State = LightningTransactionState.Ready;
 
         var parentHandle = parent?._handle ?? default(nint);
-        mdb_txn_begin(environment._handle, parentHandle, flags, out _handle).ThrowOnError();
+        try
+        {
+            mdb_txn_begin(environment._handle, parentHandle, flags, out _handle).ThrowOnError();
+        }
+        catch
+        {
+            // A failed constructor must not leave a live finalizer: mdb_txn_begin
+            // never allocated a transaction, so Dispose(false) would run against
+            // an environment that may already be closed by then, throwing on the
+            // finalizer thread and aborting the process.
+            GC.SuppressFinalize(this);
+            throw;
+        }
         _originalHandle = _handle;
     }
 

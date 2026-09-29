@@ -41,7 +41,18 @@ public class LightningCursor : IDisposable
         if (txn == null)
             throw new ArgumentNullException(nameof(txn));
 
-        mdb_cursor_open(txn._handle, db._handle, out _handle).ThrowOnError();
+        try
+        {
+            mdb_cursor_open(txn._handle, db._handle, out _handle).ThrowOnError();
+        }
+        catch
+        {
+            // A failed constructor must not leave a live finalizer: Database and
+            // Transaction are not yet assigned, so Dispose(false) would dereference
+            // them on the finalizer thread and abort the process.
+            GC.SuppressFinalize(this);
+            throw;
+        }
 
         Database = db;
         Transaction = txn;
