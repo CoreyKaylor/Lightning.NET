@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
-    <LangVersion>15</LangVersion>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <AssemblyName>LightningDB.Tests</AssemblyName>
     <PackageId>LightningDB.Tests</PackageId>
