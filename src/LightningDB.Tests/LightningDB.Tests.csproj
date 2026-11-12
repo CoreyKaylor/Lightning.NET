@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <LangVersion>13</LangVersion>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+    <LangVersion>15</LangVersion>
     <Nullable>enable</Nullable>
     <AssemblyName>LightningDB.Tests</AssemblyName>
     <PackageId>LightningDB.Tests</PackageId>
@@ -18,7 +18,12 @@
 
   <ItemGroup>
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="Fixie.TestAdapter" Version="4.1.0" />
+    <PackageReference Include="Fixie.TestAdapter" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fixie 4.2+ injects Fixie.Main.cs, which relies on implicit usings for Task<>. -->
+    <Using Include="System.Threading.Tasks" />
   </ItemGroup>
 
   <Import Project="..\LightningDB\LightningDB.targets" />

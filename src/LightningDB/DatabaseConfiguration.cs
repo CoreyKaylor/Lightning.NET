@@ -83,7 +83,7 @@ public class DatabaseConfiguration
 
     private class ComparerKeepAlive : IDisposable
     {
-        private readonly List<GCHandle> _comparisons = new();
+        private readonly List<GCHandle> _comparisons = [with(capacity: 2)];
 
         public void AddComparer(CompareFunction compare)
         {

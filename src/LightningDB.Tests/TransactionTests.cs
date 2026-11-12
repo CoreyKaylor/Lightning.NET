@@ -724,4 +724,30 @@ public class TransactionTests : TestBase
             tx.ContainsKey(db, "third"u8.ToArray()).ShouldBeTrue();
         }
     }
+
+    public void delete_by_key_with_null_database_throws_argument_null()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        using var tx = env.BeginTransaction();
+        Should.Throw<ArgumentNullException>(() => tx.Delete(null!, "key"u8));
+    }
+
+    public void mdbvalue_copy_to_short_destination_throws_instead_of_overrunning()
+    {
+        using var env = CreateEnvironment();
+        env.Open();
+        env.RunTransactionScenario((tx, db) =>
+        {
+            tx.Put(db, "key"u8, "a value longer than one byte"u8).ThrowOnError();
+            var (resultCode, _, value) = tx.Get(db, "key"u8);
+            resultCode.ShouldBe(MDBResultCode.Success);
+
+            Should.Throw<ArgumentException>(() => value.CopyTo(new byte[1]));
+
+            var exact = new byte[value.AsSpan().Length];
+            value.CopyTo(exact);
+            exact.ShouldBe("a value longer than one byte"u8.ToArray());
+        });
+    }
 }

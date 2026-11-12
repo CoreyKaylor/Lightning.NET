@@ -20,7 +20,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -31,7 +31,7 @@ jobs:
       - name: Run Benchmarks
         working-directory: src/LightningDB.Benchmarks
         run: |
-          dotnet run -c Release --no-build -- \
+          dotnet run -c Release --no-build -f net11.0 -- \
             --filter "*" \
             --job short \
             --exporters json \

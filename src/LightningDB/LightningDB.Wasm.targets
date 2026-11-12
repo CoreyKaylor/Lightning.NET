@@ -20,7 +20,7 @@
        a target because EmccExtraLDFlags is read at link-target execution time;
        the two BeforeTargets names are the targets that actually read the
        property: net8 (_WasmWriteRspFilesForLinking in WasmApp.Native.targets)
-       and net9/net10 (_BrowserWasmWriteRspForLinking in BrowserWasmApp.targets).
+       and net9+ (_BrowserWasmWriteRspForLinking in BrowserWasmApp.targets).
        Missing names are ignored. -->
   <Target Name="_LightningDBEnableIdbfs"
           Condition="'$(RuntimeIdentifier)' == 'browser-wasm' and '$(WasmEnableIDBFS)' != 'false'"

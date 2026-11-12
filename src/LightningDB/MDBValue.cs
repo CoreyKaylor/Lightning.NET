@@ -80,12 +80,9 @@ public readonly unsafe struct MDBValue
     /// Copies the buffer contents to the destination span
     /// </summary>
     /// <param name="destination">The destination span to copy to</param>
+    /// <exception cref="ArgumentException"><paramref name="destination"/> is shorter than the buffer.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void CopyTo(Span<byte> destination) =>
-        Unsafe.CopyBlockUnaligned(
-            ref MemoryMarshal.GetReference(destination),
-            ref Unsafe.AsRef<byte>(data),
-            (uint)size);
+    public void CopyTo(Span<byte> destination) => AsSpan().CopyTo(destination);
 
     /// <summary>
     /// Copies the data of the buffer to a new array

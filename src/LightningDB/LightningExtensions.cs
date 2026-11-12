@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using LightningDB.Native;
@@ -28,11 +30,21 @@ public static class LightningExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static MDBResultCode ThrowOnError(this MDBResultCode resultCode)
     {
-        if (resultCode == MDBResultCode.Success)
-            return resultCode;
+        if (resultCode != MDBResultCode.Success)
+            ThrowLightningException(resultCode);
+        return resultCode;
+    }
+
+    // Kept out of line so the inlined success check at every call site stays tiny.
+    [DoesNotReturn]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+#if NET6_0_OR_GREATER
+    [StackTraceHidden]
+#endif
+    private static void ThrowLightningException(MDBResultCode resultCode)
+    {
         var statusCode = (int) resultCode;
-        var message = mdb_strerror(statusCode);
-        throw new LightningException(message, statusCode); 
+        throw new LightningException(mdb_strerror(statusCode), statusCode);
     }
 
     /// <summary>
@@ -48,7 +60,6 @@ public static class LightningExtensions
         return result;
     }
         
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string mdb_strerror(int err)
     {
         var ptr = Lmdb.mdb_strerror(err);
