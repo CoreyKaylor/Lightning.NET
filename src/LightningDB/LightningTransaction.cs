@@ -176,8 +176,7 @@ public sealed class LightningTransaction : IDisposable
     /// <returns>Requested value's byte array if exists, or null if not.</returns>
     public unsafe (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(LightningDatabase db, ReadOnlySpan<byte> key)
     {
-        if (db == null)
-            throw new ArgumentNullException(nameof(db));
+        ArgumentNullException.ThrowIfNull(db);
 
         fixed(byte* keyBuffer = key)
         {
@@ -208,8 +207,7 @@ public sealed class LightningTransaction : IDisposable
     /// <param name="options">Operation options (optional).</param>
     public unsafe MDBResultCode Put(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value, PutOptions options = PutOptions.None)
     {
-        if (db == null)
-            throw new ArgumentNullException(nameof(db));
+        ArgumentNullException.ThrowIfNull(db);
 
         fixed (byte* keyPtr = key)
         fixed (byte* valuePtr = value)
@@ -250,8 +248,7 @@ public sealed class LightningTransaction : IDisposable
     /// <param name="value">The data to delete (optional)</param>
     public unsafe MDBResultCode Delete(LightningDatabase db, ReadOnlySpan<byte> key, ReadOnlySpan<byte> value)
     {
-        if (db == null)
-            throw new ArgumentNullException(nameof(db));
+        ArgumentNullException.ThrowIfNull(db);
 
         fixed (byte* keyPtr = key)
         fixed (byte* valuePtr = value)
@@ -294,6 +291,8 @@ public sealed class LightningTransaction : IDisposable
     /// <param name="key">The key to delete from the database</param>
     public unsafe MDBResultCode Delete(LightningDatabase db, ReadOnlySpan<byte> key)
     {
+        ArgumentNullException.ThrowIfNull(db);
+
         fixed(byte* ptr = key) {
             var mdbKey = new MDBValue(key.Length, ptr);
             return mdb_del(_handle, db._handle, mdbKey);
@@ -468,8 +467,7 @@ public sealed class LightningTransaction : IDisposable
     /// <returns>Negative value if a is less than b, zero if equal, positive if a is greater than b</returns>
     public unsafe int CompareKeys(LightningDatabase db, ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
     {
-        if (db == null)
-            throw new ArgumentNullException(nameof(db));
+        ArgumentNullException.ThrowIfNull(db);
 
         fixed (byte* aPtr = a)
         fixed (byte* bPtr = b)
@@ -490,8 +488,7 @@ public sealed class LightningTransaction : IDisposable
     /// <returns>Negative value if a is less than b, zero if equal, positive if a is greater than b</returns>
     public unsafe int CompareData(LightningDatabase db, ReadOnlySpan<byte> a, ReadOnlySpan<byte> b)
     {
-        if (db == null)
-            throw new ArgumentNullException(nameof(db));
+        ArgumentNullException.ThrowIfNull(db);
 
         fixed (byte* aPtr = a)
         fixed (byte* bPtr = b)

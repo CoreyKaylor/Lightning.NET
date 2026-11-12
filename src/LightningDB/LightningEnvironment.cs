@@ -54,8 +54,7 @@ public sealed class LightningEnvironment : IDisposable
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Invalid directory name");
-        if (configuration == null)
-            throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
 
         mdb_env_create(out _handle).ThrowOnError();
         try
@@ -100,7 +99,7 @@ public sealed class LightningEnvironment : IDisposable
     /// The size may be changed by closing and reopening the environment.
     /// Any attempt to set a size smaller than the space already consumed by the environment will be silently changed to the current size of the used space.
     /// </remarks>
-    public unsafe long MapSize
+    public long MapSize
     {
         get => _config.MapSize;
         set
@@ -108,7 +107,7 @@ public sealed class LightningEnvironment : IDisposable
             if (value == _config.MapSize)
                 return;
 
-            if (_config.AutoReduceMapSizeIn32BitProcess && sizeof(nint) == 4)
+            if (_config.AutoReduceMapSizeIn32BitProcess && IntPtr.Size == 4)
                 _config.MapSize = int.MaxValue;
             else
                 _config.MapSize = value;
@@ -539,8 +538,7 @@ public sealed class LightningEnvironment : IDisposable
     /// <exception cref="NotSupportedException">Thrown when the platform doesn't support getting file handles from FileStream</exception>
     public MDBResultCode CopyToStream(FileStream fileStream, bool compact = false)
     {
-        if (fileStream == null)
-            throw new ArgumentNullException(nameof(fileStream));
+        ArgumentNullException.ThrowIfNull(fileStream);
 
         if (!fileStream.CanWrite)
             throw new ArgumentException("FileStream must be writable", nameof(fileStream));
@@ -593,8 +591,7 @@ public sealed class LightningEnvironment : IDisposable
     /// <returns>A result code indicating success or failure</returns>
     public MDBResultCode IncrementalCopyTo(string path, ulong sinceTransactionId)
     {
-        if (path == null)
-            throw new ArgumentNullException(nameof(path));
+        ArgumentNullException.ThrowIfNull(path);
         if (sinceTransactionId == 0)
             throw new ArgumentOutOfRangeException(nameof(sinceTransactionId),
                 "sinceTransactionId must be greater than zero; use CopyTo for a full backup");
@@ -614,8 +611,7 @@ public sealed class LightningEnvironment : IDisposable
     /// <returns>A result code indicating success or failure</returns>
     public MDBResultCode IncrementalCopyToStream(FileStream fileStream, ulong sinceTransactionId)
     {
-        if (fileStream == null)
-            throw new ArgumentNullException(nameof(fileStream));
+        ArgumentNullException.ThrowIfNull(fileStream);
         if (!fileStream.CanWrite)
             throw new ArgumentException("FileStream must be writable", nameof(fileStream));
         if (sinceTransactionId == 0)
@@ -645,8 +641,7 @@ public sealed class LightningEnvironment : IDisposable
     /// </remarks>
     public MDBResultCode LoadIncrementalFromStream(FileStream fileStream)
     {
-        if (fileStream == null)
-            throw new ArgumentNullException(nameof(fileStream));
+        ArgumentNullException.ThrowIfNull(fileStream);
         if (!fileStream.CanRead)
             throw new ArgumentException("FileStream must be readable", nameof(fileStream));
 

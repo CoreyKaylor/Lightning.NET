@@ -35,11 +35,8 @@ public class LightningCursor : IDisposable
     /// <param name="txn">Transaction</param>
     internal LightningCursor(LightningDatabase db, LightningTransaction txn)
     {
-        if (db == null)
-            throw new ArgumentNullException(nameof(db));
-
-        if (txn == null)
-            throw new ArgumentNullException(nameof(txn));
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(txn);
 
         try
         {
@@ -289,8 +286,7 @@ public class LightningCursor : IDisposable
 
     private (MDBResultCode resultCode, MDBValue key, MDBValue value) Get(CursorOperation operation, byte[] key)
     {
-        if (key is null)
-            throw new ArgumentNullException(nameof(key));
+        ArgumentNullException.ThrowIfNull(key);
 
         return Get(operation, key.AsSpan());
     }
@@ -513,8 +509,7 @@ public class LightningCursor : IDisposable
     /// <returns>Returns <see cref="MDBResultCode"/></returns>
     public MDBResultCode Renew(LightningTransaction txn)
     {
-        if(txn == null)
-            throw new ArgumentNullException(nameof(txn));
+        ArgumentNullException.ThrowIfNull(txn);
 
         if (!txn.IsReadOnly)
             throw new InvalidOperationException("Can't renew cursor on non-readonly transaction");

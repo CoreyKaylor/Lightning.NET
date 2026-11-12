@@ -27,8 +27,7 @@ public sealed class LightningDatabase : IDisposable
     internal LightningDatabase(string? name, LightningTransaction transaction, DatabaseConfiguration configuration,
         bool closeOnDispose)
     {
-        if (transaction == null)
-            throw new ArgumentNullException(nameof(transaction));
+        ArgumentNullException.ThrowIfNull(transaction);
 
         Name = name;
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -69,8 +68,7 @@ public sealed class LightningDatabase : IDisposable
     /// <returns>The database flags</returns>
     public DatabaseOpenFlags GetFlags(LightningTransaction transaction)
     {
-        if (transaction == null)
-            throw new ArgumentNullException(nameof(transaction));
+        ArgumentNullException.ThrowIfNull(transaction);
 
         mdb_dbi_flags(transaction._handle, _handle, out var flags).ThrowOnError();
         return (DatabaseOpenFlags)flags;
