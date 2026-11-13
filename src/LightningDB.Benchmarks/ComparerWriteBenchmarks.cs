@@ -13,7 +13,7 @@ public class ComparerWriteBenchmarks : ComparerBenchmarkBase
     [ParamsSource(nameof(AllComparers))]
     public override ComparerDescriptor Comparer { get; set; }
 
-    public static IEnumerable<ComparerDescriptor> AllComparers => ComparerDescriptor.All;
+    public static IEnumerable<ComparerDescriptor> AllComparers => ComparerDescriptor.Selected;
 
     [Benchmark]
     public void Write()

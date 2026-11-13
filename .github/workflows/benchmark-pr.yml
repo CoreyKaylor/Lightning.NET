@@ -1,15 +1,38 @@
 name: Benchmark PR Check
 
+# Runs the base and head benchmarks back to back on the same runner and compares them.
+# Same-runner comparison avoids cross-machine noise and any dependency on a cached baseline.
+
 on:
   pull_request:
     branches: [main]
     paths:
       - 'src/LightningDB/**'
       - 'src/LightningDB.Benchmarks/**'
+      - '.github/workflows/benchmark-pr.yml'
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: 'Ref to compare the selected branch against'
+        default: 'main'
+      comparers:
+        description: 'Comparer set for ComparerRead/ComparerWrite benchmarks'
+        type: choice
+        options: [representative, all]
+        default: representative
 
 permissions:
   contents: read
   pull-requests: write
+
+concurrency:
+  group: benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  LIGHTNING_BENCH_COMPARERS: ${{ inputs.comparers || 'representative' }}
 
 jobs:
   benchmark:
@@ -17,244 +40,123 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout PR
+      - name: Checkout head
         uses: actions/checkout@v5
+        with:
+          path: head
+
+      - name: Checkout base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha || inputs.base_ref }}
+          path: base
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '11.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Run base benchmarks
+        working-directory: base/src/LightningDB.Benchmarks
+        # Short job: 1 launch, 3 warmup and 3 measured iterations of 100 ms each (BenchmarkDotNet's default is 500 ms).
+        run: dotnet run -c Release -f net11.0 -- --filter '*' --job short --iterationTime 100 --exporters json
 
-      - name: Build Release
-        run: dotnet build --configuration Release --no-restore
+      - name: Run head benchmarks
+        working-directory: head/src/LightningDB.Benchmarks
+        # Short job: 1 launch, 3 warmup and 3 measured iterations of 100 ms each (BenchmarkDotNet's default is 500 ms).
+        run: dotnet run -c Release -f net11.0 -- --filter '*' --job short --iterationTime 100 --exporters json
 
-      - name: Restore baseline cache
-        id: cache-baseline
-        uses: actions/cache/restore@v4
-        with:
-          path: benchmark-cache
-          key: benchmark-baseline-${{ runner.os }}-latest
-          restore-keys: |
-            benchmark-baseline-${{ runner.os }}-
-
-      - name: Check baseline exists
-        id: check-baseline
-        run: |
-          if [ -f "benchmark-cache/baseline.json" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Baseline found from cache"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "::warning::No baseline cache found. Benchmarks will run but comparison will be skipped."
-          fi
-
-      - name: Run Benchmarks
-        working-directory: src/LightningDB.Benchmarks
-        run: |
-          dotnet run -c Release --no-build -f net11.0 -- \
-            --filter "*" \
-            --job short \
-            --exporters json \
-            --iterationCount 3 \
-            --warmupCount 1 \
-            --launchCount 1
-
-      - name: Combine PR benchmark results
-        run: |
-          mkdir -p pr-results
-          find src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results \
-            -name "*-report-full-compressed.json" \
-            -exec cat {} + > pr-results/current.json
-
-      - name: Compare benchmarks and check for regressions
-        if: steps.check-baseline.outputs.exists == 'true'
-        id: compare
-        run: |
-          python3 << 'EOF'
-          import json
-
-          REGRESSION_THRESHOLD = 40.0  # Threshold for flagging significant regressions
-          IMPROVEMENT_THRESHOLD = 20.0  # Threshold for flagging improvements
-
-          def parse_benchmarks(file_path):
-              """Parse concatenated BenchmarkDotNet JSON files."""
-              benchmarks = {}
-              with open(file_path, 'r') as f:
-                  content = f.read()
-
-              # Handle concatenated JSON objects (one per benchmark class)
-              decoder = json.JSONDecoder()
-              pos = 0
-              while pos < len(content):
-                  # Skip whitespace
-                  while pos < len(content) and content[pos] in ' \t\n\r':
-                      pos += 1
-                  if pos >= len(content):
-                      break
-                  try:
-                      obj, end = decoder.raw_decode(content, pos)
-                      pos = end
-                      if 'Benchmarks' in obj:
-                          for b in obj['Benchmarks']:
-                              name = b.get('FullName', b.get('Method', 'unknown'))
-                              if 'Statistics' in b and 'Mean' in b['Statistics']:
-                                  benchmarks[name] = b['Statistics']['Mean']
-                  except json.JSONDecodeError:
-                      pos += 1
-
-              return benchmarks
-
-          baseline = parse_benchmarks('benchmark-cache/baseline.json')
-          current = parse_benchmarks('pr-results/current.json')
-
-          print(f"Baseline benchmarks: {len(baseline)}")
-          print(f"Current benchmarks: {len(current)}")
-
-          regressions = []
-          improvements = []
-          results = []
-
-          for name, current_mean in current.items():
-              if name in baseline:
-                  baseline_mean = baseline[name]
-                  if baseline_mean > 0:
-                      change_pct = ((current_mean - baseline_mean) / baseline_mean) * 100
-
-                      results.append({
-                          'name': name,
-                          'baseline': baseline_mean,
-                          'current': current_mean,
-                          'change': change_pct
-                      })
-
-                      if change_pct > REGRESSION_THRESHOLD:
-                          regressions.append({
-                              'name': name,
-                              'baseline': baseline_mean,
-                              'current': current_mean,
-                              'change': change_pct
-                          })
-                      elif change_pct < -IMPROVEMENT_THRESHOLD:
-                          improvements.append({
-                              'name': name,
-                              'change': change_pct
-                          })
-
-          # Write results for PR comment
-          with open('pr-results/comparison.json', 'w') as f:
-              json.dump(results, f, indent=2)
-
-          # Generate summary
-          print(f"\nCompared {len(results)} benchmarks")
-          print(f"Significant regressions (>{REGRESSION_THRESHOLD}%): {len(regressions)}")
-          print(f"Improvements (<-{IMPROVEMENT_THRESHOLD}%): {len(improvements)}")
-
-          if regressions:
-              print(f"\nBenchmarks with significant regression:")
-              for r in sorted(regressions, key=lambda x: -x['change']):
-                  print(f"  - {r['name']}: +{r['change']:.1f}% ({r['baseline']:.2f}ns -> {r['current']:.2f}ns)")
-
-          if improvements:
-              print(f"\nBenchmarks with significant improvement:")
-              for r in sorted(improvements, key=lambda x: x['change']):
-                  print(f"  - {r['name']}: {r['change']:.1f}%")
-          EOF
-
-      - name: Comment PR with benchmark results
-        if: always() && steps.check-baseline.outputs.exists == 'true' && hashFiles('pr-results/comparison.json') != ''
+      - name: Compare and report
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
+            const path = require('path');
+            const REGRESSION = 15; // % slower than base to flag
+            const IMPROVEMENT = 15; // % faster than base to flag
+            const MARKER = '<!-- lightning-benchmark-report -->';
 
-            let body = '## Benchmark Results\n\n';
+            const load = dir => {
+              const means = new Map();
+              for (const file of fs.readdirSync(dir).filter(f => f.endsWith('-report-full-compressed.json')))
+                for (const b of JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')).Benchmarks ?? [])
+                  if (b.Statistics?.Mean != null) means.set(b.FullName, b.Statistics.Mean);
+              return means;
+            };
+            const results = side => `${side}/src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results`;
+            const base = load(results('base'));
+            const head = load(results('head'));
+
+            const time = ns => {
+              for (const [unit, scale] of [['s', 1e9], ['ms', 1e6], ['us', 1e3]])
+                if (ns >= scale) return `${(ns / scale).toFixed(2)} ${unit}`;
+              return `${ns.toFixed(2)} ns`;
+            };
+            // "LightningDB.Benchmarks.ReadBenchmarks.Read(args)" -> "ReadBenchmarks.Read(args)"
+            const shortName = name => {
+              const i = name.indexOf('(');
+              const method = i < 0 ? name : name.slice(0, i);
+              return method.split('.').slice(-2).join('.') + (i < 0 ? '' : name.slice(i));
+            };
+            const table = rows => [
+              '| Benchmark | Base | Head | Change |',
+              '|---|---:|---:|---:|',
+              ...rows.map(r => `| \`${shortName(r.name)}\` | ${time(r.base)} | ${time(r.head)} | ${r.change > 0 ? '+' : ''}${r.change.toFixed(1)}% |`),
+            ].join('\n');
+
+            const rows = [...head]
+              .filter(([name]) => base.get(name) > 0)
+              .map(([name, h]) => ({ name, base: base.get(name), head: h, change: (h - base.get(name)) / base.get(name) * 100 }))
+              .sort((a, b) => b.change - a.change);
+            const regressions = rows.filter(r => r.change > REGRESSION);
+            const improvements = rows.filter(r => r.change < -IMPROVEMENT).reverse();
+            const newInHead = [...head.keys()].filter(name => !base.has(name)).length;
+
+            const out = [MARKER, '## Benchmark Results', ''];
+            if (rows.length === 0)
+              out.push(':grey_question: No benchmarks in common between base and head.');
+            else if (regressions.length)
+              out.push(`:warning: **${regressions.length} benchmark(s) more than ${REGRESSION}% slower than base**`, '', table(regressions));
+            else
+              out.push(`:white_check_mark: **No benchmark more than ${REGRESSION}% slower than base**`);
+            if (improvements.length)
+              out.push('', `:rocket: **${improvements.length} benchmark(s) more than ${IMPROVEMENT}% faster than base**`, '', table(improvements));
+            if (newInHead)
+              out.push('', `${newInHead} benchmark(s) are new in head and have no base to compare against.`);
+            out.push('',
+              'Base and head ran back to back on the same runner using a short job (3 iterations of about 100 ms each). ' +
+              'Read and cursor benchmarks are usually stable to within a few percent; write benchmarks commit to disk ' +
+              'and can swing 25% or more from I/O alone, so treat write-only changes with suspicion.',
+              '', `<details><summary>All results (${rows.length} benchmarks)</summary>`, '', table(rows), '', '</details>');
+            const body = out.join('\n');
+
+            fs.writeFileSync('report.md', body);
+            await core.summary.addRaw(body).write();
+            if (context.eventName !== 'pull_request') return;
 
             try {
-              const results = JSON.parse(fs.readFileSync('pr-results/comparison.json', 'utf8'));
-
-              // Sort by change percentage (worst regressions first)
-              results.sort((a, b) => b.change - a.change);
-
-              const regressions = results.filter(r => r.change > 40);
-              const warnings = results.filter(r => r.change > 20 && r.change <= 40);
-              const improvements = results.filter(r => r.change < -20);
-
-              if (regressions.length > 0) {
-                body += `:warning: **${regressions.length} benchmark(s) showed significant regression (>40%)**\n\n`;
-                body += '| Benchmark | Baseline | Current | Change |\n';
-                body += '|-----------|----------|---------|--------|\n';
-                for (const r of regressions.slice(0, 10)) {
-                  const shortName = r.name.split('.').slice(-2).join('.');
-                  body += `| ${shortName} | ${r.baseline.toFixed(2)}ns | ${r.current.toFixed(2)}ns | :warning: +${r.change.toFixed(1)}% |\n`;
-                }
-                if (regressions.length > 10) {
-                  body += `\n*...and ${regressions.length - 10} more*\n`;
-                }
-              } else {
-                body += ':white_check_mark: **No significant performance regressions detected**\n\n';
-              }
-
-              if (warnings.length > 0) {
-                body += `\n### :warning: Minor performance degradation (20-40%)\n`;
-                body += `${warnings.length} benchmarks showed minor slowdown\n`;
-              }
-
-              if (improvements.length > 0) {
-                body += `\n### :rocket: Improvements\n`;
-                body += `${improvements.length} benchmarks showed improvement (>20% faster)\n`;
-              }
-
-              body += `\n<details><summary>All results (${results.length} benchmarks)</summary>\n\n`;
-              body += '| Benchmark | Baseline | Current | Change |\n|-----------|----------|---------|--------|\n';
-              for (const r of results) {
-                const shortName = r.name.split('.').slice(-2).join('.');
-                const emoji = r.change > 40 ? ':x:' : r.change > 20 ? ':warning:' : r.change < -20 ? ':rocket:' : ':white_check_mark:';
-                const sign = r.change > 0 ? '+' : '';
-                body += `| ${shortName} | ${r.baseline.toFixed(2)}ns | ${r.current.toFixed(2)}ns | ${emoji} ${sign}${r.change.toFixed(1)}% |\n`;
-              }
-              body += '</details>\n';
-
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number });
+              const existing = comments.find(c =>
+                c.user.type === 'Bot' && (c.body.includes(MARKER) || c.body.includes('## Benchmark Results')));
+              if (existing)
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body });
+              else
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body });
             } catch (e) {
-              body += ':warning: Could not parse benchmark comparison results.\n';
-              body += `Error: ${e.message}\n`;
-            }
-
-            // Find existing comment to update
-            const { data: comments } = await github.rest.issues.listComments({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-
-            const botComment = comments.find(c =>
-              c.user.type === 'Bot' && c.body.includes('## Benchmark Results')
-            );
-
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                comment_id: botComment.id,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: body
-              });
+              // Fork PRs get a read-only token; the job summary still has the report.
+              core.warning(`Could not comment on the PR: ${e.message}`);
             }
 
       - name: Upload benchmark results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: benchmark-results-pr-${{ github.event.pull_request.number }}
+          name: benchmark-results-${{ github.run_id }}
           path: |
-            pr-results/
-            src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results/
+            report.md
+            base/src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results/
+            head/src/LightningDB.Benchmarks/BenchmarkDotNet.Artifacts/results/
           retention-days: 14

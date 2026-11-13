@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using LightningDB.Comparers;
 
@@ -18,6 +19,27 @@ public readonly struct ComparerDescriptor
     }
 
     public override string ToString() => Name;
+
+    /// <summary>
+    /// Comparers for the all-comparer benchmarks: <see cref="All"/>, or <see cref="Representative"/> when
+    /// the LIGHTNING_BENCH_COMPARERS environment variable is "representative" (used by CI to keep runs short).
+    /// The variable is inherited by BenchmarkDotNet's child processes, so host and child agree on the set.
+    /// </summary>
+    public static IEnumerable<ComparerDescriptor> Selected =>
+        string.Equals(Environment.GetEnvironmentVariable("LIGHTNING_BENCH_COMPARERS"), "representative", StringComparison.OrdinalIgnoreCase)
+            ? Representative
+            : All;
+
+    /// <summary>
+    /// One comparer per family: LMDB native, managed byte-wise, integer, and string.
+    /// </summary>
+    public static IEnumerable<ComparerDescriptor> Representative => new[]
+    {
+        new ComparerDescriptor("Default", null),
+        new ComparerDescriptor("Bitwise", BitwiseComparer.Instance),
+        new ComparerDescriptor("SignedInt", SignedIntegerComparer.Instance),
+        new ComparerDescriptor("Utf8String", Utf8StringComparer.Instance),
+    };
 
     /// <summary>
     /// All available comparers including Default (null = LMDB native).
